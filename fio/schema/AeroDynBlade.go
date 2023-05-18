@@ -1,11 +1,11 @@
-package fio
+package schema
 
-var AeroDynBlade = NewFile("AeroDynBlade", []Field{
-	{Type: Heading, Desc: "AeroDynBlade Input File"},
+var AeroDynBlade = RegisterSchemas("AeroDynBlade", []Schema{
+	{Type: Header, Desc: "AeroDynBlade Input File"},
 	{Name: "Title", Type: Title},
-	{Type: Heading, Desc: "Blade Properties"},
+	{Type: Header, Desc: "Blade Properties"},
 	{Name: "NumBlNds", Type: Int, Desc: "Number of blade nodes used in the analysis"},
-	{Name: "BlNds", Type: Table, Num: "NumBlNds",
+	{Name: "BlNds", Type: Table, NumVar: "NumBlNds",
 		TableHeaderSize: 2,
 		TableColumns: []Column{
 			{Name: "BlSpn", Type: Float, Unit: "m"},

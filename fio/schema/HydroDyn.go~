@@ -32,16 +32,15 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	{Name: "WaveHs", Type: Float, Desc: `Significant wave height of incident waves [used only when WaveMod=1, 2, or 3]`, Unit: "meters"},
 	{Name: "WaveTp", Type: Float, Desc: `Peak-spectral period of incident waves [used only when WaveMod=1 or 2]`, Unit: "sec"},
 	{Name: "WavePkShp", Type: FloatDefault, Desc: `Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]`},
-	//
-	//	        0   WvLowCOff      - Low  cut-off frequency or lower frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]
-	//	      500   WvHiCOff       - High cut-off frequency or upper frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]
-	//	        0   WaveDir        - Incident wave propagation heading direction                         (degrees) [unused when WaveMod=0 or 6]
-	//	        0   WaveDirMod     - Directional spreading function {0: none, 1: COS2S}                  (-)       [only used when WaveMod=2,3, or 4]
-	//	        1   WaveDirSpread  - Wave direction spreading coefficient ( > 0 )                        (-)       [only used when WaveMod=2,3, or 4 and WaveDirMod=1]
-	//	        1   WaveNDir       - Number of wave directions                                           (-)       [only used when WaveMod=2,3, or 4 and WaveDirMod=1; odd number only]
-	//	       90   WaveDirRange   - Range of wave directions (full range: WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]
-	//	123456789   WaveSeed(1)    - First  random seed of incident waves [-2147483648 to 2147483647]    (-)       [unused when WaveMod=0, 5, or 6]
-	//	   RANLUX   WaveSeed(2)    - Second random seed of incident waves [-2147483648 to 2147483647] for intrinsic pRNG, or an alternative pRNG: "RanLux"    (-)       [unused when WaveMod=0, 5, or 6]
+	{Name:"WvLowCOff",    Type:Float, 		Desc:`Low  cut-off frequency or lower frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]`},
+	{Name:"WvHiCOff",     Type:Float, 		Desc:`High cut-off frequency or upper frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]`},
+	{Name:"WaveDir",      Type:Float, 		Desc:`Incident wave propagation heading direction                         (degrees) [unused when WaveMod=0 or 6]`},
+	{Name:"WaveDirMod",   Type:Int, 	    	Desc:`Directional spreading function {0: none, 1: COS2S}                  (-)       [only used when WaveMod=2,3, or 4]`},
+	{Name:"WaveDirSpread",Type:Int,      	Desc:`Wave direction spreading coefficient ( > 0 )                        (-)       [only used when WaveMod=2,3, or 4 and WaveDirMod=1]`},
+	{Name:"WaveNDir",     Type:Int, 	    	Desc:`Number of wave directions                                           (-)       [only used when WaveMod=2,3, or 4 and WaveDirMod=1; odd number only]`},
+	{Name:"WaveDirRange", Type:Float, 		Desc:`Range of wave directions (full range: WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]`},
+	{Name:"WaveSeed(1)",  Type:Int, 	    	Desc:`First  random seed of incident waves [-2147483648 to 2147483647]    (-)       [unused when WaveMod=0, 5, or 6]`},
+	{Name:"WaveSeed(2)",  Type:IntOrString,  Desc:`Second random seed of incident waves [-2147483648 to 2147483647] for intrinsic pRNG, or an alternative pRNG: "RanLux"    (-)       [unused when WaveMod=0, 5, or 6]`},
 	//
 	// TRUE             WaveNDAmp      - Flag for normally distributed amplitudes                            (flag)    [only used when WaveMod=2, 3, or 4]
 	// ""               WvKinFile      - Root name of externally generated wave data file(s)        (quoted string)    [used only when WaveMod=5 or 6]
@@ -50,7 +49,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	0   WaveElevxi     - List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
 	//	0   WaveElevyi     - List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
 	//
-	// {Type:Heading, Desc:`2nd-Order Waves ----------------------------------------- [Unused With Wavemod=0 Or `},
+	{Type:Heading, Desc:`2nd-Order Waves ----------------------------------------- [Unused With Wavemod=0 Or `},
 	// False            WvDiffQTF      - Full difference-frequency 2nd-order wave kinematics (flag)
 	// False            WvSumQTF       - Full summation-frequency  2nd-order wave kinematics (flag)
 	//
@@ -59,7 +58,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	0.1   WvLowCOffS     - Low  frequency cutoff used in the summation-frequencies  (rad/s) [Only used with a summation-frequency  method]
 	//	3.5   WvHiCOffS      - High frequency cutoff used in the summation-frequencies  (rad/s) [Only used with a summation-frequency  method]
 	//
-	// {Type:Heading, Desc:`Current ------------------------------------------------- [Unused With Wavemod=`},
+	{Type:Heading, Desc:`Current ------------------------------------------------- [Unused With Wavemod=`},
 	//
 	//	0   CurrMod        - Current profile model {0: none=no current, 1: standard, 2: user-defined from routine UserCurrent} (switch)
 	//	0   CurrSSV0       - Sub-surface current velocity at still water level  (m/s) [used only when CurrMod=1]
@@ -72,7 +71,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	 0   CurrDIV        - Depth-independent current velocity                 (m/s) [used only when CurrMod=1]
 	//	 0   CurrDIDir      - Depth-independent current heading direction    (degrees) [used only when CurrMod=1]
 	//
-	// {Type:Heading, Desc:`Floating Platform --------------------------------------- [Unused With Wavemod=`},
+	{Type:Heading, Desc:`Floating Platform --------------------------------------- [Unused With Wavemod=`},
 	//
 	//	     1   PotMod         - Potential-flow model {0: none=no potential flow, 1: frequency-to-time-domain transforms based on WAMIT output, 2: fluid-impulse theory (FIT)} (switch)
 	//	     1   ExctnMod       - Wave-excitation model {0: no wave-excitation calculation, 1: DFT, 2: state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ssexctn INPUT FILE]
@@ -93,14 +92,14 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	 0.0   PtfmCOBxt      - The xt offset of the center of buoyancy (COB) from (0,0) (meters) [1 to NBody] [only used when PotMod=1]
 	//	 0.0   PtfmCOByt      - The yt offset of the center of buoyancy (COB) from (0,0) (meters) [1 to NBody] [only used when PotMod=1]
 	//
-	// {Type:Heading, Desc:`2nd-Order Floating Platform Forces ---------------------- [Unused With Wavemod=0 Or 6, Or Potmod=0 Or `},
+	{Type:Heading, Desc:`2nd-Order Floating Platform Forces ---------------------- [Unused With Wavemod=0 Or 6, Or Potmod=0 Or `},
 	//
 	//	0   MnDrift        - Mean-drift 2nd-order forces computed                                       {0: None; [7, 8, 9, 10, 11, or 12]: WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero. If NBody>1, MnDrift  /=8]
 	//	0   NewmanApp      - Mean- and slow-drift 2nd-order forces computed with Newman's approximation {0: None; [7, 8, 9, 10, 11, or 12]: WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero. If NBody>1, NewmanApp/=8. Used only when WaveDirMod=0]
 	//	0   DiffQTF        - Full difference-frequency 2nd-order forces computed with full QTF          {0: None; [10, 11, or 12]: WAMIT file to use}          [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
 	//	0   SumQTF         - Full summation -frequency 2nd-order forces computed with full QTF          {0: None; [10, 11, or 12]: WAMIT file to use}
 	//
-	// {Type:Heading, Desc:`Platform Additional Stiffness And Damping  -------------- [Unused With Potmod=0 Or `},
+	{Type:Heading, Desc:`Platform Additional Stiffness And Damping  -------------- [Unused With Potmod=0 Or `},
 	//
 	//	0   AddF0    - Additional preload (N, N-m) [If NBodyMod=1, one size 6*NBody x 1 vector; if NBodyMod>1, NBody size 6 x 1 vectors]
 	//	0
@@ -127,7 +126,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	0             0             0             0             0             0
 	//	0             0             0             0             0             0
 	//
-	// {Type:Heading, Desc:`Axial Coefficients`},
+	{Type:Heading, Desc:`Axial Coefficients`},
 	//
 	//	1   NAxCoef        - Number of axial coefficients (-)
 	//
@@ -136,7 +135,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	(-)    (-)      (-)      (-)
 	//	 1     0.00     0.00     1.00
 	//
-	// {Type:Heading, Desc:`Member Joints`},
+	{Type:Heading, Desc:`Member Joints`},
 	//
 	//	2   NJoints        - Number of joints (-)   [must be exactly 0 or at least 2]
 	//
@@ -146,7 +145,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	 1     0.00000     0.00000    -4.00000      1            0
 	//	 2     0.00000     0.00000     0.00000      1            0
 	//
-	// {Type:Heading, Desc:`Member Cross-Section Properties`},
+	{Type:Heading, Desc:`Member Cross-Section Properties`},
 	//
 	//	1   NPropSets      - Number of member property sets (-)
 	//
@@ -155,19 +154,19 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	(-)        (m)            (m)
 	//	 1       45.13520        0.00010
 	//
-	// {Type:Heading, Desc:`Simple Hydrodynamic Coefficients (Model 1)`},
+	{Type:Heading, Desc:`Simple Hydrodynamic Coefficients (Model 1)`},
 	//
 	//	SimplCd    SimplCdMG    SimplCa    SimplCaMG    SimplCp    SimplCpMG   SimplAxCa  SimplAxCaMG  SimplAxCa  SimplAxCaMG  SimplAxCp   SimplAxCpMG
 	//	  (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)
 	//	  1.00        1.00        0.00        0.00        1.00        1.00        1.00        1.00        1.00        1.00        0.00        0.00
 	//
-	// {Type:Heading, Desc:`Depth-Based Hydrodynamic Coefficients (Model 2)`},
+	{Type:Heading, Desc:`Depth-Based Hydrodynamic Coefficients (Model 2)`},
 	//
 	//	0   NCoefDpth       - Number of depth-dependent coefficients (-)
 	//
 	// Dpth      DpthCd   DpthCdMG   DpthCa   DpthCaMG       DpthCp   DpthCpMG   DpthAxCa   DpthAxCaMG    DpthAxCa   DpthAxCaMG       DpthAxCp   DpthAxCpMG
 	// (m)       (-)      (-)        (-)      (-)            (-)      (-)          (-)        (-)           (-)        (-)              (-)         (-)
-	// {Type:Heading, Desc:`Member-Based Hydrodynamic Coefficients (Model 3)`},
+	{Type:Heading, Desc:`Member-Based Hydrodynamic Coefficients (Model 3)`},
 	//
 	//	0   NCoefMembers       - Number of member-based coefficients (-)
 	//
@@ -175,7 +174,7 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//
 	//	(-)         (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)           (-)
 	//
-	// {Type:Heading, Desc:`Members`},
+	{Type:Heading, Desc:`Members`},
 	//
 	//	1   NMembers       - Number of members (-)
 	//
@@ -184,19 +183,19 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//	(-)        (-)        (-)         (-)          (-)        (m)      (switch)   (flag)
 	//	  1         1          2           1            1         0.5000      1        TRUE
 	//
-	// {Type:Heading, Desc:`Filled Members`},
+	{Type:Heading, Desc:`Filled Members`},
 	//
 	//	0   NFillGroups     - Number of filled member groups (-) [If FillDens = DEFAULT, then FillDens = WtrDens; FillFSLoc is related to MSL2SWL]
 	//
 	// FillNumM FillMList             FillFSLoc     FillDens
 	// (-)      (-)                   (m)           (kg/m^3)
-	// {Type:Heading, Desc:`Marine Growth`},
+	{Type:Heading, Desc:`Marine Growth`},
 	//
 	//	0   NMGDepths      - Number of marine-growth depths specified (-)
 	//
 	// MGDpth     MGThck       MGDens
 	// (m)        (m)         (kg/m^3)
-	// {Type:Heading, Desc:`Member Output List`},
+	{Type:Heading, Desc:`Member Output List`},
 	//
 	//	0   NMOutputs      - Number of member outputs (-) [must be < 10]
 	//
@@ -204,12 +203,12 @@ var HydroDyn = NewFileType("HydroDyn", []Field{
 	//
 	//	(-)        (-)        (-)
 	//
-	// {Type:Heading, Desc:`Joint Output List`},
+	{Type:Heading, Desc:`Joint Output List`},
 	//
 	//	          0   NJOutputs      - Number of joint outputs [Must be < 10]
 	//	0           JOutLst        - List of JointIDs which are to be output (-)[unused if NJOutputs=0]
 	//
-	// {Type:Heading, Desc:`Output`},
+	{Type:Heading, Desc:`Output`},
 	// True             HDSum          - Output a summary file [flag]
 	// False            OutAll         - Output all user-specified member and joint loads (only at each member end, not interior locations) [flag]
 	//

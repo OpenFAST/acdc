@@ -1,12 +1,12 @@
-package fio
+package schema
 
-var BeamDynBlade = NewFile("BeamDynBlade", []Field{
-	{Type: Heading, Desc: "BeamDynBlade Input File"},
+var BeamDynBlade = RegisterSchemas("BeamDynBlade", []Schema{
+	{Type: Header, Desc: "BeamDynBlade Input File"},
 	{Name: "Title", Type: Title},
-	{Type: Heading, Desc: "Blade Parameters"},
+	{Type: Header, Desc: "Blade Parameters"},
 	{Name: "station_total", Type: Int, Desc: `Number of blade input stations (-)`},
 	{Name: "damp_type", Type: Int, Desc: `Damping type: 0: no damping; 1: damped`},
-	{Type: Heading, Desc: "Damping Coefficient"},
+	{Type: Header, Desc: "Damping Coefficient"},
 	{Name: "mu", Type: Table, TableHeaderSize: 2, TableColumns: []Column{
 		{Name: "mu1", Type: Float, Unit: "-"},
 		{Name: "mu2", Type: Float, Unit: "-"},
@@ -15,6 +15,6 @@ var BeamDynBlade = NewFile("BeamDynBlade", []Field{
 		{Name: "mu5", Type: Float, Unit: "-"},
 		{Name: "mu6", Type: Float, Unit: "-"},
 	}},
-	{Type: Heading, Desc: "Distributed Properties"},
-	{Name: "Stations", Type: BDStations, Num: "station_total"},
+	{Type: Header, Desc: "Distributed Properties"},
+	{Name: "Stations", Type: BDStations, NumVar: "station_total"},
 })

@@ -1,7 +1,7 @@
-package fio
+package schema
 
-var AeroDyn14 = NewFile("AeroDyn14", []Field{
-	{Type: Heading, Desc: "AeroDyn14 Input File"},
+var AeroDyn14 = RegisterSchemas("AeroDyn14", []Schema{
+	{Type: Header, Desc: "AeroDyn14 Input File"},
 	{Name: "Title", Type: Title},
 	{Name: "StallMod", Type: String, Desc: `Dynamic stall included [BEDDOES or STEADY]`, Unit: "unquoted string"},
 	{Name: "UseCm", Type: String, Desc: `Use aerodynamic pitching moment model? [USE_CM or NO_CM]`, Unit: "unquoted string"},
@@ -17,10 +17,9 @@ var AeroDyn14 = NewFile("AeroDyn14", []Field{
 	{Name: "KinVisc", Type: Float, Desc: `Kinematic air viscosity [CURRENTLY IGNORED]`, Unit: "m^2/sec"},
 	{Name: "DTAero", Type: FloatDefault, Desc: `Time interval for aerodynamic calculations`, Unit: "sec"},
 	{Name: "NumFoil", Type: Int, Desc: `Number of airfoil files`},
-	{Name: "FoilNm", Type: Paths, Num: "NumFoil", Desc: `Names of the airfoil files [NumFoil lines]`, Unit: "quoted string",
-		PathFileType: "Foil"},
+	{Name: "FoilNm", Type: Files, FileType: "TextFile", NumVar: "NumFoil", Desc: `Names of the airfoil files [NumFoil lines]`, Unit: "quoted string"},
 	{Name: "BldNodes", Type: Int, Desc: `Number of blade nodes used for analysis`},
-	{Name: "BldNodeData", Type: Table, Num: "BldNodes",
+	{Name: "BldNodeData", Type: Table, NumVar: "BldNodes",
 		TableHeaderSize: 1,
 		TableColumns: []Column{
 			{Name: "RNodes", Type: Float},
