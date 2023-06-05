@@ -1,24 +1,7 @@
 <script lang="ts" setup>
 import { reactive, onMounted } from 'vue'
-import { SelectExec } from '../../wailsjs/go/main/Project'
-
-
-onMounted(() => {
-
-
-})
-
-const data = reactive({ execPath: '' })
-
-function selectExec() {
-    SelectExec().then(result => {
-        data.execPath = result
-        console.log(result)
-    }).catch(err => {
-        console.log(err)
-    })
-}
-
+import { useProjectStore } from '../project';
+const project = useProjectStore()
 </script>
 
 <template>
@@ -27,18 +10,23 @@ function selectExec() {
             <div class="card-header">
                 Settings
             </div>
-            <div class="card-body">
+            <!-- <div class="card-body">
                 <div class="mb-3">
                     <label for="openfastExecutable" class="form-label">OpenFAST Executable</label>
                     <div class="input-group">
-                        <input type="text" :value="data.execPath" class="form-control" id="openfastExecutable"
+                        <input type="text" :value="project.analyze.Exec.Path" class="form-control" id="openfastExecutable"
                             aria-describedby="openfastExecutableHelp" readonly>
                         <button class="btn btn-outline-primary" type="button" id="openfastExecutable"
-                            @click="selectExec">Browse</button>
+                            @click="project.selectExec">Browse</button>
                     </div>
                     <div id="openfastExecutableHelp" class="form-text">Path to OpenFAST executable</div>
                 </div>
             </div>
+            <div class="card-body">
+                <h5 class="card-title">OpenFAST Version</h5>
+                <pre><code>{{ project.analyze.Exec.Info }}</code></pre>
+            </div> -->
+
         </div>
     </main>
 </template>

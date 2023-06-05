@@ -6,7 +6,7 @@ export default createRouter({
     routes: [
         {
             path: '/',
-            component: () => import('./components/Home.vue'),
+            component: () => import('./components/Project.vue'),
         },
         {
             path: '/turbine',

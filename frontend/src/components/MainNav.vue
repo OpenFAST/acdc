@@ -15,9 +15,9 @@ onMounted(() => {
     <nav class="navbar navbar-expand-sm navbar-dark bg-primary fixed-top">
         <div class="container-fluid">
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <router-link class="nav-link" to="/">Home</router-link>
+                        <router-link class="nav-link" to="/">Project</router-link>
                     </li>
                     <li class="nav-item" v-if="project.loaded">
                         <router-link class="nav-link" to="/turbine">Turbine</router-link>
@@ -29,6 +29,11 @@ onMounted(() => {
                         <router-link class="nav-link" to="/Results">Results</router-link>
                     </li>
                 </ul>
+                <span class="navbar-text me-2" v-if="project.saving">
+                    <div class="spinner-border spinner-border-sm text-light" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </span>
             </div>
         </div>
     </nav>
