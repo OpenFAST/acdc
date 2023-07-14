@@ -1,19 +1,13 @@
-# README
+# ACDC: Automated Campbell Diagram Capabilities
 
-## About
+This application provides a web-based graphical user interface to generating Campbell Diagrams and visualizing mode shapes for OpenFAST turbine models.
 
-This is the official Wails Vue-TS template.
+Additional information can be found in [Aeroelastic Modeling for Distributed Wind Turbines](https://www.nrel.gov/docs/fy22osti/81724.pdf).
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+## Current State
 
-## Live Development
-
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+This software is currently under development and the results it produces, if it does produce results, should not be considered reliable.
 
 ## Building
 
-To build a redistributable, production mode package, use `wails build`.
+This project uses [WAILS](https://wails.io/) to build an package the application. To get started, please follow the [Installation Instructions](https://wails.io/docs/gettingstarted/installation).
