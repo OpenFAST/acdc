@@ -4,10 +4,7 @@ import { reactive, onMounted } from 'vue'
 
 const project = useProjectStore()
 
-onMounted(() => {
-
-
-})
+onMounted(() => { })
 
 </script>
 
@@ -23,7 +20,10 @@ onMounted(() => {
                         <router-link class="nav-link" to="/turbine">Turbine</router-link>
                     </li>
                     <li class="nav-item" v-if="project.loaded">
-                        <router-link class="nav-link" to="/analyze">Analyze</router-link>
+                        <router-link class="nav-link" to="/analysis">Analysis</router-link>
+                    </li>
+                    <li class="nav-item" v-if="project.loaded">
+                        <router-link class="nav-link" to="/evaluate">Evaluate</router-link>
                     </li>
                     <li class="nav-item" v-if="project.loaded">
                         <router-link class="nav-link" to="/Results">Results</router-link>
@@ -31,7 +31,7 @@ onMounted(() => {
                 </ul>
                 <span class="navbar-text me-2" v-if="project.saving">
                     <div class="spinner-border spinner-border-sm text-light" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">Saving...</span>
                     </div>
                 </span>
             </div>

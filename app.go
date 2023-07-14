@@ -7,8 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/sync/errgroup"
 )
 
 const ProjectFile = "project.json"
@@ -144,9 +146,12 @@ func (a *App) SelectExec() (*Project, error) {
 	if index := bytes.Index(output, []byte("Execution Info:")); index > -1 {
 		output = output[:index-1]
 	}
+	if index := bytes.LastIndex(output, []byte("****")); index > -1 {
+		output = output[index+4:]
+	}
 
 	// Update executable info in project
-	a.Project.Exec = Exec{
+	a.Project.Exec = &Exec{
 		Path:    path,
 		Version: string(bytes.TrimSpace(output)),
 		Valid:   true,
@@ -177,10 +182,27 @@ func (a *App) ImportModelDialog() (*Project, error) {
 		return nil, fmt.Errorf("error selecting OpenFAST file: %w", err)
 	}
 
-	// Parse model
-	a.Project.Model, err = ParseModel(path)
+	// Parse model files
+	files, err := ParseFiles(path)
 	if err != nil {
 		return nil, fmt.Errorf("error importing OpenFAST model '%s': %w", path, err)
+	}
+
+	// Get imported paths
+	paths := []string{}
+	for p := range files.PathMap {
+		p, _ := filepath.Rel(filepath.Dir(path), p)
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+
+	// Initialize models structure
+	a.Project.Model = &Model{
+		HasAero: ((len(files.AeroDyn)+len(files.AeroDyn14)) > 0 &&
+			len(files.InflowWind) > 0),
+		Files:         files,
+		ImportedPaths: paths,
+		Notes:         []string{},
 	}
 
 	// Save project
@@ -210,4 +232,94 @@ func (a *App) UpdateModel(model *Model) (*Project, error) {
 	p := &Project{Info: a.Project.Info}
 
 	return p, nil
+}
+
+// UpdateAnalysis runs Analysis.Calculate and saves results
+func (a *App) UpdateAnalysis(analysis *Analysis) (*Project, error) {
+
+	// Calculate analysis values
+	if err := analysis.Calculate(); err != nil {
+		return nil, err
+	}
+
+	// Update analysis in project
+	a.Project.Analysis = analysis
+
+	// Save project
+	if _, err := a.Project.Save(a.Project.Info.Path); err != nil {
+		return nil, err
+	}
+
+	// Initialize return project
+	p := &Project{Info: a.Project.Info, Analysis: a.Project.Analysis}
+
+	return p, nil
+}
+
+func (a *App) AddAnalysisCase() (*Project, error) {
+
+	// Add new case to analysis
+	a.Project.Analysis.Cases = append(a.Project.Analysis.Cases, NewCase())
+
+	// Update analysis
+	return a.UpdateAnalysis(a.Project.Analysis)
+}
+
+func (a *App) RemoveAnalysisCase(ID int) (*Project, error) {
+
+	// Filter out case that matches ID
+	tmp := []Case{}
+	for _, c := range a.Project.Analysis.Cases {
+		if c.ID != ID {
+			tmp = append(tmp, c)
+		}
+	}
+	a.Project.Analysis.Cases = tmp
+
+	// Update analysis
+	return a.UpdateAnalysis(a.Project.Analysis)
+}
+
+func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) {
+
+	// Call existing cancel func
+	EvalCancel(fmt.Errorf("new evaluation started"))
+
+	// Wrap app context with cancel function
+	ctx, cancelFunc := context.WithCancelCause(a.ctx)
+
+	// Save cancel function so it can be called
+	EvalCancel = cancelFunc
+
+	// Wrap cancel context with error group so eval will stop on first error
+	g, ctx2 := errgroup.WithContext(ctx)
+
+	// Create eval status slice
+	statuses := []EvalStatus{}
+
+	// Launch evaluations throttled to number of CPUs specified
+	semChan := make(chan struct{}, numCPUs)
+	for _, op := range c.OperatingPoints {
+		op := op
+		statuses = append(statuses, EvalStatus{ID: op.ID, State: "Queued"})
+		g.Go(func() error {
+			semChan <- struct{}{}
+			defer func() { <-semChan }()
+			return a.Project.EvaluateLinearization(ctx2, c, &op)
+		})
+	}
+
+	// Wait for evaluations to complete. If error, print
+	go func() {
+		if err := g.Wait(); err != nil {
+			runtime.LogErrorf(a.ctx, "error evaluating case: %s", err)
+		}
+		cancelFunc(nil) // cancel the context
+	}()
+
+	return statuses, nil
+}
+
+func (a *App) CancelEvaluate() {
+	EvalCancel(fmt.Errorf("evaluation canceled"))
 }

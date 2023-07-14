@@ -13,8 +13,12 @@ export default createRouter({
             component: () => import('./components/Turbine.vue'),
         },
         {
-            path: '/analyze',
-            component: () => import('./components/Analyze.vue'),
+            path: '/analysis',
+            component: () => import('./components/Analysis.vue'),
+        },
+        {
+            path: '/evaluate',
+            component: () => import('./components/Evaluate.vue'),
         },
         {
             path: '/results',

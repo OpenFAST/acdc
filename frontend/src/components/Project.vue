@@ -23,31 +23,6 @@ const project = useProjectStore()
                     @click="project.open(item)">{{ item }}</a>
             </ul>
         </div>
-
-        <div class="card mt-3" v-if="project.loaded">
-            <div class="card-header">
-                OpenFAST
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="openfastExecutable" class="form-label">Executable</label>
-                    <div class="input-group">
-                        <input type="text" :value="project.exec.Path" class="form-control" id="openfastExecutable"
-                            aria-describedby="openfastExecutableHelp" readonly>
-                        <button class="btn btn-outline-primary" type="button" id="openfastExecutable"
-                            @click="project.selectExec">Browse</button>
-                    </div>
-                    <div id="openfastExecutableHelp" class="form-text">Path to OpenFAST executable</div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="openfastVersion" class="form-label">Version</label>
-                    <textarea class="form-control" id="openfastVersion" readonly rows="18"
-                        :value="project.exec.Version"></textarea>
-                </div>
-
-            </div>
-        </div>
     </main>
 </template>
 

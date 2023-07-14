@@ -15,11 +15,11 @@ func TestFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, f := range matches {
+	for _, filePath := range matches {
 
-		files, err := ParseModel(f)
+		files, err := ParseFiles(filePath)
 		if err != nil {
-			t.Fatalf("error parsing '%s': %s", f, err)
+			t.Fatalf("error parsing '%s': %s", filePath, err)
 		}
 
 		b, err := json.MarshalIndent(files, "", "\t")
@@ -28,7 +28,7 @@ func TestFiles(t *testing.T) {
 		}
 
 		// Get directory
-		dir := filepath.Base(filepath.Dir(f))
+		dir := filepath.Base(filepath.Dir(filePath))
 
 		path := filepath.Join("testdata", "output", dir)
 		if err := os.MkdirAll(path, 0777); err != nil {

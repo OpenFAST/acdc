@@ -192,19 +192,111 @@ export namespace main {
 		    return a;
 		}
 	}
-	export class Analyze {
-	    Name: string;
-	    IncludeAero: boolean;
+	export class Condition {
+	    ID: number;
+	    WindSpeed: number;
+	    RotorSpeed: number;
+	    BladePitch: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new Analyze(source);
+	        return new Condition(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.WindSpeed = source["WindSpeed"];
+	        this.RotorSpeed = source["RotorSpeed"];
+	        this.BladePitch = source["BladePitch"];
+	    }
+	}
+	export class Range {
+	    Min: number;
+	    Max: number;
+	    Num: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Range(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Min = source["Min"];
+	        this.Max = source["Max"];
+	        this.Num = source["Num"];
+	    }
+	}
+	export class Case {
+	    ID: number;
+	    Name: string;
+	    IncludeAero: boolean;
+	    RotorSpeedRange: Range;
+	    WindSpeedRange: Range;
+	    Curve: Condition[];
+	    OperatingPoints: Condition[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Case(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
 	        this.Name = source["Name"];
 	        this.IncludeAero = source["IncludeAero"];
+	        this.RotorSpeedRange = this.convertValues(source["RotorSpeedRange"], Range);
+	        this.WindSpeedRange = this.convertValues(source["WindSpeedRange"], Range);
+	        this.Curve = this.convertValues(source["Curve"], Condition);
+	        this.OperatingPoints = this.convertValues(source["OperatingPoints"], Condition);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Analysis {
+	    Cases: Case[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Analysis(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Cases = this.convertValues(source["Cases"], Case);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class BeamDyn {
 	    Name: string;
@@ -262,6 +354,8 @@ export namespace main {
 	        this.Value = source["Value"];
 	    }
 	}
+	
+	
 	export class Config {
 	    RecentProjects: string[];
 	
@@ -272,6 +366,26 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.RecentProjects = source["RecentProjects"];
+	    }
+	}
+	export class Real {
+	    Name: string;
+	    Type: string;
+	    Desc: string;
+	    Line: number;
+	    Value: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Real(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Desc = source["Desc"];
+	        this.Line = source["Line"];
+	        this.Value = source["Value"];
 	    }
 	}
 	export class ElastoDyn {
@@ -289,6 +403,11 @@ export namespace main {
 	    TwFADOF2: Bool;
 	    TwSSDOF1: Bool;
 	    TwSSDOF2: Bool;
+	    BlPitch1: Real;
+	    BlPitch2: Real;
+	    BlPitch3: Real;
+	    RotSpeed: Real;
+	    NumBl: Integer;
 	    BldFile1: Path;
 	    BldFile2: Path;
 	    BldFile3: Path;
@@ -314,6 +433,11 @@ export namespace main {
 	        this.TwFADOF2 = this.convertValues(source["TwFADOF2"], Bool);
 	        this.TwSSDOF1 = this.convertValues(source["TwSSDOF1"], Bool);
 	        this.TwSSDOF2 = this.convertValues(source["TwSSDOF2"], Bool);
+	        this.BlPitch1 = this.convertValues(source["BlPitch1"], Real);
+	        this.BlPitch2 = this.convertValues(source["BlPitch2"], Real);
+	        this.BlPitch3 = this.convertValues(source["BlPitch3"], Real);
+	        this.RotSpeed = this.convertValues(source["RotSpeed"], Real);
+	        this.NumBl = this.convertValues(source["NumBl"], Integer);
 	        this.BldFile1 = this.convertValues(source["BldFile1"], Path);
 	        this.BldFile2 = this.convertValues(source["BldFile2"], Path);
 	        this.BldFile3 = this.convertValues(source["BldFile3"], Path);
@@ -338,9 +462,28 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class EvalStatus {
+	    ID: number;
+	    State: string;
+	    Progress: number;
+	    Error: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EvalStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.State = source["State"];
+	        this.Progress = source["Progress"];
+	        this.Error = source["Error"];
+	    }
+	}
 	export class Exec {
 	    Path: string;
 	    Version: string;
+	    Valid: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Exec(source);
@@ -350,16 +493,17 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Path = source["Path"];
 	        this.Version = source["Version"];
+	        this.Valid = source["Valid"];
 	    }
 	}
-	export class HydroDyn {
+	export class StControl {
 	    Name: string;
 	    Type: string;
 	    Text: string;
-	    PotFile: Path;
+	    PrescribedForcesFile: Path;
 	
 	    static createFrom(source: any = {}) {
-	        return new HydroDyn(source);
+	        return new StControl(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -367,7 +511,7 @@ export namespace main {
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
 	        this.Text = source["Text"];
-	        this.PotFile = this.convertValues(source["PotFile"], Path);
+	        this.PrescribedForcesFile = this.convertValues(source["PrescribedForcesFile"], Path);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -388,25 +532,57 @@ export namespace main {
 		    return a;
 		}
 	}
-	export class Real {
+	export class Misc {
 	    Name: string;
 	    Type: string;
-	    Desc: string;
-	    Line: number;
-	    Value: number;
+	    Text: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new Real(source);
+	        return new Misc(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Desc = source["Desc"];
-	        this.Line = source["Line"];
-	        this.Value = source["Value"];
+	        this.Text = source["Text"];
 	    }
+	}
+	export class OLAF {
+	    Name: string;
+	    Type: string;
+	    Text: string;
+	    PrescribedCircFile: Path;
+	
+	    static createFrom(source: any = {}) {
+	        return new OLAF(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Text = source["Text"];
+	        this.PrescribedCircFile = this.convertValues(source["PrescribedCircFile"], Path);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class InflowWind {
 	    Name: string;
@@ -452,21 +628,92 @@ export namespace main {
 		    return a;
 		}
 	}
-	export class Info {
-	    Date: string;
-	    Path: string;
+	export class ServoDyn {
+	    Name: string;
+	    Type: string;
+	    Text: string;
+	    NumBStC: Integer;
+	    BStCfiles: Paths;
+	    NumNStC: Integer;
+	    NStCfiles: Paths;
+	    NumTStC: Integer;
+	    TStCfiles: Paths;
+	    NumSStC: Integer;
+	    SStCfiles: Paths;
 	
 	    static createFrom(source: any = {}) {
-	        return new Info(source);
+	        return new ServoDyn(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Date = source["Date"];
-	        this.Path = source["Path"];
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Text = source["Text"];
+	        this.NumBStC = this.convertValues(source["NumBStC"], Integer);
+	        this.BStCfiles = this.convertValues(source["BStCfiles"], Paths);
+	        this.NumNStC = this.convertValues(source["NumNStC"], Integer);
+	        this.NStCfiles = this.convertValues(source["NStCfiles"], Paths);
+	        this.NumTStC = this.convertValues(source["NumTStC"], Integer);
+	        this.TStCfiles = this.convertValues(source["TStCfiles"], Paths);
+	        this.NumSStC = this.convertValues(source["NumSStC"], Integer);
+	        this.SStCfiles = this.convertValues(source["SStCfiles"], Paths);
 	    }
-	}
 	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class HydroDyn {
+	    Name: string;
+	    Type: string;
+	    Text: string;
+	    PotFile: Path;
+	
+	    static createFrom(source: any = {}) {
+	        return new HydroDyn(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Text = source["Text"];
+	        this.PotFile = this.convertValues(source["PotFile"], Path);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Reals {
 	    Name: string;
 	    Type: string;
@@ -589,145 +836,7 @@ export namespace main {
 		    return a;
 		}
 	}
-	export class StControl {
-	    Name: string;
-	    Type: string;
-	    Text: string;
-	    PrescribedForcesFile: Path;
-	
-	    static createFrom(source: any = {}) {
-	        return new StControl(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Text = source["Text"];
-	        this.PrescribedForcesFile = this.convertValues(source["PrescribedForcesFile"], Path);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class Misc {
-	    Name: string;
-	    Type: string;
-	    Text: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new Misc(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Text = source["Text"];
-	    }
-	}
-	export class OLAF {
-	    Name: string;
-	    Type: string;
-	    Text: string;
-	    PrescribedCircFile: Path;
-	
-	    static createFrom(source: any = {}) {
-	        return new OLAF(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Text = source["Text"];
-	        this.PrescribedCircFile = this.convertValues(source["PrescribedCircFile"], Path);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class ServoDyn {
-	    Name: string;
-	    Type: string;
-	    Text: string;
-	    NumBStC: Integer;
-	    BStCfiles: Paths;
-	    NumNStC: Integer;
-	    NStCfiles: Paths;
-	    NumTStC: Integer;
-	    TStCfiles: Paths;
-	    NumSStC: Integer;
-	    SStCfiles: Paths;
-	
-	    static createFrom(source: any = {}) {
-	        return new ServoDyn(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Text = source["Text"];
-	        this.NumBStC = this.convertValues(source["NumBStC"], Integer);
-	        this.BStCfiles = this.convertValues(source["BStCfiles"], Paths);
-	        this.NumNStC = this.convertValues(source["NumNStC"], Integer);
-	        this.NStCfiles = this.convertValues(source["NStCfiles"], Paths);
-	        this.NumTStC = this.convertValues(source["NumTStC"], Integer);
-	        this.TStCfiles = this.convertValues(source["TStCfiles"], Paths);
-	        this.NumSStC = this.convertValues(source["NumSStC"], Integer);
-	        this.SStCfiles = this.convertValues(source["SStCfiles"], Paths);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class Model {
+	export class Files {
 	    Main: Main[];
 	    ElastoDyn: ElastoDyn[];
 	    BeamDyn: BeamDyn[];
@@ -742,7 +851,7 @@ export namespace main {
 	    AirfoilInfo: AirfoilInfo[];
 	
 	    static createFrom(source: any = {}) {
-	        return new Model(source);
+	        return new Files(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -779,6 +888,61 @@ export namespace main {
 		    return a;
 		}
 	}
+	
+	
+	export class Info {
+	    Date: string;
+	    Path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Info(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Date = source["Date"];
+	        this.Path = source["Path"];
+	    }
+	}
+	
+	
+	export class Model {
+	    HasAero: boolean;
+	    ImportedPaths: string[];
+	    Files?: Files;
+	    Notes: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Model(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.HasAero = source["HasAero"];
+	        this.ImportedPaths = source["ImportedPaths"];
+	        this.Files = this.convertValues(source["Files"], Files);
+	        this.Notes = source["Notes"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	
 	
 	

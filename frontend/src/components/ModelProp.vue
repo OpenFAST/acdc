@@ -50,7 +50,7 @@ function updateValidate() {
             </div>
             <div v-if="isReals(field)">
                 <input v-for="(_, i) in field.Value" type="text" class="form-control" :id="field.Name + (i == 0 ? '' : i)"
-                    v-model.number="field.Value[i]" readonly :class="i == 0 ? '' : 'mt-1'" @change="project.updateModel" />
+                    v-model.number="field.Value[i]" :class="i == 0 ? '' : 'mt-1'" @change="project.updateModel" />
             </div>
 
             <div class="form-text">{{ field.Desc }}</div>

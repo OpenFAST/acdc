@@ -8,10 +8,10 @@ import (
 )
 
 type Project struct {
-	Info    Info
-	Exec    Exec
-	Model   *Model
-	Analyze *Analyze
+	Info     Info
+	Exec     *Exec
+	Model    *Model
+	Analysis *Analysis
 }
 
 type Info struct {
@@ -19,14 +19,12 @@ type Info struct {
 	Path string `json:"Path"`
 }
 
-type Exec struct {
-	Path    string `json:"Path"`
-	Version string `json:"Version"`
-	Valid   bool   `json:"Valid"`
-}
-
 func NewProject() *Project {
-	return &Project{}
+	return &Project{
+		Exec:     NewExec(),
+		Model:    NewModel(),
+		Analysis: NewAnalysis(),
+	}
 }
 
 func LoadProject(path string) (*Project, error) {
@@ -43,7 +41,7 @@ func LoadProject(path string) (*Project, error) {
 		return nil, fmt.Errorf("error parsing project: %w", err)
 	}
 
-	// Save project path
+	// Update project path
 	p.Info.Path = path
 
 	return p, nil
