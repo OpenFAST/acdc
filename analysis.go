@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"gonum.org/v1/gonum/interp"
 )
@@ -39,11 +40,21 @@ func NewCase() Case {
 
 func (c *Case) Calculate() error {
 
+	if c.IncludeAero {
+		sort.SliceStable(c.Curve, func(i, j int) bool {
+			return c.Curve[i].WindSpeed < c.Curve[j].WindSpeed
+		})
+	} else {
+		sort.SliceStable(c.Curve, func(i, j int) bool {
+			return c.Curve[i].RotorSpeed < c.Curve[j].RotorSpeed
+		})
+	}
+
 	// Get rotor speed and blade pitch arrays
 	windSpeeds := []float64{}
 	rotorSpeeds := []float64{}
 	bladePitches := []float64{}
-	xMap := map[float64]struct{}{0: {}}
+	xMap := map[float64]struct{}{}
 	for i, point := range c.Curve {
 		c.Curve[i].ID = i + 1
 		if c.IncludeAero {
