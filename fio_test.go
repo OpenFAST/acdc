@@ -39,7 +39,7 @@ func TestFiles(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := files.Write(path); err != nil {
+		if err := files.Write(path, ""); err != nil {
 			t.Fatal(err)
 		}
 	}

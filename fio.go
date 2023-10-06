@@ -660,7 +660,7 @@ func readLines(path string) ([]string, error) {
 // Write
 //------------------------------------------------------------------------------
 
-func (m *Files) Write(dir string) error {
+func (m *Files) Write(dir, prefix string) error {
 
 	val := reflect.ValueOf(m).Elem()
 
@@ -677,7 +677,7 @@ func (m *Files) Write(dir string) error {
 
 		// Loop through file structures in slice and write to file
 		for j := 0; j < field.Len(); j++ {
-			if err := writeFile(field.Index(j).Addr().Interface(), dir); err != nil {
+			if err := writeFile(field.Index(j).Addr().Interface(), dir, prefix); err != nil {
 				return fmt.Errorf("error writing %s file: %w", val.Type().Field(i).Name, err)
 			}
 		}
@@ -686,7 +686,7 @@ func (m *Files) Write(dir string) error {
 	return nil
 }
 
-func writeFile(s any, dir string) error {
+func writeFile(s any, dir, prefix string) error {
 
 	sVal := reflect.Indirect(reflect.ValueOf(s))
 
@@ -694,7 +694,7 @@ func writeFile(s any, dir string) error {
 	fb := sVal.FieldByName("FileBase").Interface().(FileBase)
 
 	// Create path
-	path := filepath.Join(dir, fb.Name)
+	path := filepath.Join(dir, prefix+fb.Name)
 
 	// Get lines in file
 	lines := fb.Lines
@@ -756,21 +756,21 @@ func writeFile(s any, dir string) error {
 		// Switch based on field type
 		switch v := fieldVal.Interface().(type) {
 		case Path:
-			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+v.Value+`"`, v.Name, v.Desc)
+			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+prefix+v.Value+`"`, v.Name, v.Desc)
 		case Paths:
 			if v.Condensed {
 				values := ""
 				for _, value := range v.Value {
-					values += `"` + value + `" `
+					values += `"` + prefix + value + `" `
 				}
 				if len(v.Value) == 0 {
 					values = `"unused"`
 				}
 				lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, values, v.Name, v.Desc)
 			} else {
-				lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+v.Value[0]+`"`, v.Name, v.Desc)
+				lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+prefix+v.Value[0]+`"`, v.Name, v.Desc)
 				for j, value := range v.Value[1:] {
-					lines[v.Line+j] = `"` + value + `"`
+					lines[v.Line+j] = `"` + prefix + value + `"`
 				}
 			}
 		case Bool:
