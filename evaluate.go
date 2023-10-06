@@ -58,7 +58,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 
 		// The file writing code assumes that NLinTimes is governed by the
 		// length of LinTimes which is only true if CalcSteady==false.
-		// If CalcSteady is true, the size of LinTimes should be changed
+		// If CalcSteady is true, the size of LinTimes must be changed
 		// to match NLinTimes
 		if files.Main[0].CalcSteady.Value {
 			files.Main[0].LinTimes.Value = make([]float64, files.Main[0].NLinTimes.Value)
@@ -112,17 +112,21 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		files.Main[0].CompAero.Value = 0
 		files.AeroDyn = []AeroDyn{}
 		files.AeroDyn14 = []AeroDyn14{}
+
+		// Disable ServoDyn and remove files
+		files.Main[0].CompServo.Value = 0
+		files.ServoDyn = []ServoDyn{}
 	}
 
 	// Create path to operating point directory
-	runDir := filepath.Join(strings.TrimSuffix(p.Info.Path, filepath.Ext(p.Info.Path)),
-		fmt.Sprintf("case%02d", c.ID), fmt.Sprintf("op%02d", op.ID))
+	runDir := filepath.Join(strings.TrimSuffix(p.Info.Path, filepath.Ext(p.Info.Path)), fmt.Sprintf("case%02d", c.ID))
 	if err := os.MkdirAll(runDir, 0777); err != nil {
 		return fmt.Errorf("error creating directory '%s': %w", runDir, err)
 	}
 
 	// Write modified turbine files
-	if err := files.Write(runDir); err != nil {
+	filePrefix := fmt.Sprintf("%02d_", op.ID)
+	if err := files.Write(runDir, filePrefix); err != nil {
 		return fmt.Errorf("error writing turbine files: %w", err)
 	}
 
@@ -130,7 +134,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	numLinSteps := files.Main[0].NLinTimes.Value
 
 	// Create path to main file and log file
-	mainPath := filepath.Join(runDir, files.Main[0].Name)
+	mainPath := filepath.Join(runDir, filePrefix+files.Main[0].Name)
 	logPath := strings.TrimSuffix(mainPath, filepath.Ext(mainPath)) + ".log"
 
 	// Create log file
@@ -229,7 +233,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	//--------------------------------------------------------------------------
 
 	// Read linearization files for this operating point
-	linFiles, err := filepath.Glob(filepath.Join(runDir, "*.lin"))
+	linFiles, err := filepath.Glob(filepath.Join(runDir, filePrefix+"*.lin"))
 	if err != nil {
 		return err
 	}
