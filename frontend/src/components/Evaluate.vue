@@ -115,9 +115,15 @@ function clearLogID() {
                             <td>{{ status.State }}</td>
                             <td>
                                 <div v-if="status.Error" class="text-danger">Error: {{ status.Error }}</div>
-                                <div v-else class="progress" role="progressbar">
-                                    <div :class="{ 'progress-bar': true, 'bg-info': status.State == 'Linearization', 'bg-success': status.State == 'Complete', 'bg-warning': status.State == 'Canceled' }"
-                                        :style="{ width: status.Progress + '%' }">{{ status.Progress }}%</div>
+                                <div v-else class="progress-stacked">
+                                    <div class="progress" :style="{ width: (status.SimProgress * 0.5) + '%' }">
+                                        <div class="progress-bar bg-primary">{{ status.SimProgress + "%" }} </div>
+                                    </div>
+                                    <div class="progress" :style="{ width: (status.LinProgress * 0.5) + '%' }">
+                                        <div class="progress-bar bg-info">{{ status.LinProgress + "%" }} </div>
+                                    </div>
+                                    <!-- <div :class="{ 'progress-bar': true, 'bg-info': status.State == 'Linearization', 'bg-success': status.State == 'Complete', 'bg-warning': status.State == 'Canceled' }"
+                                        :style="{ width: status.Progress + '%' }">{{ status.Progress }}%</div> -->
                                 </div>
                             </td>
                             <td class="text-end">

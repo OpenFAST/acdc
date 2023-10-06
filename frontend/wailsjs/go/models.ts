@@ -24,28 +24,6 @@ export namespace main {
 	        this.Condensed = source["Condensed"];
 	    }
 	}
-	export class Integer {
-	    Name: string;
-	    Type: string;
-	    Desc: string;
-	    Line: number;
-	    Value: number;
-	    Size: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new Integer(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Desc = source["Desc"];
-	        this.Line = source["Line"];
-	        this.Value = source["Value"];
-	        this.Size = source["Size"];
-	    }
-	}
 	export class Path {
 	    Name: string;
 	    Type: string;
@@ -70,10 +48,58 @@ export namespace main {
 	        this.Root = source["Root"];
 	    }
 	}
+	export class Bool {
+	    Name: string;
+	    Type: string;
+	    Desc: string;
+	    Line: number;
+	    Value: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Bool(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Desc = source["Desc"];
+	        this.Line = source["Line"];
+	        this.Value = source["Value"];
+	    }
+	}
+	export class Integer {
+	    Name: string;
+	    Type: string;
+	    Desc: string;
+	    Line: number;
+	    Value: number;
+	    Size: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Integer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Desc = source["Desc"];
+	        this.Line = source["Line"];
+	        this.Value = source["Value"];
+	        this.Size = source["Size"];
+	    }
+	}
 	export class AeroDyn {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
+	    WakeMod: Integer;
+	    AFAeroMod: Integer;
+	    TwrPotent: Integer;
+	    TwrShadow: Integer;
+	    FrozenWake: Bool;
+	    SkewMod: Integer;
 	    OLAFInputFileName: Path;
 	    NumAFfiles: Integer;
 	    AFNames: Paths;
@@ -90,7 +116,13 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
+	        this.WakeMod = this.convertValues(source["WakeMod"], Integer);
+	        this.AFAeroMod = this.convertValues(source["AFAeroMod"], Integer);
+	        this.TwrPotent = this.convertValues(source["TwrPotent"], Integer);
+	        this.TwrShadow = this.convertValues(source["TwrShadow"], Integer);
+	        this.FrozenWake = this.convertValues(source["FrozenWake"], Bool);
+	        this.SkewMod = this.convertValues(source["SkewMod"], Integer);
 	        this.OLAFInputFileName = this.convertValues(source["OLAFInputFileName"], Path);
 	        this.NumAFfiles = this.convertValues(source["NumAFfiles"], Integer);
 	        this.AFNames = this.convertValues(source["AFNames"], Paths);
@@ -121,7 +153,7 @@ export namespace main {
 	export class AeroDyn14 {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    NumFoil: Integer;
 	    FoilNm: Paths;
 	
@@ -133,7 +165,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.NumFoil = this.convertValues(source["NumFoil"], Integer);
 	        this.FoilNm = this.convertValues(source["FoilNm"], Paths);
 	    }
@@ -159,7 +191,7 @@ export namespace main {
 	export class AirfoilInfo {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    BL_File: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -170,7 +202,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.BL_File = this.convertValues(source["BL_File"], Path);
 	    }
 	
@@ -301,7 +333,7 @@ export namespace main {
 	export class BeamDyn {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    BldFile: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -312,7 +344,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.BldFile = this.convertValues(source["BldFile"], Path);
 	    }
 	
@@ -334,26 +366,7 @@ export namespace main {
 		    return a;
 		}
 	}
-	export class Bool {
-	    Name: string;
-	    Type: string;
-	    Desc: string;
-	    Line: number;
-	    Value: boolean;
 	
-	    static createFrom(source: any = {}) {
-	        return new Bool(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Desc = source["Desc"];
-	        this.Line = source["Line"];
-	        this.Value = source["Value"];
-	    }
-	}
 	
 	
 	export class Config {
@@ -391,7 +404,7 @@ export namespace main {
 	export class ElastoDyn {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    FlapDOF1: Bool;
 	    FlapDOF2: Bool;
 	    EdgeDOF: Bool;
@@ -408,6 +421,7 @@ export namespace main {
 	    BlPitch3: Real;
 	    RotSpeed: Real;
 	    NumBl: Integer;
+	    ShftTilt: Real;
 	    BldFile1: Path;
 	    BldFile2: Path;
 	    BldFile3: Path;
@@ -421,7 +435,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.FlapDOF1 = this.convertValues(source["FlapDOF1"], Bool);
 	        this.FlapDOF2 = this.convertValues(source["FlapDOF2"], Bool);
 	        this.EdgeDOF = this.convertValues(source["EdgeDOF"], Bool);
@@ -438,6 +452,7 @@ export namespace main {
 	        this.BlPitch3 = this.convertValues(source["BlPitch3"], Real);
 	        this.RotSpeed = this.convertValues(source["RotSpeed"], Real);
 	        this.NumBl = this.convertValues(source["NumBl"], Integer);
+	        this.ShftTilt = this.convertValues(source["ShftTilt"], Real);
 	        this.BldFile1 = this.convertValues(source["BldFile1"], Path);
 	        this.BldFile2 = this.convertValues(source["BldFile2"], Path);
 	        this.BldFile3 = this.convertValues(source["BldFile3"], Path);
@@ -465,7 +480,8 @@ export namespace main {
 	export class EvalStatus {
 	    ID: number;
 	    State: string;
-	    Progress: number;
+	    SimProgress: number;
+	    LinProgress: number;
 	    Error: string;
 	
 	    static createFrom(source: any = {}) {
@@ -476,7 +492,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
 	        this.State = source["State"];
-	        this.Progress = source["Progress"];
+	        this.SimProgress = source["SimProgress"];
+	        this.LinProgress = source["LinProgress"];
 	        this.Error = source["Error"];
 	    }
 	}
@@ -499,7 +516,7 @@ export namespace main {
 	export class StControl {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    PrescribedForcesFile: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -510,7 +527,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.PrescribedForcesFile = this.convertValues(source["PrescribedForcesFile"], Path);
 	    }
 	
@@ -535,7 +552,7 @@ export namespace main {
 	export class Misc {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Misc(source);
@@ -545,13 +562,13 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	    }
 	}
 	export class OLAF {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    PrescribedCircFile: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -562,7 +579,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.PrescribedCircFile = this.convertValues(source["PrescribedCircFile"], Path);
 	    }
 	
@@ -587,7 +604,7 @@ export namespace main {
 	export class InflowWind {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    WindType: Integer;
 	    PropagationDir: Real;
 	    VFlowAng: Real;
@@ -602,7 +619,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.WindType = this.convertValues(source["WindType"], Integer);
 	        this.PropagationDir = this.convertValues(source["PropagationDir"], Real);
 	        this.VFlowAng = this.convertValues(source["VFlowAng"], Real);
@@ -631,7 +648,15 @@ export namespace main {
 	export class ServoDyn {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
+	    PCMode: Integer;
+	    VSContrl: Integer;
+	    VS_RtGnSp: Real;
+	    VS_RtTq: Real;
+	    VS_Rgn2K: Real;
+	    VS_SlPc: Real;
+	    HSSBrMode: Integer;
+	    YCMode: Integer;
 	    NumBStC: Integer;
 	    BStCfiles: Paths;
 	    NumNStC: Integer;
@@ -649,7 +674,15 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
+	        this.PCMode = this.convertValues(source["PCMode"], Integer);
+	        this.VSContrl = this.convertValues(source["VSContrl"], Integer);
+	        this.VS_RtGnSp = this.convertValues(source["VS_RtGnSp"], Real);
+	        this.VS_RtTq = this.convertValues(source["VS_RtTq"], Real);
+	        this.VS_Rgn2K = this.convertValues(source["VS_Rgn2K"], Real);
+	        this.VS_SlPc = this.convertValues(source["VS_SlPc"], Real);
+	        this.HSSBrMode = this.convertValues(source["HSSBrMode"], Integer);
+	        this.YCMode = this.convertValues(source["YCMode"], Integer);
 	        this.NumBStC = this.convertValues(source["NumBStC"], Integer);
 	        this.BStCfiles = this.convertValues(source["BStCfiles"], Paths);
 	        this.NumNStC = this.convertValues(source["NumNStC"], Integer);
@@ -681,7 +714,7 @@ export namespace main {
 	export class HydroDyn {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
 	    PotFile: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -692,7 +725,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
 	        this.PotFile = this.convertValues(source["PotFile"], Path);
 	    }
 	
@@ -734,10 +767,31 @@ export namespace main {
 	        this.Value = source["Value"];
 	    }
 	}
+	export class String {
+	    Name: string;
+	    Type: string;
+	    Desc: string;
+	    Line: number;
+	    Value: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new String(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Desc = source["Desc"];
+	        this.Line = source["Line"];
+	        this.Value = source["Value"];
+	    }
+	}
 	export class Main {
 	    Name: string;
 	    Type: string;
-	    Text: string;
+	    Lines: string[];
+	    TMax: Real;
 	    DT: Real;
 	    CompElast: Integer;
 	    CompInflow: Integer;
@@ -748,6 +802,7 @@ export namespace main {
 	    CompMooring: Integer;
 	    CompIce: Integer;
 	    MHK: Integer;
+	    Gravity: Real;
 	    EDFile: Path;
 	    BDBldFile1: Path;
 	    BDBldFile2: Path;
@@ -759,6 +814,7 @@ export namespace main {
 	    SubFile: Path;
 	    MooringFile: Path;
 	    IceFile: Path;
+	    OutFmt: String;
 	    Linearize: Bool;
 	    CalcSteady: Bool;
 	    TrimCase: Integer;
@@ -772,6 +828,8 @@ export namespace main {
 	    LinOutputs: Integer;
 	    LinOutJac: Bool;
 	    LinOutMod: Bool;
+	    WrVTK: Integer;
+	    VTK_type: Integer;
 	
 	    static createFrom(source: any = {}) {
 	        return new Main(source);
@@ -781,7 +839,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
-	        this.Text = source["Text"];
+	        this.Lines = source["Lines"];
+	        this.TMax = this.convertValues(source["TMax"], Real);
 	        this.DT = this.convertValues(source["DT"], Real);
 	        this.CompElast = this.convertValues(source["CompElast"], Integer);
 	        this.CompInflow = this.convertValues(source["CompInflow"], Integer);
@@ -792,6 +851,7 @@ export namespace main {
 	        this.CompMooring = this.convertValues(source["CompMooring"], Integer);
 	        this.CompIce = this.convertValues(source["CompIce"], Integer);
 	        this.MHK = this.convertValues(source["MHK"], Integer);
+	        this.Gravity = this.convertValues(source["Gravity"], Real);
 	        this.EDFile = this.convertValues(source["EDFile"], Path);
 	        this.BDBldFile1 = this.convertValues(source["BDBldFile1"], Path);
 	        this.BDBldFile2 = this.convertValues(source["BDBldFile2"], Path);
@@ -803,6 +863,7 @@ export namespace main {
 	        this.SubFile = this.convertValues(source["SubFile"], Path);
 	        this.MooringFile = this.convertValues(source["MooringFile"], Path);
 	        this.IceFile = this.convertValues(source["IceFile"], Path);
+	        this.OutFmt = this.convertValues(source["OutFmt"], String);
 	        this.Linearize = this.convertValues(source["Linearize"], Bool);
 	        this.CalcSteady = this.convertValues(source["CalcSteady"], Bool);
 	        this.TrimCase = this.convertValues(source["TrimCase"], Integer);
@@ -816,6 +877,8 @@ export namespace main {
 	        this.LinOutputs = this.convertValues(source["LinOutputs"], Integer);
 	        this.LinOutJac = this.convertValues(source["LinOutJac"], Bool);
 	        this.LinOutMod = this.convertValues(source["LinOutMod"], Bool);
+	        this.WrVTK = this.convertValues(source["WrVTK"], Integer);
+	        this.VTK_type = this.convertValues(source["VTK_type"], Integer);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -942,6 +1005,7 @@ export namespace main {
 		    return a;
 		}
 	}
+	
 	
 	
 	

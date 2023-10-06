@@ -10,6 +10,7 @@ defineProps<{ field: Field }>()
 
 function isInteger(field: Field): field is m.Integer { return field.Type === 'Integer' }
 function isBool(field: Field): field is m.Bool { return field.Type === 'Bool' }
+function isString(field: Field): field is m.String { return field.Type === 'String' }
 function isPath(field: Field): field is m.Path { return field.Type === 'Path' }
 function isPaths(field: Field): field is m.Paths { return field.Type === 'Paths' }
 function isReal(field: Field): field is m.Real { return field.Type === 'Real' }
@@ -24,9 +25,9 @@ function updateValidate() {
 </script>
 
 <template>
-    <div class="row mb-3" v-if="field">
+    <div class="row mb-2 g-3 align-items-center" v-if="field && field.Line > 0">
         <label :for="field.Name" class="col-sm-2 col-form-label">{{ field.Name }}</label>
-        <div class="col-sm-10">
+        <div class="col-2">
             <div v-if="isPath(field)">
                 <input type="text" class="form-control-plaintext" :id="field.Name" v-model="field.Value" readonly />
             </div>
@@ -40,6 +41,9 @@ function updateValidate() {
                     <option :value="false">False</option>
                 </select>
             </div>
+            <div v-if="isString(field)">
+                <input type="text" class="form-control" :id="field.Name" v-model="field.Value" />
+            </div>
             <div v-else-if="isInteger(field)">
                 <input type="text" class="form-control" :id="field.Name" v-model.number="field.Value"
                     @change="project.updateModel" />
@@ -52,9 +56,8 @@ function updateValidate() {
                 <input v-for="(_, i) in field.Value" type="text" class="form-control" :id="field.Name + (i == 0 ? '' : i)"
                     v-model.number="field.Value[i]" :class="i == 0 ? '' : 'mt-1'" @change="project.updateModel" />
             </div>
-
-            <div class="form-text">{{ field.Desc }}</div>
         </div>
+        <div class="col-8"><span class="form-text">{{ field.Desc }}</span></div>
     </div>
 </template>
 
