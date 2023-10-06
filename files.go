@@ -62,6 +62,11 @@ type Reals struct {
 	Value []float64 `json:"Value"`
 }
 
+type String struct {
+	FieldBase
+	Value string `json:"Value"`
+}
+
 //------------------------------------------------------------------------------
 // Files Type
 //------------------------------------------------------------------------------
@@ -137,9 +142,9 @@ func (fs *Files) Copy() (*Files, error) {
 //------------------------------------------------------------------------------
 
 type FileBase struct {
-	Name string `json:"Name"`
-	Type string `json:"Type"`
-	Text string `json:"Text"`
+	Name  string   `json:"Name"`
+	Type  string   `json:"Type"`
+	Lines []string `json:"Lines"`
 }
 
 type Misc struct {
@@ -148,6 +153,7 @@ type Misc struct {
 
 type Main struct {
 	FileBase
+	TMax        Real    `json:"TMax"`
 	DT          Real    `json:"DT"`
 	CompElast   Integer `json:"CompElast"`
 	CompInflow  Integer `json:"CompInflow"`
@@ -158,6 +164,7 @@ type Main struct {
 	CompMooring Integer `json:"CompMooring"`
 	CompIce     Integer `json:"CompIce"`
 	MHK         Integer `json:"MHK"`
+	Gravity     Real    `json:"Gravity"`
 	EDFile      Path    `json:"EDFile" ftype:"ElastoDyn"`
 	BDBldFile1  Path    `json:"BDBldFile1" key:"BDBldFile(1)" ftype:"BeamDyn"`
 	BDBldFile2  Path    `json:"BDBldFile2" key:"BDBldFile(2)" ftype:"BeamDyn"`
@@ -169,6 +176,7 @@ type Main struct {
 	SubFile     Path    `json:"SubFile" ftype:"SubDyn"`
 	MooringFile Path    `json:"MooringFile" ftype:"Misc"`
 	IceFile     Path    `json:"IceFile" ftype:"Misc"`
+	OutFmt      String  `json:"OutFmt"`
 	Linearize   Bool    `json:"Linearize"`
 	CalcSteady  Bool    `json:"CalcSteady"`
 	TrimCase    Integer `json:"TrimCase"`
@@ -182,6 +190,8 @@ type Main struct {
 	LinOutputs  Integer `json:"LinOutputs"`
 	LinOutJac   Bool    `json:"LinOutJac"`
 	LinOutMod   Bool    `json:"LinOutMod"`
+	WrVTK       Integer `json:"WrVTK"`
+	VTK_type    Integer `json:"VTK_type"`
 }
 
 func (m *Main) PostParse() error {
@@ -202,6 +212,12 @@ func (m *Main) PostParse() error {
 
 type AeroDyn struct {
 	FileBase
+	WakeMod           Integer `json:"WakeMod"`
+	AFAeroMod         Integer `json:"AFAeroMod"`
+	TwrPotent         Integer `json:"TwrPotent"`
+	TwrShadow         Integer `json:"TwrShadow"`
+	FrozenWake        Bool    `json:"FrozenWake"`
+	SkewMod           Integer `json:"SkewMod"`
 	OLAFInputFileName Path    `json:"OLAFInputFileName" ftype:"OLAF"`
 	NumAFfiles        Integer `json:"NumAFfiles"`
 	AFNames           Paths   `json:"AFNames" num:"NumAFfiles" ftype:"AirfoilInfo"`
@@ -250,6 +266,7 @@ type ElastoDyn struct {
 	BlPitch3 Real    `json:"BlPitch3" key:"BlPitch(3)"`
 	RotSpeed Real    `json:"RotSpeed"`
 	NumBl    Integer `json:"NumBl"`
+	ShftTilt Real    `json:"ShftTilt"`
 	BldFile1 Path    `json:"BldFile1" key:"BldFile(1)" ftype:"ElastoDynBlade"`
 	BldFile2 Path    `json:"BldFile2" key:"BldFile(2)" ftype:"ElastoDynBlade"`
 	BldFile3 Path    `json:"BldFile3" key:"BldFile(3)" ftype:"ElastoDynBlade"`
@@ -275,8 +292,21 @@ type InflowWind struct {
 	PLExp          Real    `json:"PLExp"`
 }
 
+func (IfW *InflowWind) PostParse() error {
+	IfW.WindType.Value = 1
+	return nil
+}
+
 type ServoDyn struct {
 	FileBase
+	PCMode    Integer `json:"PCMode"`
+	VSContrl  Integer `json:"VSContrl"`
+	VS_RtGnSp Real    `json:"VS_RtGnSp"`
+	VS_RtTq   Real    `json:"VS_RtTq"`
+	VS_Rgn2K  Real    `json:"VS_Rgn2K"`
+	VS_SlPc   Real    `json:"VS_SlPc"`
+	HSSBrMode Integer `json:"HSSBrMode"`
+	YCMode    Integer `json:"YCMode"`
 	NumBStC   Integer `json:"NumBStC"`
 	BStCfiles Paths   `json:"BStCfiles" num:"NumBStC" ftype:"StControl"`
 	NumNStC   Integer `json:"NumNStC"`
@@ -329,7 +359,6 @@ func (fs *Files) parseFile(path string, s any) error {
 		return err
 	}
 	numLines := len(lines)
-	linesBackup := lines
 
 	sVal := reflect.ValueOf(s).Elem()
 	sTyp := sVal.Type()
@@ -337,12 +366,12 @@ func (fs *Files) parseFile(path string, s any) error {
 	fb := sVal.FieldByName("FileBase").Addr().Interface().(*FileBase)
 	fb.Name = filepath.Base(path)
 	fb.Type = sTyp.Name()
-	fb.Text = strings.Join(lines, "\n")
+	fb.Lines = lines
 
 	// Loop through fields in struct
 	for i := 1; i < sVal.NumField(); i++ {
 
-		// Find field name in line
+		// Get field name
 		fieldType := sTyp.Field(i)
 		fieldName := fieldType.Name
 		if key, ok := fieldType.Tag.Lookup("key"); ok {
@@ -350,7 +379,11 @@ func (fs *Files) parseFile(path string, s any) error {
 		}
 		fieldNameLower := strings.ToLower(fieldName)
 
-		parsedField := false
+		// Create backup of lines to search
+		linesSave := lines
+
+		// Initialize field parsed to false
+		fieldParsed := false
 
 		// Loop through lines
 		for len(lines) > 0 {
@@ -419,15 +452,17 @@ func (fs *Files) parseFile(path string, s any) error {
 				if numField == nil {
 					return fmt.Errorf("number of paths in '%s' not specified", v.Name)
 				}
-				for _, value := range values[:numField.Value] {
+				for _, value := range values[:min(len(values), numField.Value)] {
 					v.Value = append(v.Value, strings.Trim(value, `"`))
 				}
 				for i := len(v.Value); i < numField.Value; i++ {
 					line, lines = lines[0], lines[1:]
-					v.Value = append(v.Value, strings.Trim(line, `"`))
+					v.Value = append(v.Value, strings.Trim(strings.TrimSpace(line), `"`))
 				}
 			case *Bool:
 				v.Value, err = strconv.ParseBool(values[0])
+			case *String:
+				v.Value = values[0]
 			case *Integer:
 				v.Value, err = strconv.Atoi(values[0])
 			case *Real:
@@ -451,14 +486,18 @@ func (fs *Files) parseFile(path string, s any) error {
 			}
 
 			// Variable parsed, from line, continue to next variable
-			parsedField = true
+			fieldParsed = true
 			break
 		}
 
 		// Return error if field not found
-		if !parsedField {
-			return fmt.Errorf("error parsing file '%s', field '%s' not found %v",
-				path, fieldName, linesBackup)
+		// if !fieldParsed {
+		// 	return fmt.Errorf("error parsing file '%s', field '%s' not found", path, fieldName)
+		// }
+
+		// If field was not parsed, restore lines and go to next field
+		if !fieldParsed {
+			lines = linesSave
 		}
 	}
 
@@ -658,7 +697,7 @@ func writeFile(s any, dir string) error {
 	path := filepath.Join(dir, fb.Name)
 
 	// Get lines in file
-	lines := strings.Split(fb.Text, "\n")
+	lines := fb.Lines
 
 	// Loop through fields
 	for i := 1; i < sVal.NumField(); i++ {
@@ -708,6 +747,12 @@ func writeFile(s any, dir string) error {
 		// Get field value
 		fieldVal := sVal.Field(i)
 
+		// Get the field base and skip if line number is zero
+		fb := fieldVal.FieldByName("FieldBase").Addr().Interface().(*FieldBase)
+		if fb.Line == 0 {
+			continue
+		}
+
 		// Switch based on field type
 		switch v := fieldVal.Interface().(type) {
 		case Path:
@@ -729,6 +774,8 @@ func writeFile(s any, dir string) error {
 				}
 			}
 		case Bool:
+			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, v.Value, v.Name, v.Desc)
+		case String:
 			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, v.Value, v.Name, v.Desc)
 		case Integer:
 			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, v.Value, v.Name, v.Desc)
