@@ -1,6 +1,7 @@
 package main
 
 import (
+	"acdc/mbc3"
 	"bufio"
 	"bytes"
 	"context"
@@ -26,10 +27,11 @@ func NewExec() *Exec {
 }
 
 type EvalStatus struct {
-	ID       int    `json:"ID"`
-	State    string `json:"State"`
-	Progress int    `json:"Progress"`
-	Error    string `json:"Error"`
+	ID          int    `json:"ID"`
+	State       string `json:"State"`
+	SimProgress int    `json:"SimProgress"`
+	LinProgress int    `json:"LinProgress"`
+	Error       string `json:"Error"`
 }
 
 type EvalLog struct {
@@ -40,6 +42,10 @@ type EvalLog struct {
 var EvalCancel context.CancelCauseFunc = func(_ error) {}
 
 func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condition) error {
+
+	//--------------------------------------------------------------------------
+	// Prepare input files
+	//--------------------------------------------------------------------------
 
 	// Create a local copy of the files so modifications don't affect the original
 	files, err := p.Model.Files.Copy()
@@ -72,8 +78,8 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		return fmt.Errorf("no ElastoDyn files were imported")
 	}
 
-	// If case includes aero
-	if c.IncludeAero {
+	// If case includes aero and wind speed is nonzero
+	if c.IncludeAero && op.WindSpeed > 0 {
 
 		// Set flag to use InflowWind
 		files.Main[0].CompInflow.Value = 1
@@ -110,7 +116,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 
 	// Create path to operating point directory
 	runDir := filepath.Join(strings.TrimSuffix(p.Info.Path, filepath.Ext(p.Info.Path)),
-		fmt.Sprintf("case-%d", c.ID), fmt.Sprintf("op-%d", op.ID))
+		fmt.Sprintf("case%02d", c.ID), fmt.Sprintf("op%02d", op.ID))
 	if err := os.MkdirAll(runDir, 0777); err != nil {
 		return fmt.Errorf("error creating directory '%s': %w", runDir, err)
 	}
@@ -134,23 +140,22 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	}
 	defer logFile.Close()
 
-	// Create status ID
+	// Create status ID from operating point and set in linearization flag to false
 	statusID := op.ID
+	inLinearization := false
 
-	// Create command
+	//--------------------------------------------------------------------------
+	// Run Linearization
+	//--------------------------------------------------------------------------
+
+	// Create command, get output pipe, set stderr to stdout, start command
 	cmd := exec.CommandContext(ctx, p.Exec.Path, mainPath)
-
-	// Get pipe to read stdout and stderr
 	outputReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
 	cmd.Stderr = cmd.Stdout
-
-	// Start command
 	cmd.Start()
-
-	inLinearization := false
 
 	// Get progress
 	scanner := bufio.NewScanner(outputReader)
@@ -178,9 +183,9 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 				continue
 			}
 			runtime.EventsEmit(ctx, "evalStatus", EvalStatus{
-				ID:       statusID,
-				State:    "Simulation",
-				Progress: int(100 * currentTime / totalTime),
+				ID:          statusID,
+				State:       "Simulation",
+				SimProgress: int(100 * currentTime / totalTime),
 			})
 		} else if strings.Contains(line, "Performing linearization") {
 			inLinearization = true
@@ -190,9 +195,10 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 				continue
 			}
 			runtime.EventsEmit(ctx, "evalStatus", EvalStatus{
-				ID:       statusID,
-				State:    "Linearization",
-				Progress: int(100 * linNumber / float64(numLinSteps)),
+				ID:          statusID,
+				State:       "Linearization",
+				SimProgress: 100,
+				LinProgress: int(100 * linNumber / float64(numLinSteps)),
 			})
 		}
 	}
@@ -203,10 +209,11 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	// Wait for command to exit, set status on error
 	if err := cmd.Wait(); err != nil {
 		status := EvalStatus{
-			ID:       statusID,
-			State:    "Error",
-			Progress: 100,
-			Error:    err.Error(),
+			ID:          statusID,
+			State:       "Error",
+			SimProgress: 100,
+			LinProgress: 100,
+			Error:       err.Error(),
 		}
 		// If context was canceled, set state to canceled
 		if cause := context.Cause(ctx); cause != nil {
@@ -217,11 +224,31 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		return err
 	}
 
+	//--------------------------------------------------------------------------
+	// Multi-Blade Coordinate Transform
+	//--------------------------------------------------------------------------
+
+	// Read linearization files for this operating point
+	linFiles, err := filepath.Glob(filepath.Join(runDir, "*.lin"))
+	if err != nil {
+		return err
+	}
+
+	// Perform coordinate transform and eigen-analysis
+	_, err = mbc3.Analyze(linFiles)
+	if err != nil {
+		return err
+	}
+
+	//--------------------------------------------------------------------------
 	// Send complete status
+	//--------------------------------------------------------------------------
+
 	runtime.EventsEmit(ctx, "evalStatus", EvalStatus{
-		ID:       statusID,
-		State:    "Complete",
-		Progress: 100,
+		ID:          statusID,
+		State:       "Complete",
+		SimProgress: 100,
+		LinProgress: 100,
 	})
 
 	return nil
