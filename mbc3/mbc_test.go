@@ -28,8 +28,28 @@ func TestAnalyze(t *testing.T) {
 	}
 
 	for _, linFiles := range linFileSets {
-		if _, err := mbc3.Analyze(linFiles); err != nil {
-			t.Fatalf("mbc3.Analyze(%v) = %v", linFiles, err)
+
+		// Read linearization data from files
+		linFileData := make([]*mbc3.LinData, len(linFiles))
+		for i, f := range linFiles {
+			if linFileData[i], err = mbc3.ReadLinFile(f); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Create matrix data from linearization file data
+		matData := mbc3.NewMatData(linFileData)
+
+		// Perform multi-blade coordinate transform
+		mbc, err := matData.MBC3()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Perform Eigenanalysis
+		_, err = mbc.EigenAnalysis()
+		if err != nil {
+			t.Fatal(err)
 		}
 	}
 }

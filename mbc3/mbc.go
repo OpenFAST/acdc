@@ -5,66 +5,23 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 
+	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/mat"
 )
 
 type MBC struct {
-	DescStates   []string
-	NumDOF2      int
-	NumDOF1      int
-	RotSpeed     float64
-	WindSpeed    float64
-	OrderX       OPOrder
-	OrderX2      OPOrder
-	OrderX2dot   OPOrder
-	OrderX1      OPOrder
-	OrderU       OPOrder
-	OrderY       OPOrder
-	AvgA         *mat.Dense
-	AvgX         *mat.VecDense
-	AvgXdot      *mat.VecDense
-	A_NR         []*mat.Dense
-	B_NR         []*mat.Dense
-	C_NR         []*mat.Dense
-	D_NR         []*mat.Dense
-	EigenResults *EigenResults
-}
-
-func Analyze(linPaths []string) (*MBC, error) {
-
-	var err error
-
-	// Read linearization data from files
-	linFileData := make([]*LinData, len(linPaths))
-	for i, f := range linPaths {
-		if linFileData[i], err = ReadLinFile(f); err != nil {
-			return nil, err
-		}
-	}
-
-	// Create matrix data from linearization file data
-	matData := NewMatData(linFileData)
-
-	// Perform multi-blade coordinate transform
-	mbc, err := matData.MBC3()
-	if err != nil {
-		return nil, err
-	}
-
-	// Get indices of eigenvector rows to keep (exclude X2dot)
-	rows := append(mbc.OrderX2.Indices, mbc.OrderX1.Indices...)
-
-	// Perform Eigen analysis on average A matrix
-	eigenAnalysis, err := EigenAnalysis(mbc.AvgA, rows)
-	if err != nil {
-		return nil, err
-	}
-
-	// Save eigen results
-	mbc.EigenResults = eigenAnalysis
-
-	return mbc, err
+	RotSpeed                    float64  // RPM
+	WindSpeed                   float64  // m/s
+	DescStates                  []string // List of states
+	OrderX, OrderX2, OrderX2dot OPOrder
+	OrderX1, OrderU, OrderY     OPOrder
+	AvgA                        *mat.Dense
+	AvgX                        *mat.VecDense
+	AvgXdot                     *mat.VecDense
+	OrderEigen                  OPOrder
+	DOFsEigen                   []string
 }
 
 func (md *MatData) MBC3() (*MBC, error) {
@@ -73,12 +30,16 @@ func (md *MatData) MBC3() (*MBC, error) {
 	numBlades := 3
 
 	// Create MBC structure
-	mbc := MBC{}
+	mbc := MBC{
+		WindSpeed: floats.Sum(md.WindSpeed) / float64(md.NumStep),
+		RotSpeed:  floats.Sum(md.Omega) / float64(md.NumStep) * 30 / math.Pi,
+	}
 
 	//--------------------------------------------------------------------------
+	// Operating point ordering
+	//--------------------------------------------------------------------------
+
 	// State ordering (q2, qdot2, q1)
-	//--------------------------------------------------------------------------
-
 	if len(md.OP_x) > 0 {
 
 		// Get sorted version of operating points (q2, q2dot, q1)
@@ -103,31 +64,35 @@ func (md *MatData) MBC3() (*MBC, error) {
 
 		// Combine operating point orders
 		mbc.OrderX = CombineOPOrders(mbc.OrderX2, mbc.OrderX2dot, mbc.OrderX1)
+
+		// Get indices of eigenvector rows to keep (exclude X2dot)
+		mbc.OrderEigen = CombineOPOrders(mbc.OrderX2, mbc.OrderX1)
+		sort.Ints(mbc.OrderEigen.Indices)
+		mbc.DOFsEigen = make([]string, len(mbc.OrderEigen.Indices))
+		for j, i := range mbc.OrderEigen.Indices {
+			mbc.DOFsEigen[j] = md.OP_x[i].Desc
+		}
 	}
 
-	//--------------------------------------------------------------------------
 	// Input Ordering
-	//--------------------------------------------------------------------------
-
 	if len(md.OP_u) > 0 {
 		mbc.OrderU = NewOPOrder(md.OP_u, numBlades)
 	}
 
-	//--------------------------------------------------------------------------
 	// Output Ordering
-	//--------------------------------------------------------------------------
-
 	if len(md.OP_y) > 0 {
 		mbc.OrderY = NewOPOrder(md.OP_y, numBlades)
 	}
 
 	//--------------------------------------------------------------------------
-	// Blade triplet reordering
+	// Convert to non-rotating
 	//--------------------------------------------------------------------------
 
+	var A_NR []*mat.Dense // TODO: Add B_NR, C_NR, D_NR
+
 	// Create row permutation array for states
-	P := mat.NewDense(mbc.OrderX.Num, mbc.OrderX.Num, nil)
-	P.Permutation(mbc.OrderX.Num, mbc.OrderX.Indices)
+	PX := mat.NewDense(mbc.OrderX.Num, mbc.OrderX.Num, nil)
+	PX.Permutation(mbc.OrderX.Num, mbc.OrderX.Indices)
 
 	// Loop through linearization data
 	for i := 0; i < md.NumStep; i++ {
@@ -152,25 +117,25 @@ func (md *MatData) MBC3() (*MBC, error) {
 		ttv := &mat.Dense{}
 		ttv.Inverse(tt)
 
-		X2IFixed := eye(mbc.OrderX2.NumFixed)
-		X20Fixed := &mat.Dense{}
+		X2EyeFixed := eye(mbc.OrderX2.NumFixed)
+		X2ZeroFixed := &mat.Dense{}
 		if mbc.OrderX2.NumFixed > 0 {
-			X20Fixed.ReuseAs(mbc.OrderX2.NumFixed, mbc.OrderX2.NumFixed)
+			X2ZeroFixed.ReuseAs(mbc.OrderX2.NumFixed, mbc.OrderX2.NumFixed)
 		}
-		X1IFixed := eye(mbc.OrderX1.NumFixed)
-		X10Fixed := &mat.Dense{}
+		X1EyeFixed := eye(mbc.OrderX1.NumFixed)
+		X1ZeroFixed := &mat.Dense{}
 		if mbc.OrderX1.NumFixed > 0 {
-			X10Fixed.ReuseAs(mbc.OrderX1.NumFixed, mbc.OrderX1.NumFixed)
+			X1ZeroFixed.ReuseAs(mbc.OrderX1.NumFixed, mbc.OrderX1.NumFixed)
 		}
 
 		// Equation 11 for second-order states only
-		T1 := blockDiag(X2IFixed, Repeat(tt, mbc.OrderX2.NumTriplets)...)
+		T1 := blockDiag(X2EyeFixed, Repeat(tt, mbc.OrderX2.NumTriplets)...)
 
 		// Inverse of T1
-		T1v := blockDiag(X2IFixed, Repeat(ttv, mbc.OrderX2.NumTriplets)...)
+		T1v := blockDiag(X2EyeFixed, Repeat(ttv, mbc.OrderX2.NumTriplets)...)
 
 		// Equation 14  for second-order states only
-		T2 := blockDiag(X20Fixed, Repeat(tt2, mbc.OrderX2.NumTriplets)...)
+		T2 := blockDiag(X2ZeroFixed, Repeat(tt2, mbc.OrderX2.NumTriplets)...)
 		T2_omega := &mat.Dense{}
 		T2_omegaDot := &mat.Dense{}
 		T2_2omega := &mat.Dense{}
@@ -181,40 +146,40 @@ func (md *MatData) MBC3() (*MBC, error) {
 		}
 
 		// Equation 11 for first-order states (Equation 8 in MBC3 Update document)
-		T1q := blockDiag(X1IFixed, Repeat(tt, mbc.OrderX1.NumTriplets)...)
+		T1q := blockDiag(X1EyeFixed, Repeat(tt, mbc.OrderX1.NumTriplets)...)
 
 		// Inverse of T1q
-		T1qv := blockDiag(X1IFixed, Repeat(ttv, mbc.OrderX1.NumTriplets)...)
+		T1qv := blockDiag(X1EyeFixed, Repeat(ttv, mbc.OrderX1.NumTriplets)...)
 
 		// Equation 14 for first-order states (Equation  9 in MBC3 Update document)
 		T2q_omega := &mat.Dense{}
-		T2q := blockDiag(X10Fixed, Repeat(tt2, mbc.OrderX1.NumTriplets)...)
+		T2q := blockDiag(X1ZeroFixed, Repeat(tt2, mbc.OrderX1.NumTriplets)...)
 		if mbc.OrderX1.Num > 0 {
 			T2q_omega.Scale(omega, T2q)
 		}
 
 		// Equation 15
-		T3 := blockDiag(X20Fixed, Repeat(tt3, mbc.OrderX2.NumTriplets)...)
+		T3 := blockDiag(X2ZeroFixed, Repeat(tt3, mbc.OrderX2.NumTriplets)...)
 		T3_omega2 := &mat.Dense{}
 		if mbc.OrderX2.Num > 0 {
 			T3_omega2.Scale(omega*omega, T3)
 		}
 
 		// T1c := &mat.Dense{}
-		// if mbc.OrderU.NumFixed > 0 {
-		// 	T1c = blockDiag(eye(mbc.OrderU.NumFixed), Repeat(tt, mbc.OrderU.Num)...)
+		// if OrderU.NumFixed > 0 {
+		// 	T1c = blockDiag(eye(OrderU.NumFixed), Repeat(tt, OrderU.Num)...)
 		// }
 
 		// // Inverse of T1q
 		// T1ov := &mat.Dense{}
-		// if mbc.OrderY.NumFixed > 0 {
-		// 	T1ov = blockDiag(eye(mbc.OrderY.NumFixed), Repeat(ttv, mbc.OrderY.Num)...)
+		// if OrderY.NumFixed > 0 {
+		// 	T1ov = blockDiag(eye(OrderY.NumFixed), Repeat(ttv, OrderY.Num)...)
 		// }
 
 		// Copy A matrix from linearization data
 		A := mat.DenseCopyOf(md.A[i])
-		A.Mul(P, A)     // Reorder rows
-		A.Mul(A, P.T()) // Reorder columns
+		A.Mul(PX, A)     // Reorder rows
+		A.Mul(A, PX.T()) // Reorder columns
 
 		// Equation 29 [[T1, 0, 0], [Omega*T2, T1, 0], [0, 0, T1q]]
 		L := blockDiag(T1, T1, T1q)
@@ -229,16 +194,16 @@ func (md *MatData) MBC3() (*MBC, error) {
 		ANR.Mul(A, L)
 		ANR.Sub(ANR, R)
 		ANR.Mul(blockDiag(T1v, T1v, T1qv), ANR)
-		ANR.Mul(P.T(), ANR) // Restore row order
-		ANR.Mul(ANR, P)     // Restore column order
+		ANR.Mul(PX.T(), ANR) // Restore row order
+		ANR.Mul(ANR, PX)     // Restore column order
 
 		// Save non-rotating A matrix
-		mbc.A_NR = append(mbc.A_NR, ANR)
+		A_NR = append(A_NR, ANR)
 	}
 
 	// Average the A matrix
 	mbc.AvgA = mat.NewDense(len(md.OP_x), len(md.OP_x), nil)
-	for _, A_NR := range mbc.A_NR {
+	for _, A_NR := range A_NR {
 		mbc.AvgA.Add(mbc.AvgA, A_NR)
 	}
 	mbc.AvgA.Scale(1/float64(md.NumStep), mbc.AvgA)
