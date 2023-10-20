@@ -12,6 +12,8 @@ export function ImportModelDialog():Promise<main.Project>;
 
 export function LoadConfig():Promise<main.Config>;
 
+export function OpenCaseDirectoryDialog():Promise<main.Project>;
+
 export function OpenProject(arg1:string):Promise<main.Project>;
 
 export function OpenProjectDialog():Promise<main.Project>;

@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sync/errgroup"
@@ -31,6 +33,10 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
+
+//------------------------------------------------------------------------------
+// Project
+//------------------------------------------------------------------------------
 
 func (a *App) OpenProjectDialog() (*Project, error) {
 
@@ -117,57 +123,9 @@ func (a *App) SaveProjectDialog() (*Project, error) {
 	return a.SaveProject(path)
 }
 
-// SelectExec opens a dialog for the user to select an OpenFAST executable.
-func (a *App) SelectExec() (*Project, error) {
-
-	// Open dialog so user can select the executable path
-	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:                "Select OpenFAST Executable",
-		CanCreateDirectories: false,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// If no path selected, return current exec
-	if path == "" {
-		return &Project{Info: a.Project.Info}, nil
-	}
-
-	// Get output from running the command
-	output, _ := exec.Command(path).CombinedOutput()
-
-	// If OpenFAST isn't in the output, return error
-	if !bytes.Contains(output, []byte("OpenFAST")) {
-		return nil, fmt.Errorf("'%s' is not an OpenFAST executable", path)
-	}
-
-	// Trim output
-	if index := bytes.Index(output, []byte("Execution Info:")); index > -1 {
-		output = output[:index-1]
-	}
-	if index := bytes.LastIndex(output, []byte("****")); index > -1 {
-		output = output[index+4:]
-	}
-
-	// Update executable info in project
-	a.Project.Exec = &Exec{
-		Path:    path,
-		Version: string(bytes.TrimSpace(output)),
-		Valid:   true,
-	}
-
-	// Save project
-	if _, err := a.SaveProject(a.Project.Info.Path); err != nil {
-		runtime.LogErrorf(a.ctx, "SelectExec: error saving project: %s", err)
-	}
-
-	// Initialize return project
-	p := &Project{Info: a.Project.Info, Exec: a.Project.Exec}
-
-	// Save project and return path
-	return p, nil
-}
+//------------------------------------------------------------------------------
+// Turbine
+//------------------------------------------------------------------------------
 
 func (a *App) ImportModelDialog() (*Project, error) {
 
@@ -234,6 +192,10 @@ func (a *App) UpdateModel(model *Model) (*Project, error) {
 	return p, nil
 }
 
+//------------------------------------------------------------------------------
+// Analysis
+//------------------------------------------------------------------------------
+
 // UpdateAnalysis runs Analysis.Calculate and saves results
 func (a *App) UpdateAnalysis(analysis *Analysis) (*Project, error) {
 
@@ -280,10 +242,81 @@ func (a *App) RemoveAnalysisCase(ID int) (*Project, error) {
 	return a.UpdateAnalysis(a.Project.Analysis)
 }
 
+//------------------------------------------------------------------------------
+// Evaluate
+//------------------------------------------------------------------------------
+
+// SelectExec opens a dialog for the user to select an OpenFAST executable.
+func (a *App) SelectExec() (*Project, error) {
+
+	// Open dialog so user can select the executable path
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:                "Select OpenFAST Executable",
+		CanCreateDirectories: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// If no path selected, return current exec
+	if path == "" {
+		return &Project{Info: a.Project.Info}, nil
+	}
+
+	// Get output from running the command
+	output, _ := exec.Command(path).CombinedOutput()
+
+	// If OpenFAST isn't in the output, return error
+	if !bytes.Contains(output, []byte("OpenFAST")) {
+		return nil, fmt.Errorf("'%s' is not an OpenFAST executable", path)
+	}
+
+	// Trim output
+	if index := bytes.Index(output, []byte("Execution Info:")); index > -1 {
+		output = output[:index-1]
+	}
+	if index := bytes.LastIndex(output, []byte("****")); index > -1 {
+		output = output[index+4:]
+	}
+
+	// Update executable info in project
+	a.Project.Exec = &Exec{
+		Path:    path,
+		Version: string(bytes.TrimSpace(output)),
+		Valid:   true,
+	}
+
+	// Save project
+	if _, err := a.SaveProject(a.Project.Info.Path); err != nil {
+		runtime.LogErrorf(a.ctx, "SelectExec: error saving project: %s", err)
+	}
+
+	// Initialize return project
+	p := &Project{Info: a.Project.Info, Exec: a.Project.Exec}
+
+	// Save project and return path
+	return p, nil
+}
+
 func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) {
 
 	// Call existing cancel func
 	EvalCancel(fmt.Errorf("new evaluation started"))
+
+	// Create path to case directory
+	caseDir := filepath.Join(strings.TrimSuffix(a.Project.Info.Path, filepath.Ext(a.Project.Info.Path)), fmt.Sprintf("case%02d", c.ID))
+	if err := os.MkdirAll(caseDir, 0777); err != nil {
+		return nil, fmt.Errorf("error creating directory '%s': %w", caseDir, err)
+	}
+
+	// Remove existing linearization files
+	linFiles, err := filepath.Glob(filepath.Join(caseDir, "*.lin"))
+	if err != nil {
+		return nil, err
+	}
+	for _, linFile := range linFiles {
+		os.Remove(linFile)
+	}
 
 	// Wrap app context with cancel function
 	ctx, cancelFunc := context.WithCancelCause(a.ctx)
@@ -305,7 +338,7 @@ func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) 
 		g.Go(func() error {
 			semChan <- struct{}{}
 			defer func() { <-semChan }()
-			return a.Project.EvaluateLinearization(ctx2, c, &op)
+			return a.Project.EvaluateLinearization(ctx2, c, &op, caseDir)
 		})
 	}
 
@@ -322,4 +355,53 @@ func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) 
 
 func (a *App) CancelEvaluate() {
 	EvalCancel(fmt.Errorf("evaluation canceled"))
+}
+
+//------------------------------------------------------------------------------
+// Results
+//------------------------------------------------------------------------------
+
+func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
+
+	casePath := strings.TrimSuffix(a.Project.Info.Path, filepath.Ext(a.Project.Info.Path))
+
+	// Open dialog so user can select the case directory
+	path, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:            "Open Case Directory",
+		DefaultDirectory: casePath,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error selecting OpenFAST file: %w", err)
+	}
+
+	// Search for linearization files
+	LinFiles, err := filepath.Glob(filepath.Join(path, "*.lin"))
+	if err != nil {
+		return nil, err
+	}
+	if len(LinFiles) == 0 {
+		return nil, fmt.Errorf("no linearization files found")
+	}
+
+	// Process linearization files into results
+	a.Project.Results, err = LoadResults(LinFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save results to file
+	bs, err := json.MarshalIndent(a.Project.Results, "", "\t")
+	if err != nil {
+		return nil, err
+	}
+	err = os.WriteFile(filepath.Join(path, "results.json"), bs, 0777)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize return Project
+	p := &Project{Info: a.Project.Info, Results: a.Project.Results}
+
+	// Parse and return model
+	return p, nil
 }

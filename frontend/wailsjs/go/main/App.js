@@ -22,6 +22,10 @@ export function LoadConfig() {
   return window['go']['main']['App']['LoadConfig']();
 }
 
+export function OpenCaseDirectoryDialog() {
+  return window['go']['main']['App']['OpenCaseDirectoryDialog']();
+}
+
 export function OpenProject(arg1) {
   return window['go']['main']['App']['OpenProject'](arg1);
 }

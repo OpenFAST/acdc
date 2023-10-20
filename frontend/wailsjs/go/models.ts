@@ -334,6 +334,7 @@ export namespace main {
 	    Name: string;
 	    Type: string;
 	    Lines: string[];
+	    RotStates: Bool;
 	    BldFile: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -345,6 +346,7 @@ export namespace main {
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
 	        this.Lines = source["Lines"];
+	        this.RotStates = this.convertValues(source["RotStates"], Bool);
 	        this.BldFile = this.convertValues(source["BldFile"], Path);
 	    }
 	
@@ -969,6 +971,60 @@ export namespace main {
 	}
 	
 	
+	export class ModeIndex {
+	    OP: number;
+	    Mode: number;
+	    Weight: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModeIndex(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.OP = source["OP"];
+	        this.Mode = source["Mode"];
+	        this.Weight = source["Weight"];
+	    }
+	}
+	export class ModeSet {
+	    ID: number;
+	    Label: string;
+	    Weight: number;
+	    FrequencyMean: number;
+	    Indices: ModeIndex[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ModeSet(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Label = source["Label"];
+	        this.Weight = source["Weight"];
+	        this.FrequencyMean = source["FrequencyMean"];
+	        this.Indices = this.convertValues(source["Indices"], ModeIndex);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Model {
 	    HasAero: boolean;
 	    ImportedPaths: string[];
@@ -1006,14 +1062,127 @@ export namespace main {
 		}
 	}
 	
+	export class OPResults {
+	    ID: number;
+	    Files: string[];
+	    RotSpeed: number;
+	    WindSpeed: number;
+	    Modes: mbc3.Mode[];
+	    Costs: number[][];
+	
+	    static createFrom(source: any = {}) {
+	        return new OPResults(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Files = source["Files"];
+	        this.RotSpeed = source["RotSpeed"];
+	        this.WindSpeed = source["WindSpeed"];
+	        this.Modes = this.convertValues(source["Modes"], mbc3.Mode);
+	        this.Costs = source["Costs"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	
 	
 	
 	
 	
 	
+	export class Results {
+	    HasWind: boolean;
+	    OPs: OPResults[];
+	    ModeSets: ModeSet[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Results(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.HasWind = source["HasWind"];
+	        this.OPs = this.convertValues(source["OPs"], OPResults);
+	        this.ModeSets = this.convertValues(source["ModeSets"], ModeSet);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	
 	
+
+}
+
+export namespace mbc3 {
+	
+	export class Mode {
+	    ID: number;
+	    OP: number;
+	    EigenValueReal: number;
+	    EigenValueImag: number;
+	    NaturalFreqRaw: number;
+	    NaturalFreqHz: number;
+	    DampedFreqRaw: number;
+	    DampedFreqHz: number;
+	    DampingRatio: number;
+	    Magnitudes: number[];
+	    Phases: number[];
+	    Cluster: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Mode(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.OP = source["OP"];
+	        this.EigenValueReal = source["EigenValueReal"];
+	        this.EigenValueImag = source["EigenValueImag"];
+	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
+	        this.NaturalFreqHz = source["NaturalFreqHz"];
+	        this.DampedFreqRaw = source["DampedFreqRaw"];
+	        this.DampedFreqHz = source["DampedFreqHz"];
+	        this.DampingRatio = source["DampingRatio"];
+	        this.Magnitudes = source["Magnitudes"];
+	        this.Phases = source["Phases"];
+	        this.Cluster = source["Cluster"];
+	    }
+	}
 
 }
 

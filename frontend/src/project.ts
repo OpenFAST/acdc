@@ -5,6 +5,7 @@ import { LoadConfig, SaveConfig } from "../wailsjs/go/main/App"
 import { SelectExec, ImportModelDialog, UpdateModel } from "../wailsjs/go/main/App"
 import { AddAnalysisCase, RemoveAnalysisCase } from "../wailsjs/go/main/App"
 import { EvaluateLinearization, CancelEvaluate } from "../wailsjs/go/main/App"
+import { OpenCaseDirectoryDialog } from "../wailsjs/go/main/App"
 import { main } from "../wailsjs/go/models"
 import { File, Field } from "./types"
 import { EventsOn } from "../wailsjs/runtime/runtime"
@@ -17,6 +18,7 @@ export const useProjectStore = defineStore('project', () => {
     const exec = reactive<main.Exec>(new main.Exec)
     const model = reactive<main.Model>(new main.Model)
     const analysis = reactive<main.Analysis>(new main.Analysis)
+    const results = reactive<main.Results>(new main.Results)
     const statusMap = reactive<Map<number, main.EvalStatus>>(new Map)
     const config = reactive<main.Config>(new main.Config)
 
@@ -107,6 +109,16 @@ export const useProjectStore = defineStore('project', () => {
         })
     }
 
+    function openCaseDirectory() {
+        OpenCaseDirectoryDialog().then(result => {
+            Object.assign(info, result.Info)
+            Object.assign(results, result.Results)
+        }).catch(err => {
+            console.log(err)
+        })
+    }
+
+
     function updateModel() {
         UpdateModel(model).then(result => {
             Object.assign(info, result.Info)
@@ -188,11 +200,11 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     return {
-        loaded, saving, config, info, exec, model, analysis, statusMap,
+        loaded, saving, config, info, exec, model, analysis, results, statusMap,
         modelFileOptions,
         $reset, open, saveDialog, save, openDialog, selectExec,
         importModel, updateModel,
-        updateAnalysis, addAnalysisCase, removeAnalysisCase,
+        openCaseDirectory, updateAnalysis, addAnalysisCase, removeAnalysisCase,
         startEvaluate, cancelEvaluate
     }
 })

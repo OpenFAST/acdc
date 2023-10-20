@@ -221,9 +221,9 @@ type AeroDyn struct {
 	OLAFInputFileName Path    `json:"OLAFInputFileName" ftype:"OLAF"`
 	NumAFfiles        Integer `json:"NumAFfiles"`
 	AFNames           Paths   `json:"AFNames" num:"NumAFfiles" ftype:"AirfoilInfo"`
-	ADBlFile1         Path    `json:"ADBlFile1" key:"ADBlFile(1)" ftype:"AeroDynBlade"`
-	ADBlFile2         Path    `json:"ADBlFile2" key:"ADBlFile(2)" ftype:"AeroDynBlade"`
-	ADBlFile3         Path    `json:"ADBlFile3" key:"ADBlFile(3)" ftype:"AeroDynBlade"`
+	ADBlFile1         Path    `json:"ADBlFile1" key:"ADBlFile(1)" ftype:"Misc"` // AeroDynBlade
+	ADBlFile2         Path    `json:"ADBlFile2" key:"ADBlFile(2)" ftype:"Misc"` // AeroDynBlade
+	ADBlFile3         Path    `json:"ADBlFile3" key:"ADBlFile(3)" ftype:"Misc"` // AeroDynBlade
 	TFinFile          Path    `json:"TFinFile"`
 }
 
@@ -245,7 +245,8 @@ type AeroDyn14 struct {
 
 type BeamDyn struct {
 	FileBase
-	BldFile Path `json:"BldFile" ftype:"BeamDynBlade"`
+	RotStates Bool `json:"RotStates"`
+	BldFile   Path `json:"BldFile" ftype:"Misc"` // BeamDynBlade
 }
 
 type ElastoDyn struct {
@@ -267,10 +268,10 @@ type ElastoDyn struct {
 	RotSpeed Real    `json:"RotSpeed"`
 	NumBl    Integer `json:"NumBl"`
 	ShftTilt Real    `json:"ShftTilt"`
-	BldFile1 Path    `json:"BldFile1" key:"BldFile(1)" ftype:"ElastoDynBlade"`
-	BldFile2 Path    `json:"BldFile2" key:"BldFile(2)" ftype:"ElastoDynBlade"`
-	BldFile3 Path    `json:"BldFile3" key:"BldFile(3)" ftype:"ElastoDynBlade"`
-	TwrFile  Path    `json:"TwrFile" ftype:"ElastoDynTower"`
+	BldFile1 Path    `json:"BldFile1" key:"BldFile(1)" ftype:"Misc"` // ElastoDynBlade
+	BldFile2 Path    `json:"BldFile2" key:"BldFile(2)" ftype:"Misc"` // ElastoDynBlade
+	BldFile3 Path    `json:"BldFile3" key:"BldFile(3)" ftype:"Misc"` // ElastoDynBlade
+	TwrFile  Path    `json:"TwrFile" ftype:"Misc"`                   // ElastoDynTower
 }
 
 type HydroDyn struct {
@@ -695,6 +696,9 @@ func writeFile(s any, dir, prefix string) error {
 
 	// Create path
 	path := filepath.Join(dir, prefix+fb.Name)
+	if fb.Type == "Misc" {
+		path = filepath.Join(dir, fb.Name)
+	}
 
 	// Get lines in file
 	lines := fb.Lines
@@ -756,21 +760,29 @@ func writeFile(s any, dir, prefix string) error {
 		// Switch based on field type
 		switch v := fieldVal.Interface().(type) {
 		case Path:
-			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+prefix+v.Value+`"`, v.Name, v.Desc)
+			pathPrefix := prefix
+			if v.FileType == "Misc" {
+				pathPrefix = ""
+			}
+			lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+pathPrefix+v.Value+`"`, v.Name, v.Desc)
 		case Paths:
+			pathPrefix := prefix
+			if v.FileType == "Misc" {
+				pathPrefix = ""
+			}
 			if v.Condensed {
 				values := ""
 				for _, value := range v.Value {
-					values += `"` + prefix + value + `" `
+					values += `"` + pathPrefix + value + `" `
 				}
 				if len(v.Value) == 0 {
 					values = `"unused"`
 				}
 				lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, values, v.Name, v.Desc)
 			} else {
-				lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+prefix+v.Value[0]+`"`, v.Name, v.Desc)
+				lines[v.Line-1] = fmt.Sprintf(`%11v   %-15s - %s`, `"`+pathPrefix+v.Value[0]+`"`, v.Name, v.Desc)
 				for j, value := range v.Value[1:] {
-					lines[v.Line+j] = `"` + prefix + value + `"`
+					lines[v.Line+j] = `"` + pathPrefix + value + `"`
 				}
 			}
 		case Bool:

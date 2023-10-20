@@ -3,11 +3,10 @@ import { reactive, ref, onMounted, computed } from 'vue'
 import { main } from '../../wailsjs/go/models';
 import { useProjectStore } from '../project';
 import { Scatter } from 'vue-chartjs'
-import { Chart as ChartJS, Colors, Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale, ChartData, ChartOptions } from 'chart.js'
+import { ChartData, ChartOptions } from 'chart.js'
 
 const project = useProjectStore()
 
-ChartJS.register(Colors, Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
 
 const props = defineProps<{
     Case: main.Case

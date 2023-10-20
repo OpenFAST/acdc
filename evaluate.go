@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -41,7 +42,7 @@ type EvalLog struct {
 
 var EvalCancel context.CancelCauseFunc = func(_ error) {}
 
-func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condition) error {
+func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condition, caseDir string) error {
 
 	//--------------------------------------------------------------------------
 	// Prepare input files
@@ -76,6 +77,11 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		files.ElastoDyn[0].RotSpeed.Value = op.RotorSpeed
 	} else {
 		return fmt.Errorf("no ElastoDyn files were imported")
+	}
+
+	// If BeamDyn files are present, set RotateStates to true
+	for i := range files.BeamDyn {
+		files.BeamDyn[i].RotStates.Value = true
 	}
 
 	// If case includes aero and wind speed is nonzero
@@ -116,17 +122,14 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		// Disable ServoDyn and remove files
 		files.Main[0].CompServo.Value = 0
 		files.ServoDyn = []ServoDyn{}
-	}
 
-	// Create path to operating point directory
-	runDir := filepath.Join(strings.TrimSuffix(p.Info.Path, filepath.Ext(p.Info.Path)), fmt.Sprintf("case%02d", c.ID))
-	if err := os.MkdirAll(runDir, 0777); err != nil {
-		return fmt.Errorf("error creating directory '%s': %w", runDir, err)
+		// Disable ElastoDyn generator DOF
+		files.ElastoDyn[0].GenDOF.Value = false
 	}
 
 	// Write modified turbine files
 	filePrefix := fmt.Sprintf("%02d_", op.ID)
-	if err := files.Write(runDir, filePrefix); err != nil {
+	if err := files.Write(caseDir, filePrefix); err != nil {
 		return fmt.Errorf("error writing turbine files: %w", err)
 	}
 
@@ -134,7 +137,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	numLinSteps := files.Main[0].NLinTimes.Value
 
 	// Create path to main file and log file
-	mainPath := filepath.Join(runDir, filePrefix+files.Main[0].Name)
+	mainPath := filepath.Join(caseDir, filePrefix+files.Main[0].Name)
 	logPath := strings.TrimSuffix(mainPath, filepath.Ext(mainPath)) + ".log"
 
 	// Create log file
@@ -233,13 +236,50 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	//--------------------------------------------------------------------------
 
 	// Read linearization files for this operating point
-	linFiles, err := filepath.Glob(filepath.Join(runDir, filePrefix+"*.lin"))
+	linFiles, err := filepath.Glob(filepath.Join(caseDir, filePrefix+"*.lin"))
 	if err != nil {
 		return err
 	}
 
-	// Perform coordinate transform and eigen-analysis
-	_, err = mbc3.Analyze(linFiles)
+	// Read linearization data from files
+	linFileData := make([]*mbc3.LinData, len(linFiles))
+	for i, f := range linFiles {
+		if linFileData[i], err = mbc3.ReadLinFile(f); err != nil {
+			return err
+		}
+	}
+
+	// Create matrix data from linearization file data
+	matData := mbc3.NewMatData(linFileData)
+
+	// Perform multi-blade coordinate transform
+	mbc, err := matData.MBC3()
+	if err != nil {
+		return err
+	}
+
+	// Perform eigen analysis
+	modes, err := mbc.EigenAnalysis()
+	if err != nil {
+		return err
+	}
+
+	// Write MBC data to file
+	bs, err := json.MarshalIndent(mbc, "", "\t")
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(caseDir, filePrefix+"mbc.json"), bs, 0777)
+	if err != nil {
+		return err
+	}
+
+	// Write Eigen analysis results data to file
+	bs, err = json.MarshalIndent(modes, "", "\t")
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(caseDir, filePrefix+"modes.json"), bs, 0777)
 	if err != nil {
 		return err
 	}

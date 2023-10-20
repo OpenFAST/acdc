@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useProjectStore } from './project';
+import { Chart as ChartJS, Colors, Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale } from 'chart.js'
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -18,3 +19,5 @@ const project = useProjectStore()
 router.beforeEach((to, from) => {
     if (to.path != '/' && !project.loaded) return { path: '/' }
 })
+
+ChartJS.register(Colors, Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
