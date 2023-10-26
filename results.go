@@ -10,11 +10,8 @@ import (
 
 	"github.com/mkmik/argsort"
 	"github.com/parallelo-ai/kmeans"
-	"gonum.org/v1/gonum/graph"
-	"gonum.org/v1/gonum/graph/path"
-	"gonum.org/v1/gonum/graph/simple"
+	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/stat"
 )
 
 type Results struct {
@@ -34,11 +31,12 @@ type OPResults struct {
 }
 
 type ModeSet struct {
-	ID            int         `json:"ID"`
-	Label         string      `json:"Label"`
-	Weight        float64     `json:"Weight"`
-	FrequencyMean float64     `json:"FrequencyMean"`
-	Indices       []ModeIndex `json:"Indices"`
+	ID        int          `json:"ID"`
+	Label     string       `json:"Label"`
+	Weight    float64      `json:"Weight"`
+	Frequency [2]float64   `json:"Frequency"`
+	Indices   []ModeIndex  `json:"Indices"`
+	Modes     []*mbc3.Mode `json:"-"`
 }
 
 type ModeIndex struct {
@@ -90,10 +88,15 @@ func LoadResults(LinFiles []string) (res *Results, err error) {
 	res = &Results{}
 	for i, lfr := range linFileResults {
 
+		// Set operating point identifier for modes
+		for j := range lfr.Modes {
+			lfr.Modes[j].OP = i
+		}
+
 		// Store data in results
 		res.MBC = append(res.MBC, lfr.MBC)
 		res.OPs = append(res.OPs, OPResults{
-			ID:        i + 1,
+			ID:        i,
 			RotSpeed:  lfr.MBC.RotSpeed,
 			WindSpeed: lfr.MBC.WindSpeed,
 			Modes:     lfr.Modes,
@@ -106,15 +109,78 @@ func LoadResults(LinFiles []string) (res *Results, err error) {
 	}
 
 	// Identify modes
-	err = res.IdentifyModes2()
+	err = res.BuildModeSets()
 	if err != nil {
 		return nil, err
 	}
 
-	// Identify modes
-	err = res.IdentifyModes3()
-	if err != nil {
-		return nil, err
+	// If no mode sets found, return
+	if len(res.ModeSets) == 0 {
+		return res, nil
+	}
+
+	// Find groups of potentially overlapping mode sets
+	modeSetGroups := [][]*ModeSet{{}}
+	j := 0
+	for i := range res.ModeSets {
+
+		// Get pointer to the mode set
+		ms := &res.ModeSets[i]
+
+		// If mode set is incomplete, fewer indices than OPs, prepend to groups
+		if len(ms.Indices) < len(res.OPs) {
+			continue
+		}
+
+		// Get number of clusters
+		// points := []dbscan.Point{}
+		// for _, m := range ms.Modes {
+		// 	points = append(points, m)
+		// }
+		// clusters := dbscan.Cluster(int(float64(len(res.OPs))/3), 5, points...)
+		// if len(clusters) == 1 {
+		// 	continue
+		// }
+
+		opMap1 := map[int]*mbc3.Mode{}
+		for _, m := range ms.Modes {
+			opMap1[m.OP] = m
+		}
+
+		// Find minimum gap compared to any mode set in group
+		minGap := 1000.0
+		for _, msg := range modeSetGroups[j] {
+			opMap2 := map[int]*mbc3.Mode{}
+			for _, m := range msg.Modes {
+				opMap2[m.OP] = m
+			}
+			for i := 0; i < len(res.OPs); i++ {
+				m1, ok1 := opMap1[i]
+				m2, ok2 := opMap2[i]
+				if ok1 && ok2 {
+					minGap = min(m1.NaturalFreqHz-m2.NaturalFreqHz, minGap)
+				}
+			}
+		}
+
+		if len(modeSetGroups[j]) > 0 && minGap > 0.05 {
+			modeSetGroups = append(modeSetGroups, []*ModeSet{})
+			j++
+		}
+
+		// Add set to last group
+		modeSetGroups[j] = append(modeSetGroups[j], ms)
+	}
+
+	// Loop through mode set groups. If more than one mode set in group,
+	// perform spectral clustering to identify shared modes
+	for _, msg := range modeSetGroups {
+		if len(msg) > 1 {
+			err = res.SpectralClustering(msg)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return res, nil
@@ -159,81 +225,102 @@ func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileR
 		}
 
 		// Perform Eigenanalysis to get modes
-		modes, err := mbc.EigenAnalysis()
+		eigRes, err := mbc.EigenAnalysis()
 		if err != nil {
 			resultsChan <- LinFileResult{err: err}
 			return
 		}
 
 		// Send MBC and mode results
-		resultsChan <- LinFileResult{Name: linFileGroup.Name, MBC: mbc, Modes: modes}
+		resultsChan <- LinFileResult{Name: linFileGroup.Name, MBC: mbc, Modes: eigRes.Modes}
 	}
 }
 
-func (r *Results) IdentifyModes2() error {
+func (r *Results) BuildModeSets() error {
+
+	// Set max frequency to consider
+	const MaxFreqHz = 5
 
 	// Create a map of mode sets
-	modeSetMap := map[int]*ModeSet{}
-	modeSetMapNext := map[int]*ModeSet{}
+	modeSets := []*ModeSet{}
 
-	// Initialize mode set map with all modes from first OP
-	for i := range r.OPs[0].Modes {
-		modeSetMap[i] = &ModeSet{
-			ID:      i + 1,
-			Label:   fmt.Sprintf("%d", i+1),
-			Indices: []ModeIndex{{OP: 0, Mode: i, Weight: 1}},
+	// Loop through modes in first operating point
+	for i, m := range r.OPs[0].Modes {
+
+		// If mode natural frequency exceeds limit, continue
+		if m.NaturalFreqHz > MaxFreqHz {
+			continue
 		}
+
+		// Initialize mode set with mode
+		modeSets = append(modeSets, &ModeSet{
+			ID:      i,
+			Label:   fmt.Sprintf("%d", i),
+			Indices: []ModeIndex{{OP: 0, Mode: m.ID, Weight: 1}},
+		})
 	}
 
 	// Loop through operating point results
-	for i, op := range r.OPs {
+	for opID, op := range r.OPs {
 
 		// Skip first operating point
-		if i == 0 {
+		if opID == 0 {
 			continue
 		}
 
 		// Create weighting matrix
-		w := mat.NewDense(len(modeSetMap), len(op.Modes), nil)
+		w := mat.NewDense(len(modeSets), len(op.Modes), nil)
+
+		modeIndexMap := map[int]int{}
 
 		// Loop through modes in mode set map
-		for j, modeSet := range modeSetMap {
+		for j, modeSet := range modeSets {
 
-			// Loop through modes in next operating point
-			for k, mn := range op.Modes {
+			// 	Get last mode in mode set
+			ind := modeSet.Indices[len(modeSet.Indices)-1]
+			mp := r.OPs[ind.OP].Modes[ind.Mode]
 
-				// 	Get last index in mode set
-				ind := modeSet.Indices[len(modeSet.Indices)-1]
+			// Loop through modes in current operating point
+			k := 0
+			for _, mn := range op.Modes {
 
-				// Get previous mode
-				mp := r.OPs[ind.OP].Modes[ind.Mode]
+				// If mode natural frequency exceeds limit, continue
+				if mn.NaturalFreqHz > MaxFreqHz {
+					continue
+				}
 
 				// Calculate MAC between modes
-				mac, err := mp.MACXP(&mn)
+				mac, err := mp.MAC(&mn)
 				if err != nil {
 					return err
 				}
 
+				mac *= 1 - math.Abs(mn.NaturalFreqHz-mp.NaturalFreqHz)/MaxFreqHz
+
 				// Add MAC to weight matrix
 				w.Set(j, k, mac)
+
+				// Add mode ID to current mode map
+				modeIndexMap[k] = mn.ID
+
+				k++
 			}
 		}
 
-		// Get min, max, and range of weights
-		wMin, wMax := mat.Min(w), mat.Max(w)
-		wRange := wMax - wMin
+		// Get max weight value
+		wMax := mat.Max(w)
 
 		// Create cost matrix from weights (rescale to maximize precision)
-		cost := NewIntMatrix(len(modeSetMap), len(op.Modes), 0)
+		cost := NewIntMatrix(len(modeSets), len(modeIndexMap), 0)
 		for j := range cost {
 			for k := range cost[j] {
 				v := w.At(j, k)
-				cost[j][k] = int(1e7 * (1 - (v-wMin)/wRange))
+				cost[j][k] = int(1e7 * (1 - v/wMax))
 			}
 		}
 
 		// Save cost matrix in operating point
-		r.OPs[i].Costs = cost
+		r.OPs[opID].Costs = cost
 
 		// Find mode pairings that minimizes the total cost
 		pairs, err := MinCostAssignment(cost)
@@ -242,263 +329,101 @@ func (r *Results) IdentifyModes2() error {
 		}
 
 		// Set mode connections
-		for _, p := range pairs {
+		for _, pair := range pairs {
 
 			// Look up mode set from previous mode index
-			modeSet := modeSetMap[p[0]]
+			modeSet := modeSets[pair[0]]
+
+			// Get mode ID from index map
+			modeID := modeIndexMap[pair[1]]
 
 			// Add next operating point and mode combination
-			modeSet.Indices = append(modeSet.Indices, ModeIndex{OP: i, Mode: p[1], Weight: w.At(p[0], p[1])})
-
-			// Update mode set in next set map
-			modeSetMapNext[p[1]] = modeSet
+			modeSet.Indices = append(modeSet.Indices, ModeIndex{
+				OP:     op.ID,
+				Mode:   modeID,
+				Weight: w.At(pair[0], pair[1]),
+			})
 		}
 
-		// Set next map to current map, clear next map
-		modeSetMap, modeSetMapNext = modeSetMapNext, map[int]*ModeSet{}
+		// TODO: add logic for adding new mode sets outside pairs
 	}
 
 	// Clear mode sets in results
 	r.ModeSets = []ModeSet{}
 
 	// Loop through mode sets
-	for _, modeSet := range modeSetMap {
+	for _, modeSet := range modeSets {
 
-		// Calculate mean frequency
-		for _, ind := range modeSet.Indices {
-			modeSet.FrequencyMean += r.OPs[ind.OP].Modes[ind.Mode].NaturalFreqHz
+		// Skip empty mode sets
+		if len(modeSet.Indices) == 0 {
+			continue
 		}
-		modeSet.FrequencyMean /= float64(len(modeSet.Indices))
+
+		// Get index of first mode in set, get mode and append to slice
+		ind := modeSet.Indices[0]
+		m := &r.OPs[ind.OP].Modes[ind.Mode]
+		modeSet.Modes = append(modeSet.Modes, m)
+
+		// Get min and max frequency from first index
+		f0 := m.NaturalFreqHz
+		modeSet.Frequency = [2]float64{f0, f0}
+
+		// Calculate min and max natural frequency from remaining indices
+		for _, ind := range modeSet.Indices[1:] {
+			m := &r.OPs[ind.OP].Modes[ind.Mode]
+			modeSet.Modes = append(modeSet.Modes, m)
+			modeSet.Frequency[0] = min(modeSet.Frequency[0], m.NaturalFreqHz)
+			modeSet.Frequency[1] = max(modeSet.Frequency[1], m.NaturalFreqHz)
+		}
 
 		// Append mode set to results
 		r.ModeSets = append(r.ModeSets, *modeSet)
 	}
 
-	// Sort mode sets by mean frequency
+	// Sort mode sets by minimum frequency
 	sort.Slice(r.ModeSets, func(i, j int) bool {
-		return r.ModeSets[i].FrequencyMean < r.ModeSets[j].FrequencyMean
+		return r.ModeSets[i].Frequency[0] < r.ModeSets[j].Frequency[0]
 	})
 
 	return nil
 }
 
-func (r *Results) IdentifyModes() error {
+func (r *Results) SpectralClustering(modeSets []*ModeSet) error {
 
-	// Create mode graph
-	g := ModeGraph{
-		ids:                   make(map[*mbc3.Mode]int64),
-		WeightedDirectedGraph: simple.NewWeightedDirectedGraph(0, math.Inf(1)),
-	}
-
-	// Loop through operating point results
-	for i := range r.OPs {
-
-		// Get pointer to operating point
-		op := &r.OPs[i]
-
-		// Get standard deviation of natural frequencies
-		natFreq := make([]float64, len(op.Modes))
-		for j, m := range op.Modes {
-			natFreq[j] = m.NaturalFreqHz
-		}
-		natFreqStdDev := stat.StdDev(natFreq, nil)
-
-		// Loop through modes in operating point, add nodes
-		for j := range op.Modes {
-
-			// Get pointer to mode data
-			mode := &op.Modes[j]
-
-			// Create node
-			n := g.WeightedDirectedGraph.NewNode()
-			nid := n.ID()
-			n = ModeNode{
-				id:   nid,
-				OP:   i + 1,
-				Mode: mode,
-			}
-
-			// Add node to graph
-			g.WeightedDirectedGraph.AddNode(n)
-			g.ids[mode] = nid
-
-			// If first OP, continue
-			if i == 0 {
-				continue
-			}
-
-			// Loop through nodes in previous OP and connect
-			for k := range r.OPs[i-1].Modes {
-
-				// Get pointer to mode from previous OP
-				modePrev := &r.OPs[i-1].Modes[k]
-
-				// If difference between current mode and previous mode natural frequency
-				// is greater than twice the frequency standard deviation, continue
-				if math.Abs(mode.NaturalFreqHz-modePrev.NaturalFreqHz) > natFreqStdDev {
-					continue
-				}
-
-				// Get previous node from previous mode pointer
-				pn := g.nodeFor(modePrev)
-				if pn == nil {
-					continue
-				}
-
-				// Calculate weight
-				w, err := modePrev.MAC(*mode)
-				if err != nil {
-					return err
-				}
-
-				// Add weighted edge from previous node to current node
-				g.SetWeightedEdge(simple.WeightedEdge{F: pn, T: n, W: 1 / w})
-			}
-		}
-	}
-
-	//--------------------------------------------------------------------------
-	// Locate modes across operating points
-	//--------------------------------------------------------------------------
-
-	// Create slice of slices of mode indices to contain identified paths
-	r.ModeSets = []ModeSet{}
-
-	// Get ending operating point
-	opEnd := &r.OPs[len(r.OPs)-1]
-
-	// Loop through operating point results to get path starting OPs
-	for i := range r.OPs {
-
-		// Get starting operating point
-		opStart := &r.OPs[i]
-
-		// Loop and find minimum path
-		for {
-
-			// Generate minimum path tree, must be regenerated as nodes are removed from graph
-			// pathTree := path.DijkstraAllPaths(g)
-
-			// nidStart := int64(-1)
-			// nidEnd := int64(-1)
-			minWeight := -1.0
-			graphPath := []graph.Node{}
-
-			// Loop through modes in starting operating point
-			for j := range opStart.Modes {
-
-				// Get graph node corresponding to mode, if already in path (nil), continue
-				ns := g.nodeFor(&opStart.Modes[j])
-				if ns == nil {
-					continue
-				}
-
-				// Get all shortest paths from start node
-				pathTree := path.DijkstraFrom(ns, g)
-
-				// Loop through modes at last operating point
-				for k := range opEnd.Modes {
-
-					// Get graph node ID corresponding to ending mode,
-					// If mode is not in graph (already in path), continue
-					ne := g.nodeFor(&opEnd.Modes[k])
-					if ne == nil {
-						continue
-					}
-
-					// Get weight between start and end nodes
-					p, weight := pathTree.To(ne.ID())
-					if weight < minWeight || minWeight == -1.0 {
-						minWeight = weight
-						graphPath = p
-					}
-				}
-			}
-
-			if minWeight == -1 {
-				break
-			}
-
-			// Convert graph path to min path, remove path nodes from graph
-			// since multiple paths can't use the same node
-			minPath := []ModeIndex{}
-			for _, n := range graphPath {
-				minPath = append(minPath, n.(ModeNode).Index())
-				g.RemoveNode(n.ID())
-			}
-
-			// Add path to results
-			r.ModeSets = append(r.ModeSets, ModeSet{
-				Label:   fmt.Sprintf("%d", len(r.ModeSets)+1),
-				Weight:  minWeight,
-				Indices: minPath,
-			})
-
-			fmt.Println(r.ModeSets[len(r.ModeSets)-1])
-		}
-	}
-
-	return nil
-}
-
-type ModeGraph struct {
-	ids map[*mbc3.Mode]int64
-	*simple.WeightedDirectedGraph
-}
-
-func (g ModeGraph) nodeFor(mode *mbc3.Mode) graph.Node {
-	id, ok := g.ids[mode]
-	if !ok {
-		return nil
-	}
-	return g.WeightedDirectedGraph.Node(id)
-}
-
-type ModeNode struct {
-	id   int64
-	OP   int
-	Mode *mbc3.Mode
-}
-
-func (n ModeNode) ID() int64        { return n.id }
-func (n ModeNode) String() string   { return "" }
-func (n ModeNode) Index() ModeIndex { return ModeIndex{OP: n.OP, Mode: n.Mode.ID} }
-
-func (r *Results) IdentifyModes3() error {
-
-	// Collect all modes in all operating points
+	// Collect all modes in mode sets
+	modeSetMap := map[*mbc3.Mode]int{}
 	modes := []*mbc3.Mode{}
-	for i := range r.OPs {
-		for j := range r.OPs[i].Modes {
-			m := &r.OPs[i].Modes[j]
-			if m.NaturalFreqHz < 0.5 {
-				m.OP = i
-				modes = append(modes, m)
-			}
+	for _, ms := range modeSets {
+		modes = append(modes, ms.Modes...)
+		for _, m := range ms.Modes {
+			modeSetMap[m] = ms.ID
+		}
+	}
+
+	// Build map relating mode to mode set
+	modeToModeSetMap := map[*mbc3.Mode]int{}
+	for i, ms := range modeSets {
+		for _, m := range ms.Modes {
+			modeToModeSetMap[m] = i
 		}
 	}
 
 	N := len(modes)
 
 	// Create weight matrix by comparing modes with MAC
-	Wf := make([][]float64, N)
 	W := mat.NewDense(N, N, nil)
 	D := mat.NewDense(N, N, nil)
-	Dinv := mat.NewDense(N, N, nil)
 	Disr := mat.NewDense(N, N, nil)
 	for i, m1 := range modes {
-		Wf[i] = make([]float64, N)
 		for j, m2 := range modes {
 			if i != j {
-				if mac, err := m1.MACXP(m2); err == nil {
+				if mac, err := m1.MAC(m2); err == nil {
 					W.Set(i, j, mac)
-					Wf[i][j] = mac
 				}
 			}
 		}
 		di := mat.Sum(W.RowView(i))
 		D.Set(i, i, di)
-		Dinv.Set(i, i, 1/di)
 		Disr.Set(i, i, 1/math.Sqrt(di))
 	}
 
@@ -506,15 +431,12 @@ func (r *Results) IdentifyModes3() error {
 	L := mat.NewDense(N, N, nil)
 	L.Sub(D, W)
 
-	// Calculate random walk laplacian
-	Lrw := mat.NewDense(N, N, nil)
-	Lrw.Mul(Dinv, L)
-
-	// Calculate the symmetric laplacian
+	// Calculate the symmetric laplacian (Lsym = D^{-1/2}*L*D^{-1/2})
 	Lsym := mat.NewDense(N, N, nil)
 	Lsym.Mul(Disr, L)
 	Lsym.Mul(Lsym, Disr)
 
+	// Calculate eigenvalues and eigenvectors of Lsym matrix
 	eig := mat.Eigen{}
 	if ok := eig.Factorize(Lsym, mat.EigenRight); !ok {
 		return fmt.Errorf("error computing eigenvalues")
@@ -523,54 +445,147 @@ func (r *Results) IdentifyModes3() error {
 	eigenVectors := &mat.CDense{}
 	eig.VectorsTo(eigenVectors)
 
+	// Get indices that would sort from largest to smallest eigenvalues
 	inds := argsort.SortSlice(eigenValues, func(i, j int) bool {
 		return real(eigenValues[i]) < real(eigenValues[j])
 	})
 
-	numComps := 6
+	numClusters := len(modeSets)
+	numDims := min(int(math.Ceil(1*float64(numClusters))), N)
 
-	// data := make([][]float64, N)
-	// for i := range data {
-	// 	row := make([]float64, numComps)
-	// 	for j, ind := range inds[:numComps] {
-	// 		row[j] = real(eigenVectors.At(i, ind))
-	// 	}
-	// 	data[i] = row
-	// }
-
-	// c, err := clusters.KMeans(1000, 4, clusters.EuclideanDistance)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = c.Learn(data)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// for i, clusterNum := range c.Guesses() {
-	// 	modes[i].Cluster = clusterNum + 1
-	// }
-
-	var d kmeans.Observations
+	d := make(kmeans.Observations, N)
 	for i := 0; i < N; i++ {
-		row := make([]float64, numComps)
-		for j, ind := range inds[:numComps] {
+		row := make([]float64, numDims)
+		for j, ind := range inds[:numDims] {
 			row[j] = real(eigenVectors.At(i, ind))
 		}
-		d = append(d, kmeans.Coordinates(row))
+		floats.Scale(1/floats.Norm(row, 2), row)
+		d[i] = Observation(row)
 	}
 
-	// Partition the data points into 16 clusters
-	km := kmeans.New()
-	clusters, err := km.Partition(d, 6, 0)
+	// Create KMeans object with options
+	km, err := kmeans.NewKmeansWithOptions(0.001, 1000)
 	if err != nil {
 		return err
 	}
 
-	for i, obs := range d {
-		modes[i].Cluster = clusters.Nearest(obs)
+	clusterModesMap := map[int][]*mbc3.Mode{}
+	modeClusterMap := map[*mbc3.Mode]int{}
+	minRepeatedModes := N
+
+	for i := 0; i < 1000; i++ {
+
+		// Partition the data points
+		clusters, err := km.Partition(d, numClusters, 0)
+		if err != nil {
+			return err
+		}
+
+		// Get cluster number for each mode (starts at 0)
+		localClusterModesMap := map[int][]*mbc3.Mode{}
+		localModeClusterMap := map[*mbc3.Mode]int{}
+		for i, obs := range d {
+			c := clusters.Nearest(obs)
+			if _, ok := localClusterModesMap[c]; !ok {
+				localClusterModesMap[c] = []*mbc3.Mode{}
+			}
+			localClusterModesMap[c] = append(localClusterModesMap[c], modes[i])
+			localModeClusterMap[modes[i]] = c
+			modes[i].Cluster = c
+		}
+
+		// Calculate number of modes in same OP across clusters.
+		// This represents how well the kmeans was able to redraw the paths
+		// in the mode sets
+		numRepeatedModes := 0
+		for _, modes := range localClusterModesMap {
+			opMap := map[int]int{}
+			for _, m := range modes {
+				opMap[m.OP]++
+			}
+			for _, numModes := range opMap {
+				numRepeatedModes += numModes - 1
+			}
+		}
+
+		if numRepeatedModes < minRepeatedModes {
+			minRepeatedModes = numRepeatedModes
+			clusterModesMap = localClusterModesMap
+			modeClusterMap = localModeClusterMap
+		}
+
+		// If number of repeated OPs is sufficiently small, compared to the
+		// number of modes, exit loop
+		if ratio := float64(numRepeatedModes) / float64(N); ratio < 0.01 {
+			fmt.Println("met criteria", i, ratio)
+			break
+		}
+	}
+
+	// Build cost matrix for determining which mode set goes with each cluster
+	C := make([][]int, len(modeSets))
+	for i := range C {
+		C[i] = make([]int, numClusters)
+		for _, m := range modeSets[i].Modes {
+			C[i][modeClusterMap[m]]++
+		}
+		for j := range C[i] {
+			C[i][j] = N - 1 - C[i][j]
+		}
+	}
+
+	// Pair mode set with cluster which have the most overlapping modes
+	modeSetClusterPairs, err := MinCostAssignment(C)
+	if err != nil {
+		return err
+	}
+
+	// Loop through mode set -> cluster pairings
+	for _, pair := range modeSetClusterPairs {
+
+		// Get mode set index and cluster number
+		msi, cn := pair[0], pair[1]
+
+		// Get mode set and modes in cluster
+		ms := modeSets[msi]
+		modes := clusterModesMap[cn]
+
+		// Collect cluster modes by operating point
+		opModesMap := map[int][]*mbc3.Mode{}
+		for _, m := range modes {
+			opModesMap[m.OP] = append(opModesMap[m.OP], m)
+		}
+
+		// Rebuild list of modes keeping one for each OP
+		modes = []*mbc3.Mode{}
+		for _, opModes := range opModesMap {
+			if len(opModes) == 1 {
+				modes = append(modes, opModes...)
+			}
+		}
+		sort.Slice(modes, func(i, j int) bool {
+			return modes[i].OP < modes[j].OP
+		})
+
+		// Reset modes slice and add modes which only have one OP
+		ms.Modes = modes
+		ms.Indices = []ModeIndex{}
+		for _, m := range modes {
+			ms.Indices = append(ms.Indices, ModeIndex{OP: m.OP, Mode: m.ID})
+		}
 	}
 
 	return nil
+}
+
+type Observation []float64
+
+func (obs Observation) Coordinates() kmeans.Coordinates {
+	return kmeans.Coordinates(obs)
+}
+
+func (obs Observation) Distance(point kmeans.Coordinates) float64 {
+	diff := make([]float64, len(obs))
+	floats.SubTo(diff, obs, []float64(point))
+	return floats.Norm(diff, 2)
 }

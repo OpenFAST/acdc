@@ -34,7 +34,7 @@ const freqChart = computed(() => {
     // Loop through mode sets
     const r = project.results
     for (const ms of r.ModeSets) {
-        if (ms.FrequencyMean > 10) {
+        if (ms.Frequency[1] > 10) {
             continue
         }
         d.data.datasets.push({
@@ -83,7 +83,7 @@ const dampingChart = computed(() => {
     // Loop through mode sets
     const r = project.results
     for (const ms of r.ModeSets) {
-        if (ms.FrequencyMean > 10) {
+        if (ms.Frequency[1] > 10) {
             continue
         }
         d.data.datasets.push({

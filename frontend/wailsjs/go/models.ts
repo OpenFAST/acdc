@@ -991,7 +991,7 @@ export namespace main {
 	    ID: number;
 	    Label: string;
 	    Weight: number;
-	    FrequencyMean: number;
+	    Frequency: number[];
 	    Indices: ModeIndex[];
 	
 	    static createFrom(source: any = {}) {
@@ -1003,7 +1003,7 @@ export namespace main {
 	        this.ID = source["ID"];
 	        this.Label = source["Label"];
 	        this.Weight = source["Weight"];
-	        this.FrequencyMean = source["FrequencyMean"];
+	        this.Frequency = source["Frequency"];
 	        this.Indices = this.convertValues(source["Indices"], ModeIndex);
 	    }
 	

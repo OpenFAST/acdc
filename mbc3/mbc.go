@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"math/cmplx"
 	"os"
 	"sort"
 
@@ -12,16 +13,18 @@ import (
 )
 
 type MBC struct {
-	RotSpeed                    float64  // RPM
-	WindSpeed                   float64  // m/s
-	DescStates                  []string // List of states
+	RotSpeed                    float64   // (RPM)
+	WindSpeed                   float64   // (m/s)
+	DescStates                  []string  // List of states
+	Azimuths                    []float64 // Azimuths (rad)
 	OrderX, OrderX2, OrderX2dot OPOrder
 	OrderX1, OrderU, OrderY     OPOrder
-	AvgA                        *mat.Dense
-	AvgX                        *mat.VecDense
-	AvgXdot                     *mat.VecDense
 	OrderEigen                  OPOrder
 	DOFsEigen                   []string
+	AvgA                        *mat.Dense
+	ANR                         *mat.Dense // Non-rotating A matrix
+	AvgX                        *mat.VecDense
+	AvgXdot                     *mat.VecDense
 }
 
 func (md *MatData) MBC3() (*MBC, error) {
@@ -31,8 +34,10 @@ func (md *MatData) MBC3() (*MBC, error) {
 
 	// Create MBC structure
 	mbc := MBC{
-		WindSpeed: floats.Sum(md.WindSpeed) / float64(md.NumStep),
-		RotSpeed:  floats.Sum(md.Omega) / float64(md.NumStep) * 30 / math.Pi,
+		WindSpeed:  floats.Sum(md.WindSpeed) / float64(md.NumStep),
+		RotSpeed:   floats.Sum(md.Omega) / float64(md.NumStep) * 30 / math.Pi,
+		Azimuths:   md.AzimuthRad,
+		DescStates: md.OP_x.Descs(),
 	}
 
 	//--------------------------------------------------------------------------
@@ -223,6 +228,80 @@ func (md *MatData) MBC3() (*MBC, error) {
 	mbc.AvgXdot.ScaleVec(1/float64(md.NumStep), mbc.AvgXdot)
 
 	return &mbc, nil
+}
+
+type EigenResults struct {
+	Modes        []Mode
+	EigenVectors *mat.CDense
+}
+
+func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
+
+	// Get indices of eigenvector rows to keep
+	rows := mbc.OrderEigen.Indices
+
+	// Calculate eigenvalues/eigenvectors analysis
+	eig := mat.Eigen{}
+	if ok := eig.Factorize(mbc.AvgA, mat.EigenRight); !ok {
+		return nil, fmt.Errorf("error computing eigenvalues")
+	}
+	eigenValues := eig.Values(nil)
+	eigenVectors := &mat.CDense{}
+	eig.VectorsTo(eigenVectors)
+
+	// Create slice of mode results
+	modes := []Mode{}
+
+	// Collect mode results
+	for i, ev := range eigenValues {
+
+		// Skip negative imaginary eigenvalues
+		if imag(ev) <= 0 {
+			continue
+		}
+
+		// Create mode
+		mode := Mode{
+			EigenValueReal:  real(ev),
+			EigenValueImag:  imag(ev),
+			NaturalFreqRaw:  cmplx.Abs(ev),
+			NaturalFreqHz:   cmplx.Abs(ev) / (2 * math.Pi),
+			DampedFreqRaw:   imag(ev),
+			DampedFreqHz:    imag(ev) / (2 * math.Pi),
+			DampingRatio:    -real(ev) / cmplx.Abs(ev),
+			Magnitudes:      make([]float64, len(rows)),
+			Phases:          make([]float64, len(rows)),
+			EigenValue:      ev,
+			EigenVector:     make([]complex128, len(rows)),
+			EigenVectorFull: make([]complex128, len(eigenValues)),
+		}
+
+		// Store full eigenvector to mode visualization
+		for j := range eigenValues {
+			mode.EigenVectorFull[j] = eigenVectors.At(j, i)
+		}
+
+		// Store eigenvector for given rows
+		for j, r := range rows {
+			mode.EigenVector[j] = eigenVectors.At(r, i)
+			mode.Magnitudes[j], mode.Phases[j] = cmplx.Polar(mode.EigenVector[j])
+		}
+
+		// Add mode to slice of modes
+		modes = append(modes, mode)
+	}
+
+	// Sort modes by natural frequency, ascending
+	sort.Slice(modes, func(i, j int) bool {
+		return modes[i].NaturalFreqRaw < modes[j].NaturalFreqRaw
+	})
+
+	// Set mode identifiers (starting at 0)
+	for i := range modes {
+		modes[i].ID = i
+	}
+
+	return &EigenResults{Modes: modes, EigenVectors: eigenVectors}, nil
 }
 
 func eye(n int) *mat.Dense {

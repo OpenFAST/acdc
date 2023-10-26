@@ -39,6 +39,8 @@ function setDefaults() {
     files.Main[0].NLinTimes.Value = 36
     files.Main[0].Gravity.Value = 0
     files.Main[0].OutFmt.Value = "ES16.9E2"
+    files.Main[0].WrVTK.Value = 3
+    files.Main[0].VTK_type.Value = 2
 
     // Set ElastoDyn file linearization defaults
     files.ElastoDyn[0].ShftTilt.Value = 0

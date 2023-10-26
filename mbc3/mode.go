@@ -4,31 +4,31 @@ import (
 	"fmt"
 	"math"
 	"math/cmplx"
-	"sort"
 
-	"gonum.org/v1/gonum/mat"
+	"github.com/kelindar/dbscan"
 )
 
 type Mode struct {
-	ID             int          `json:"ID"`
-	OP             int          `json:"OP"`
-	EigenValueReal float64      `json:"EigenValueReal"`
-	EigenValueImag float64      `json:"EigenValueImag"`
-	NaturalFreqRaw float64      `json:"NaturalFreqRaw"`
-	NaturalFreqHz  float64      `json:"NaturalFreqHz"`
-	DampedFreqRaw  float64      `json:"DampedFreqRaw"`
-	DampedFreqHz   float64      `json:"DampedFreqHz"`
-	DampingRatio   float64      `json:"DampingRatio"`
-	Magnitudes     []float64    `json:"Magnitudes"`
-	Phases         []float64    `json:"Phases"`
-	EigenValue     complex128   `json:"-"`
-	EigenVector    []complex128 `json:"-"`
-	Cluster        int          `json:"Cluster"`
+	ID              int          `json:"ID"`
+	OP              int          `json:"OP"`
+	EigenValueReal  float64      `json:"EigenValueReal"`
+	EigenValueImag  float64      `json:"EigenValueImag"`
+	NaturalFreqRaw  float64      `json:"NaturalFreqRaw"`
+	NaturalFreqHz   float64      `json:"NaturalFreqHz"`
+	DampedFreqRaw   float64      `json:"DampedFreqRaw"`
+	DampedFreqHz    float64      `json:"DampedFreqHz"`
+	DampingRatio    float64      `json:"DampingRatio"`
+	Magnitudes      []float64    `json:"Magnitudes"`
+	Phases          []float64    `json:"Phases"`
+	Cluster         int          `json:"Cluster"`
+	EigenValue      complex128   `json:"-"`
+	EigenVector     []complex128 `json:"-"`
+	EigenVectorFull []complex128 `json:"-"`
 }
 
 // MAC returns the modal assurance criteria indicating mode shape similarity.
 // 0=no correlation, 1=total correlation.
-func (md1 Mode) MAC(md2 Mode) (float64, error) {
+func (md1 Mode) MAC(md2 *Mode) (float64, error) {
 
 	if len(md1.EigenVector) != len(md2.EigenVector) {
 		return 0, fmt.Errorf("EigenVectors are different lengths")
@@ -48,7 +48,7 @@ func (md1 Mode) MAC(md2 Mode) (float64, error) {
 }
 
 // https://past.isma-isaac.be/downloads/isma2010/papers/isma2010_0103.pdf
-func (md1 Mode) MACX(md2 Mode) (float64, error) {
+func (md1 Mode) MACX(md2 *Mode) (float64, error) {
 
 	if len(md1.EigenVector) != len(md2.EigenVector) {
 		return 0, fmt.Errorf("EigenVectors are different lengths")
@@ -106,64 +106,11 @@ func (md1 *Mode) MACXP(md2 *Mode) (float64, error) {
 	return math.Pow(num, 2) / den, nil
 }
 
-func (mbc MBC) EigenAnalysis() ([]Mode, error) {
+func (md1 *Mode) DistanceTo(p dbscan.Point) float64 {
+	mac, _ := md1.MAC(p.(*Mode))
+	return 1 / mac
+}
 
-	// Get indices of eigenvector rows to keep
-	rows := mbc.OrderEigen.Indices
-
-	// Calculate eigenvalues/eigenvectors analysis
-	eig := mat.Eigen{}
-	if ok := eig.Factorize(mbc.AvgA, mat.EigenRight); !ok {
-		return nil, fmt.Errorf("error computing eigenvalues")
-	}
-	eigenVectors := &mat.CDense{}
-	eig.VectorsTo(eigenVectors)
-
-	// Create slice of mode results
-	modes := []Mode{}
-
-	// Collect mode results
-	for i, ev := range eig.Values(nil) {
-
-		// Skip negative imaginary eigenvalues
-		if imag(ev) <= 0 {
-			continue
-		}
-
-		// Create mode
-		mode := Mode{
-			EigenValueReal: real(ev),
-			EigenValueImag: imag(ev),
-			NaturalFreqRaw: cmplx.Abs(ev),
-			NaturalFreqHz:  cmplx.Abs(ev) / (2 * math.Pi),
-			DampedFreqRaw:  imag(ev),
-			DampedFreqHz:   imag(ev) / (2 * math.Pi),
-			DampingRatio:   -real(ev) / cmplx.Abs(ev),
-			Magnitudes:     make([]float64, len(rows)),
-			Phases:         make([]float64, len(rows)),
-			EigenValue:     ev,
-			EigenVector:    make([]complex128, len(rows)),
-		}
-
-		// Store eigenvector for given rows
-		for j, r := range rows {
-			mode.EigenVector[j] = eigenVectors.At(r, i)
-			mode.Magnitudes[j], mode.Phases[j] = cmplx.Polar(mode.EigenVector[j])
-		}
-
-		// Add mode to slice of modes
-		modes = append(modes, mode)
-	}
-
-	// Sort modes by natural frequency, ascending
-	sort.Slice(modes, func(i, j int) bool {
-		return modes[i].NaturalFreqRaw < modes[j].NaturalFreqRaw
-	})
-
-	// Set mode identifiers
-	for i := range modes {
-		modes[i].ID = i + 1
-	}
-
-	return modes, nil
+func (m *Mode) Name() string {
+	return fmt.Sprintf("%d-%d", m.OP, m.ID)
 }
