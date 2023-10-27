@@ -36,14 +36,13 @@ jobs:
         shell: bash
         run: |
           chmod +x build/bin/*
-          zip ./build/bin/${{ matrix.build.name }}.zip ./build/bin/${{ matrix.build.name }}
+          zip -j ./build/bin/${{ matrix.build.name }}.zip ./build/bin/${{ matrix.build.name }}
       - name: Build windows zip file
         if: runner.os == 'Windows'
         working-directory: .
         shell: pwsh
         run: |
-          ls ".\build\bin"
-          Rename-Item -Path ".\build\bin\${{ matrix.build.name }}" -NewName ".\build\bin\${{ matrix.build.name }}.exe"
+          Rename-Item -Path ".\build\bin\${{ matrix.build.name }}" -NewName "${{ matrix.build.name }}.exe"
           Compress-Archive -LiteralPath '.\build\bin\${{ matrix.build.name }}.exe' -DestinationPath ".\build\bin\${{ matrix.build.name }}.exe.zip"
       - uses: actions/upload-artifact@v3
         with:
