@@ -47,7 +47,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: ${{matrix.build.name}}-${{runner.os}}
-          path: '/build/bin/*.zip'
+          path: 'build/bin/*.zip'
     
   # build:
   #   runs-on: ubuntu-latest
