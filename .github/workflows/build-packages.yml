@@ -50,10 +50,10 @@ jobs:
           wails build -platform windows/amd64 -webview2 download -o ${{env.APP_NAME}}-amd64.exe
           wails build -platform darwin/universal -webview2 download -o ${{env.APP_NAME}}
           wails build -platform linux/amd64 -webview2 download -o ${{env.APP_NAME}}-amd64
-          chmod +x build/bin/*/Contents/MacOS/*
-          chmod +x build/bin/${{env.APP_NAME}}-amd64
-          zip build/bin/${{env.APP_NAME}}.app.zip build/bin/${{env.APP_NAME}}.app/
-          zip build/bin/${{env.APP_NAME}}-amd64.zip build/bin/${{env.APP_NAME}}-amd64
+          chmod +x ./build/bin/*/Contents/MacOS/*
+          chmod +x ./build/bin/${{env.APP_NAME}}-amd64
+          zip ./build/bin/${{env.APP_NAME}}.app.zip ./build/bin/${{env.APP_NAME}}.app/
+          zip ./build/bin/${{env.APP_NAME}}-amd64.zip ./build/bin/${{env.APP_NAME}}-amd64
       - name: Upload Windows Executable
         uses: actions/upload-artifact@v3
         with:
