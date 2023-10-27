@@ -2,24 +2,67 @@ name: Wails build
 
 on: [push, pull_request]
 
+env:
+  APP_NAME: ACDC
+
 jobs:
+  # build:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       build: [
+  #         {name: ACDC, platform: linux/amd64, os: ubuntu-latest},
+  #         {name: ACDC, platform: windows/amd64, os: windows-latest},
+  #         {name: ACDC, platform: darwin/universal, os: macos-latest},
+  #       ]
+  #   runs-on: ${{ matrix.build.os }}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: recursive
+  #     - uses: dAppServer/wails-build-action@v2.2
+  #       with:
+  #         APP_NAME: ${{ matrix.build.name }}
+  #         build-platform: ${{ matrix.build.platform }}
+  #         go-version: 1.21
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        build: [
-          {name: ACDC, platform: linux/amd64, os: ubuntu-latest},
-          # {name: ACDC, platform: linux/arm64, os: ubuntu-latest},
-          {name: ACDC, platform: windows/amd64, os: windows-latest},
-          {name: ACDC, platform: darwin/universal, os: macos-latest},
-        ]
-    runs-on: ${{ matrix.build.os }}
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
         with:
-          submodules: recursive
-      - uses: dAppServer/wails-build-action@v2.2
+          go-version: 1.21.x
+      - run: go version
+        shell: bash
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
         with:
-          build-name: ${{ matrix.build.name }}
-          build-platform: ${{ matrix.build.platform }}
-          go-version: 1.21
+          node-version: 16.x
+      - name: Install Wails
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
+        shell: bash
+      - name: Build App
+        shell: bash
+        run: |
+          wails build -platform windows/amd64 -webview2 download -o ${{env.APP_NAME}}-amd64.exe
+          wails build -platform darwin/universal -webview2 download -o ${{env.APP_NAME}}
+          wails build -platform linux/amd64 -webview2 download -o ${{env.APP_NAME}}-amd64
+          chmod +x build/bin/*/Contents/MacOS/*
+          chmod +x build/bin/${{env.APP_NAME}}-amd64
+          zip build/bin/${{env.APP_NAME}}.app.zip build/bin/${{env.APP_NAME}}.app/
+          zip build/bin/${{env.APP_NAME}}-amd64.zip build/bin/${{env.APP_NAME}}-amd64
+      - name: Upload Windows Executable
+        uses: actions/upload-artifact@v3
+        with:
+          path: build/bin/${{env.APP_NAME}}-amd64.exe
+      - name: Upload MacOS Executable
+        uses: actions/upload-artifact@v3
+        with:
+          path: build/bin/${{env.APP_NAME}}.app.zip
+      - name: Upload Linux Executable
+        uses: actions/upload-artifact@v3
+        with:
+          path: build/bin/${{env.APP_NAME}}-amd64.zip
