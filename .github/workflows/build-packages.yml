@@ -42,6 +42,7 @@ jobs:
         working-directory: .
         shell: pwsh
         run: |
+          ls ".\build\bin"
           Rename-Item -Path ".\build\bin\${{ matrix.build.name }}" -NewName ".\build\bin\${{ matrix.build.name }}.exe"
           Compress-Archive -LiteralPath '.\build\bin\${{ matrix.build.name }}.exe' -DestinationPath ".\build\bin\${{ matrix.build.name }}.exe.zip"
       - uses: actions/upload-artifact@v3
