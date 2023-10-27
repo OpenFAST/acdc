@@ -31,17 +31,23 @@ jobs:
           chmod +x build/bin/*/Contents/MacOS/*
           zip ./build/bin/${{ matrix.build.name }}.app.zip ./build/bin/${{ matrix.build.name }}.app 
       - name: Build linux zip file
-        if: runner.os != 'macOS'
+        if: runner.os == 'Linux'
         working-directory: .
         shell: bash
         run: |
           chmod +x build/bin/*
           zip ./build/bin/${{ matrix.build.name }}.zip ./build/bin/${{ matrix.build.name }}
+      - name: Build windows zip file
+        if: runner.os == 'Windows'
+        working-directory: .
+        shell: pwsh
+        run: |
+          Rename-Item -Path ".\build\bin\${{ matrix.build.name }}" -NewName ".\build\bin\${{ matrix.build.name }}.exe"
+          Compress-Archive -LiteralPath '.\build\bin\${{ matrix.build.name }}.exe' -DestinationPath ".\build\bin\${{ matrix.build.name }}.exe.zip"
       - uses: actions/upload-artifact@v3
         with:
           name: ${{matrix.build.name}}-${{runner.os}}
-          path: |
-            */bin/*.zip
+          path: '/build/bin/*.zip'
     
   # build:
   #   runs-on: ubuntu-latest
