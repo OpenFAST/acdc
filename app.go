@@ -363,12 +363,16 @@ func (a *App) CancelEvaluate() {
 
 func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
 
-	casePath := strings.TrimSuffix(a.Project.Info.Path, filepath.Ext(a.Project.Info.Path))
+	// Get path to project, if it doesn't exist, set to empty string
+	projectDir := filepath.Dir(a.Project.Info.Path)
+	if _, err := os.Stat(projectDir); err != nil {
+		projectDir = ""
+	}
 
 	// Open dialog so user can select the case directory
 	path, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:            "Open Case Directory",
-		DefaultDirectory: casePath,
+		DefaultDirectory: projectDir,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error selecting OpenFAST file: %w", err)
