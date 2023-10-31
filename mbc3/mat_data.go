@@ -26,12 +26,12 @@ type MatData struct {
 }
 
 type OPOrder struct {
-	Num         int
-	NumFixed    int
-	NumRotating int
-	NumTriplets int
-	Indices     []int
-	Triplets    [][]int // Blade triplets
+	Num         int     `json:"Num"`
+	NumFixed    int     `json:"NumFixed"`
+	NumRotating int     `json:"NumRotating"`
+	NumTriplets int     `json:"NumTriplets"`
+	Indices     []int   `json:"Indices"`
+	Triplets    [][]int `json:"Triplets"`
 }
 
 // Blade regex for descriptions

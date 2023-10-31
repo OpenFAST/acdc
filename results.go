@@ -6,6 +6,7 @@ import (
 	"math"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mkmik/argsort"
@@ -15,10 +16,10 @@ import (
 )
 
 type Results struct {
-	HasWind  bool        `json:"HasWind"`
-	OPs      []OPResults `json:"OPs"`
-	ModeSets []ModeSet   `json:"ModeSets"`
-	MBC      []*mbc3.MBC `json:"-"`
+	OPs      []OPResults     `json:"OPs"`
+	ModeSets []ModeSet       `json:"ModeSets"`
+	CD       CampbellDiagram `json:"CD"`
+	MBC      []*mbc3.MBC     `json:"-"`
 }
 
 type OPResults struct {
@@ -33,10 +34,8 @@ type OPResults struct {
 type ModeSet struct {
 	ID        int          `json:"ID"`
 	Label     string       `json:"Label"`
-	Weight    float64      `json:"Weight"`
 	Frequency [2]float64   `json:"Frequency"`
-	Indices   []ModeIndex  `json:"Indices"`
-	Modes     []*mbc3.Mode `json:"-"`
+	Modes     []*mbc3.Mode `json:"Modes"`
 }
 
 type ModeIndex struct {
@@ -45,7 +44,7 @@ type ModeIndex struct {
 	Weight float64 `json:"Weight"`
 }
 
-func LoadResults(LinFiles []string) (res *Results, err error) {
+func (res *Results) ProcessFiles(LinFiles []string) (err error) {
 
 	// Organize linearization files by operating point
 	linFileGroups := map[string][]string{}
@@ -84,8 +83,11 @@ func LoadResults(LinFiles []string) (res *Results, err error) {
 		return linFileResults[i].Name < linFileResults[j].Name
 	})
 
+	// Reset members
+	res.OPs = res.OPs[:0]
+	res.MBC = res.MBC[:0]
+
 	// Loop through results and add
-	res = &Results{}
 	for i, lfr := range linFileResults {
 
 		// Set operating point identifier for modes
@@ -101,22 +103,17 @@ func LoadResults(LinFiles []string) (res *Results, err error) {
 			WindSpeed: lfr.MBC.WindSpeed,
 			Modes:     lfr.Modes,
 		})
-
-		// If non-zero wind speed in MBC, set flag that results have wind
-		if lfr.MBC.WindSpeed > 0 {
-			res.HasWind = true
-		}
 	}
 
 	// Identify modes
 	err = res.BuildModeSets()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// If no mode sets found, return
 	if len(res.ModeSets) == 0 {
-		return res, nil
+		return nil
 	}
 
 	// Find groups of potentially overlapping mode sets
@@ -127,20 +124,10 @@ func LoadResults(LinFiles []string) (res *Results, err error) {
 		// Get pointer to the mode set
 		ms := &res.ModeSets[i]
 
-		// If mode set is incomplete, fewer indices than OPs, prepend to groups
-		if len(ms.Indices) < len(res.OPs) {
+		// If mode set is incomplete, fewer indices than OPs, don't include in group
+		if len(ms.Modes) < len(res.OPs) {
 			continue
 		}
-
-		// Get number of clusters
-		// points := []dbscan.Point{}
-		// for _, m := range ms.Modes {
-		// 	points = append(points, m)
-		// }
-		// clusters := dbscan.Cluster(int(float64(len(res.OPs))/3), 5, points...)
-		// if len(clusters) == 1 {
-		// 	continue
-		// }
 
 		opMap1 := map[int]*mbc3.Mode{}
 		for _, m := range ms.Modes {
@@ -178,12 +165,12 @@ func LoadResults(LinFiles []string) (res *Results, err error) {
 		if len(msg) > 1 {
 			err = res.SpectralClustering(msg)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 	}
 
-	return res, nil
+	return nil
 }
 
 type LinFileGroup struct {
@@ -239,13 +226,19 @@ func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileR
 func (r *Results) BuildModeSets() error {
 
 	// Set max frequency to consider
-	const MaxFreqHz = 5
+	maxRotSpeed := 0.0
+	for _, op := range r.OPs {
+		maxRotSpeed = max(maxRotSpeed, op.RotSpeed)
+	}
+	MaxFreqHz := maxRotSpeed / 60 * 18
 
 	// Create a map of mode sets
 	modeSets := []*ModeSet{}
 
 	// Loop through modes in first operating point
-	for i, m := range r.OPs[0].Modes {
+	for i := range r.OPs[0].Modes {
+
+		m := &r.OPs[0].Modes[i]
 
 		// If mode natural frequency exceeds limit, continue
 		if m.NaturalFreqHz > MaxFreqHz {
@@ -254,9 +247,9 @@ func (r *Results) BuildModeSets() error {
 
 		// Initialize mode set with mode
 		modeSets = append(modeSets, &ModeSet{
-			ID:      i,
-			Label:   fmt.Sprintf("%d", i),
-			Indices: []ModeIndex{{OP: 0, Mode: m.ID, Weight: 1}},
+			ID:    i,
+			Label: fmt.Sprintf("%d", i),
+			Modes: []*mbc3.Mode{m},
 		})
 	}
 
@@ -271,18 +264,19 @@ func (r *Results) BuildModeSets() error {
 		// Create weighting matrix
 		w := mat.NewDense(len(modeSets), len(op.Modes), nil)
 
-		modeIndexMap := map[int]int{}
+		modeIndexMap := map[int]*mbc3.Mode{}
 
 		// Loop through modes in mode set map
 		for j, modeSet := range modeSets {
 
 			// 	Get last mode in mode set
-			ind := modeSet.Indices[len(modeSet.Indices)-1]
-			mp := r.OPs[ind.OP].Modes[ind.Mode]
+			mp := modeSet.Modes[len(modeSet.Modes)-1]
 
 			// Loop through modes in current operating point
 			k := 0
-			for _, mn := range op.Modes {
+			for l := range op.Modes {
+
+				mn := &op.Modes[l]
 
 				// If mode natural frequency exceeds limit, continue
 				if mn.NaturalFreqHz > MaxFreqHz {
@@ -290,7 +284,7 @@ func (r *Results) BuildModeSets() error {
 				}
 
 				// Calculate MAC between modes
-				mac, err := mp.MAC(&mn)
+				mac, err := mp.MAC(mn)
 				if err != nil {
 					return err
 				}
@@ -300,8 +294,8 @@ func (r *Results) BuildModeSets() error {
 				// Add MAC to weight matrix
 				w.Set(j, k, mac)
 
-				// Add mode ID to current mode map
-				modeIndexMap[k] = mn.ID
+				// Add mode to index map
+				modeIndexMap[k] = mn
 
 				k++
 			}
@@ -334,15 +328,8 @@ func (r *Results) BuildModeSets() error {
 			// Look up mode set from previous mode index
 			modeSet := modeSets[pair[0]]
 
-			// Get mode ID from index map
-			modeID := modeIndexMap[pair[1]]
-
-			// Add next operating point and mode combination
-			modeSet.Indices = append(modeSet.Indices, ModeIndex{
-				OP:     op.ID,
-				Mode:   modeID,
-				Weight: w.At(pair[0], pair[1]),
-			})
+			// Add paired mode to slice of modes
+			modeSet.Modes = append(modeSet.Modes, modeIndexMap[pair[1]])
 		}
 
 		// TODO: add logic for adding new mode sets outside pairs
@@ -355,23 +342,16 @@ func (r *Results) BuildModeSets() error {
 	for _, modeSet := range modeSets {
 
 		// Skip empty mode sets
-		if len(modeSet.Indices) == 0 {
+		if len(modeSet.Modes) == 0 {
 			continue
 		}
 
-		// Get index of first mode in set, get mode and append to slice
-		ind := modeSet.Indices[0]
-		m := &r.OPs[ind.OP].Modes[ind.Mode]
-		modeSet.Modes = append(modeSet.Modes, m)
-
-		// Get min and max frequency from first index
-		f0 := m.NaturalFreqHz
-		modeSet.Frequency = [2]float64{f0, f0}
+		// Get min and max frequency from first mode in set
+		m := modeSet.Modes[0]
+		modeSet.Frequency = [2]float64{m.NaturalFreqHz, m.NaturalFreqHz}
 
 		// Calculate min and max natural frequency from remaining indices
-		for _, ind := range modeSet.Indices[1:] {
-			m := &r.OPs[ind.OP].Modes[ind.Mode]
-			modeSet.Modes = append(modeSet.Modes, m)
+		for _, m := range modeSet.Modes[1:] {
 			modeSet.Frequency[0] = min(modeSet.Frequency[0], m.NaturalFreqHz)
 			modeSet.Frequency[1] = max(modeSet.Frequency[1], m.NaturalFreqHz)
 		}
@@ -391,21 +371,9 @@ func (r *Results) BuildModeSets() error {
 func (r *Results) SpectralClustering(modeSets []*ModeSet) error {
 
 	// Collect all modes in mode sets
-	modeSetMap := map[*mbc3.Mode]int{}
 	modes := []*mbc3.Mode{}
 	for _, ms := range modeSets {
 		modes = append(modes, ms.Modes...)
-		for _, m := range ms.Modes {
-			modeSetMap[m] = ms.ID
-		}
-	}
-
-	// Build map relating mode to mode set
-	modeToModeSetMap := map[*mbc3.Mode]int{}
-	for i, ms := range modeSets {
-		for _, m := range ms.Modes {
-			modeToModeSetMap[m] = i
-		}
 	}
 
 	N := len(modes)
@@ -491,7 +459,6 @@ func (r *Results) SpectralClustering(modeSets []*ModeSet) error {
 			}
 			localClusterModesMap[c] = append(localClusterModesMap[c], modes[i])
 			localModeClusterMap[modes[i]] = c
-			modes[i].Cluster = c
 		}
 
 		// Calculate number of modes in same OP across clusters.
@@ -517,7 +484,6 @@ func (r *Results) SpectralClustering(modeSets []*ModeSet) error {
 		// If number of repeated OPs is sufficiently small, compared to the
 		// number of modes, exit loop
 		if ratio := float64(numRepeatedModes) / float64(N); ratio < 0.01 {
-			fmt.Println("met criteria", i, ratio)
 			break
 		}
 	}
@@ -569,10 +535,6 @@ func (r *Results) SpectralClustering(modeSets []*ModeSet) error {
 
 		// Reset modes slice and add modes which only have one OP
 		ms.Modes = modes
-		ms.Indices = []ModeIndex{}
-		for _, m := range modes {
-			ms.Indices = append(ms.Indices, ModeIndex{OP: m.OP, Mode: m.ID})
-		}
 	}
 
 	return nil
@@ -588,4 +550,73 @@ func (obs Observation) Distance(point kmeans.Coordinates) float64 {
 	diff := make([]float64, len(obs))
 	floats.SubTo(diff, obs, []float64(point))
 	return floats.Norm(diff, 2)
+}
+
+//------------------------------------------------------------------------------
+// Campbell Diagram
+//------------------------------------------------------------------------------
+
+type CampbellDiagram struct {
+	HasWind    bool                  `json:"HasWind"`
+	RotSpeeds  []float32             `json:"RotSpeeds"`
+	WindSpeeds []float32             `json:"WindSpeeds"`
+	Lines      []CampbellDiagramLine `json:"Lines"`
+}
+
+type CampbellDiagramLine struct {
+	ID     int                    `json:"ID"`
+	Label  string                 `json:"Label"`
+	Points []CampbellDiagramPoint `json:"Points"`
+	Hide   bool                   `json:"Hide"`
+}
+
+type CampbellDiagramPoint struct {
+	OP            int     `json:"OpPtID"`
+	Mode          int     `json:"ModeID"`
+	RotSpeed      float32 `json:"RotSpeed"`
+	WindSpeed     float32 `json:"WindSpeed"`
+	NaturalFreqHz float32 `json:"NaturalFreqHz"`
+	DampedFreqHz  float32 `json:"DampedFreqHz"`
+	DampingRatio  float32 `json:"DampingRatio"`
+}
+
+// CampbellDiagram returns a Campbell Diagram structure from the results
+func (res *Results) CampbellDiagram() *CampbellDiagram {
+
+	hasWind := false
+	rotSpeeds := make([]float32, len(res.OPs))
+	windSpeeds := make([]float32, len(res.OPs))
+	for i, op := range res.OPs {
+		rotSpeeds[i] = float32(op.RotSpeed)
+		windSpeeds[i] = float32(op.WindSpeed)
+		hasWind = op.WindSpeed > 0 || hasWind
+	}
+
+	lines := make([]CampbellDiagramLine, len(res.ModeSets))
+	for i, ms := range res.ModeSets {
+		points := make([]CampbellDiagramPoint, len(ms.Modes))
+		for j, m := range ms.Modes {
+			points[j] = CampbellDiagramPoint{
+				OP:            m.OP,
+				Mode:          m.ID,
+				RotSpeed:      float32(res.OPs[m.OP].RotSpeed),
+				WindSpeed:     float32(res.OPs[m.OP].WindSpeed),
+				NaturalFreqHz: float32(m.NaturalFreqHz),
+				DampedFreqHz:  float32(m.DampedFreqHz),
+				DampingRatio:  float32(m.DampingRatio),
+			}
+		}
+		lines[i] = CampbellDiagramLine{
+			ID:     i + 1,
+			Label:  strconv.Itoa(i + 1),
+			Points: points,
+		}
+	}
+
+	return &CampbellDiagram{
+		HasWind:    hasWind,
+		RotSpeeds:  rotSpeeds,
+		WindSpeeds: windSpeeds,
+		Lines:      lines,
+	}
 }

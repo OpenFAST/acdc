@@ -93,7 +93,7 @@ export const useProjectStore = defineStore('project', () => {
         const index = config.RecentProjects.indexOf(path)
         if (index > -1) config.RecentProjects.splice(index, 1)
         config.RecentProjects.unshift(path) // Prepend new path
-        config.RecentProjects.slice(0, 5)      // Limit to 5 items
+        config.RecentProjects = config.RecentProjects.slice(0, 5)      // Limit to 5 items
         // Save config
         SaveConfig(config).catch(err => {
             console.log(err)
@@ -200,8 +200,7 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     return {
-        loaded, saving, config, info, exec, model, analysis, results, statusMap,
-        modelFileOptions,
+        loaded, saving, config, info, exec, model, analysis, results, statusMap, modelFileOptions,
         $reset, open, saveDialog, save, openDialog, selectExec,
         importModel, updateModel,
         openCaseDirectory, updateAnalysis, addAnalysisCase, removeAnalysisCase,

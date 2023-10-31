@@ -9,17 +9,21 @@ import (
 
 func TestLoadResults(t *testing.T) {
 
-	dir := "../samples/NREL_5MW-ED/case01"
+	// dir := "../samples/NREL_5MW-ED/case01"
 	// dir := "../samples/autoModeTrackingModels/nrel5mw/structOnly75_fast"
 	// dir := "../samples/autoModeTrackingModels/nrel5mw/aeroStructSteady"
+	dir := "../samples/autoModeTrackingModels/iea15mw/structOnly75"
 
 	LinFiles, err := filepath.Glob(filepath.Join(dir, "*.lin"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(LinFiles) == 0 {
+		t.Fatal("no lin files found")
+	}
 
-	res, err := LoadResults(LinFiles)
-	if err != nil {
+	res := Results{}
+	if err = res.ProcessFiles(LinFiles); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,20 +35,5 @@ func TestLoadResults(t *testing.T) {
 	err = os.WriteFile(filepath.Join(dir, "results.json"), bs, 0777)
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func BenchmarkLoadResults(b *testing.B) {
-
-	dir := "../autoModeTrackingModels/nrel5mw/aeroStructSteady"
-
-	LinFiles, err := filepath.Glob(filepath.Join(dir, "*.lin"))
-	if err != nil {
-		b.Error(err)
-	}
-
-	_, err = LoadResults(LinFiles)
-	if err != nil {
-		b.Error(err)
 	}
 }

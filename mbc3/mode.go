@@ -9,18 +9,18 @@ import (
 )
 
 type Mode struct {
-	ID              int          `json:"ID"`
-	OP              int          `json:"OP"`
-	EigenValueReal  float64      `json:"EigenValueReal"`
-	EigenValueImag  float64      `json:"EigenValueImag"`
-	NaturalFreqRaw  float64      `json:"NaturalFreqRaw"`
-	NaturalFreqHz   float64      `json:"NaturalFreqHz"`
-	DampedFreqRaw   float64      `json:"DampedFreqRaw"`
-	DampedFreqHz    float64      `json:"DampedFreqHz"`
-	DampingRatio    float64      `json:"DampingRatio"`
-	Magnitudes      []float64    `json:"Magnitudes"`
-	Phases          []float64    `json:"Phases"`
-	Cluster         int          `json:"Cluster"`
+	ID             int       `json:"ID"`
+	OP             int       `json:"OP"`
+	EigenValueReal float64   `json:"EigenValueReal"`
+	EigenValueImag float64   `json:"EigenValueImag"`
+	NaturalFreqRaw float64   `json:"NaturalFreqRaw"`
+	NaturalFreqHz  float64   `json:"NaturalFreqHz"`
+	DampedFreqRaw  float64   `json:"DampedFreqRaw"`
+	DampedFreqHz   float64   `json:"DampedFreqHz"`
+	DampingRatio   float64   `json:"DampingRatio"`
+	Magnitudes     []float32 `json:"Magnitudes"`
+	Phases         []float32 `json:"Phases"`
+
 	EigenValue      complex128   `json:"-"`
 	EigenVector     []complex128 `json:"-"`
 	EigenVectorFull []complex128 `json:"-"`

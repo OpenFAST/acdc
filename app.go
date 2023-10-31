@@ -8,8 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sync/errgroup"
@@ -383,18 +385,30 @@ func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
+	linRe := regexp.MustCompile(`.+?\.\d+\.lin`)
+	tmp := LinFiles
+	LinFiles = []string{}
+	for _, f := range tmp {
+		if linRe.MatchString(f) {
+			LinFiles = append(LinFiles, f)
+		}
+	}
 	if len(LinFiles) == 0 {
 		return nil, fmt.Errorf("no linearization files found")
 	}
 
+	n := time.Now()
+
 	// Process linearization files into results
-	a.Project.Results, err = LoadResults(LinFiles)
+	err = a.Project.Results.ProcessFiles(LinFiles)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("process files", time.Since(n))
+
 	// Save results to file
-	bs, err := json.MarshalIndent(a.Project.Results, "", "\t")
+	bs, err := json.Marshal(a.Project.Results)
 	if err != nil {
 		return nil, err
 	}
@@ -403,9 +417,10 @@ func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
 		return nil, err
 	}
 
-	// Initialize return Project
-	p := &Project{Info: a.Project.Info, Results: a.Project.Results}
+	fmt.Println("save results", time.Since(n))
 
-	// Parse and return model
-	return p, nil
+	return &Project{
+		Info:    a.Project.Info,
+		Results: Results{CD: *a.Project.Results.CampbellDiagram()},
+	}, nil
 }

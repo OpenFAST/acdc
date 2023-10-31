@@ -369,6 +369,104 @@ export namespace main {
 		}
 	}
 	
+	export class CampbellDiagramPoint {
+	    OpPtID: number;
+	    ModeID: number;
+	    RotSpeed: number;
+	    WindSpeed: number;
+	    NaturalFreqHz: number;
+	    DampedFreqHz: number;
+	    DampingRatio: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CampbellDiagramPoint(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.OpPtID = source["OpPtID"];
+	        this.ModeID = source["ModeID"];
+	        this.RotSpeed = source["RotSpeed"];
+	        this.WindSpeed = source["WindSpeed"];
+	        this.NaturalFreqHz = source["NaturalFreqHz"];
+	        this.DampedFreqHz = source["DampedFreqHz"];
+	        this.DampingRatio = source["DampingRatio"];
+	    }
+	}
+	export class CampbellDiagramLine {
+	    ID: number;
+	    Label: string;
+	    Points: CampbellDiagramPoint[];
+	    Hide: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new CampbellDiagramLine(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Label = source["Label"];
+	        this.Points = this.convertValues(source["Points"], CampbellDiagramPoint);
+	        this.Hide = source["Hide"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CampbellDiagram {
+	    HasWind: boolean;
+	    RotSpeeds: number[];
+	    WindSpeeds: number[];
+	    Lines: CampbellDiagramLine[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CampbellDiagram(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.HasWind = source["HasWind"];
+	        this.RotSpeeds = source["RotSpeeds"];
+	        this.WindSpeeds = source["WindSpeeds"];
+	        this.Lines = this.convertValues(source["Lines"], CampbellDiagramLine);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
 	
 	
 	export class Config {
@@ -971,28 +1069,11 @@ export namespace main {
 	}
 	
 	
-	export class ModeIndex {
-	    OP: number;
-	    Mode: number;
-	    Weight: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ModeIndex(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.OP = source["OP"];
-	        this.Mode = source["Mode"];
-	        this.Weight = source["Weight"];
-	    }
-	}
 	export class ModeSet {
 	    ID: number;
 	    Label: string;
-	    Weight: number;
 	    Frequency: number[];
-	    Indices: ModeIndex[];
+	    Modes: mbc3.Mode[];
 	
 	    static createFrom(source: any = {}) {
 	        return new ModeSet(source);
@@ -1002,9 +1083,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
 	        this.Label = source["Label"];
-	        this.Weight = source["Weight"];
 	        this.Frequency = source["Frequency"];
-	        this.Indices = this.convertValues(source["Indices"], ModeIndex);
+	        this.Modes = this.convertValues(source["Modes"], mbc3.Mode);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1109,9 +1189,9 @@ export namespace main {
 	
 	
 	export class Results {
-	    HasWind: boolean;
 	    OPs: OPResults[];
 	    ModeSets: ModeSet[];
+	    CD: CampbellDiagram;
 	
 	    static createFrom(source: any = {}) {
 	        return new Results(source);
@@ -1119,9 +1199,9 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.HasWind = source["HasWind"];
 	        this.OPs = this.convertValues(source["OPs"], OPResults);
 	        this.ModeSets = this.convertValues(source["ModeSets"], ModeSet);
+	        this.CD = this.convertValues(source["CD"], CampbellDiagram);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1161,7 +1241,6 @@ export namespace mbc3 {
 	    DampingRatio: number;
 	    Magnitudes: number[];
 	    Phases: number[];
-	    Cluster: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Mode(source);
@@ -1180,7 +1259,6 @@ export namespace mbc3 {
 	        this.DampingRatio = source["DampingRatio"];
 	        this.Magnitudes = source["Magnitudes"];
 	        this.Phases = source["Phases"];
-	        this.Cluster = source["Cluster"];
 	    }
 	}
 

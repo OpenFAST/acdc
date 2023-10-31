@@ -12,7 +12,7 @@ type Project struct {
 	Exec     *Exec
 	Model    *Model
 	Analysis *Analysis
-	Results  *Results
+	Results  Results
 }
 
 type Info struct {

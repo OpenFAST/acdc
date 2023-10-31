@@ -1,13 +1,12 @@
 {
     "editor.formatOnSave": true,
-    "go.toolsEnvVars": {
-        "CGO_LDFLAGS": "-L/opt/homebrew/opt/openblas/lib -lopenblas"
-    },
-    "terminal.integrated.env.osx": {
-        "CGO_LDFLAGS": "-L/opt/homebrew/opt/openblas/lib -lopenblas"
-    },
+    // "go.toolsEnvVars": {
+    //     "CGO_LDFLAGS": "-L/opt/homebrew/opt/openblas/lib -lopenblas"
+    // },
+    // "terminal.integrated.env.osx": {
+    //     "CGO_LDFLAGS": "-L/opt/homebrew/opt/openblas/lib -lopenblas"
+    // },
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
-    "python.formatting.provider": "none",
 }

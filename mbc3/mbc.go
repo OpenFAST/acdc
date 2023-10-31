@@ -13,18 +13,22 @@ import (
 )
 
 type MBC struct {
-	RotSpeed                    float64   // (RPM)
-	WindSpeed                   float64   // (m/s)
-	DescStates                  []string  // List of states
-	Azimuths                    []float64 // Azimuths (rad)
-	OrderX, OrderX2, OrderX2dot OPOrder
-	OrderX1, OrderU, OrderY     OPOrder
-	OrderEigen                  OPOrder
-	DOFsEigen                   []string
-	AvgA                        *mat.Dense
-	ANR                         *mat.Dense // Non-rotating A matrix
-	AvgX                        *mat.VecDense
-	AvgXdot                     *mat.VecDense
+	RotSpeed   float64       `json:"RotSpeed"`   // (RPM)
+	WindSpeed  float64       `json:"WindSpeed"`  // (m/s)
+	DescStates []string      `json:"DescStates"` // List of states
+	Azimuths   []float64     `json:"Azimuths"`   // Azimuths (rad)
+	OrderX     OPOrder       `json:"OrderX"`
+	OrderX2    OPOrder       `json:"OrderX2"`
+	OrderX2dot OPOrder       `json:"OrderX2dot"`
+	OrderX1    OPOrder       `json:"OrderX1"`
+	OrderU     OPOrder       `json:"OrderU"`
+	OrderY     OPOrder       `json:"OrderY"`
+	OrderEigen OPOrder       `json:"OrderEigen"`
+	DOFsEigen  []string      `json:"DOFsEigen"`
+	AvgA       *mat.Dense    `json:"-"`
+	ANR        *mat.Dense    `json:"-"` // Non-rotating A matrix
+	AvgX       *mat.VecDense `json:"-"`
+	AvgXdot    *mat.VecDense `json:"-"`
 }
 
 func (md *MatData) MBC3() (*MBC, error) {
@@ -269,8 +273,8 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 			DampedFreqRaw:   imag(ev),
 			DampedFreqHz:    imag(ev) / (2 * math.Pi),
 			DampingRatio:    -real(ev) / cmplx.Abs(ev),
-			Magnitudes:      make([]float64, len(rows)),
-			Phases:          make([]float64, len(rows)),
+			Magnitudes:      make([]float32, len(rows)),
+			Phases:          make([]float32, len(rows)),
 			EigenValue:      ev,
 			EigenVector:     make([]complex128, len(rows)),
 			EigenVectorFull: make([]complex128, len(eigenValues)),
@@ -284,7 +288,8 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 		// Store eigenvector for given rows
 		for j, r := range rows {
 			mode.EigenVector[j] = eigenVectors.At(r, i)
-			mode.Magnitudes[j], mode.Phases[j] = cmplx.Polar(mode.EigenVector[j])
+			m, p := cmplx.Polar(mode.EigenVector[j])
+			mode.Magnitudes[j], mode.Phases[j] = float32(m), float32(p)
 		}
 
 		// Add mode to slice of modes
