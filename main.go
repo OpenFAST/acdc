@@ -8,19 +8,12 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	// "gonum.org/v1/gonum/blas/blas64"
-	// "gonum.org/v1/gonum/lapack/lapack64"
-	// blaslib "gonum.org/v1/netlib/blas/netlib"
-	// lapacklib "gonum.org/v1/netlib/lapack/netlib"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
 func main() {
-
-	// blas64.Use(blaslib.Implementation{})
-	// lapack64.Use(lapacklib.Implementation{})
 
 	// Create an instance of the app structure
 	app := NewApp()
