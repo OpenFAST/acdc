@@ -16,10 +16,16 @@ import (
 )
 
 type Results struct {
-	OPs      []OPResults     `json:"OPs"`
-	ModeSets []ModeSet       `json:"ModeSets"`
-	CD       CampbellDiagram `json:"CD"`
-	MBC      []*mbc3.MBC     `json:"-"`
+	OPs      []OPResults        `json:"OPs"`
+	ModeSets []ModeSet          `json:"ModeSets"`
+	CD       CampbellDiagram    `json:"CD"`
+	MBC      []*mbc3.MBC        `json:"-"`
+	EigRes   *mbc3.EigenResults `json:"-"`
+	Options  ResultOptions      `json:"Options"`
+}
+
+type ResultOptions struct {
+	ModeScale float32 `json:"ModeScale"`
 }
 
 type OPResults struct {
@@ -179,10 +185,11 @@ type LinFileGroup struct {
 }
 
 type LinFileResult struct {
-	Name  string
-	MBC   *mbc3.MBC
-	Modes []mbc3.Mode
-	err   error
+	Name   string
+	MBC    *mbc3.MBC
+	EigRes *mbc3.EigenResults
+	Modes  []mbc3.Mode
+	err    error
 }
 
 func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileResult) {
@@ -219,7 +226,11 @@ func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileR
 		}
 
 		// Send MBC and mode results
-		resultsChan <- LinFileResult{Name: linFileGroup.Name, MBC: mbc, Modes: eigRes.Modes}
+		resultsChan <- LinFileResult{Name: linFileGroup.Name,
+			MBC:    mbc,
+			EigRes: eigRes,
+			Modes:  eigRes.Modes,
+		}
 	}
 }
 

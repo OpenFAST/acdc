@@ -1188,10 +1188,23 @@ export namespace main {
 	
 	
 	
+	export class ResultOptions {
+	    ModeScale: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResultOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ModeScale = source["ModeScale"];
+	    }
+	}
 	export class Results {
 	    OPs: OPResults[];
 	    ModeSets: ModeSet[];
 	    CD: CampbellDiagram;
+	    Options: ResultOptions;
 	
 	    static createFrom(source: any = {}) {
 	        return new Results(source);
@@ -1202,6 +1215,7 @@ export namespace main {
 	        this.OPs = this.convertValues(source["OPs"], OPResults);
 	        this.ModeSets = this.convertValues(source["ModeSets"], ModeSet);
 	        this.CD = this.convertValues(source["CD"], CampbellDiagram);
+	        this.Options = this.convertValues(source["Options"], ResultOptions);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
