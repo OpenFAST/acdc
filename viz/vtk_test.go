@@ -1,7 +1,7 @@
-package vtk_test
+package viz_test
 
 import (
-	"acdc/vtk"
+	"acdc/viz"
 	"testing"
 )
 
@@ -17,7 +17,7 @@ func TestLoadVTK(t *testing.T) {
 	}
 
 	for _, testFile := range testFiles {
-		_, err := vtk.LoadVTK(testFile)
+		_, err := viz.LoadVTK(testFile)
 		if err != nil {
 			t.Fatal(err)
 		}

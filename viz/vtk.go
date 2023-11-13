@@ -1,4 +1,4 @@
-package vtk
+package viz
 
 import (
 	"encoding/xml"
