@@ -415,6 +415,18 @@ func (fs *Files) parseFile(path string, s any) error {
 				}
 			}
 
+			// If no values were found, and field name contains parentheses,
+			// remove parentheses from field name and look in tokens again
+			if len(values) == 0 && strings.Contains(fieldNameLower, "(") {
+				r := strings.NewReplacer("(", "", ")", "")
+				fieldNameLower = r.Replace(fieldNameLower)
+				for j, token := range tokens {
+					if strings.ToLower(token) == fieldNameLower {
+						values = tokens[:j]
+					}
+				}
+			}
+
 			// If no values were found, token not in line, go to next line
 			if len(values) == 0 {
 				continue
