@@ -72,6 +72,9 @@ export const useProjectStore = defineStore('project', () => {
     function saveDialog() {
         SaveProjectDialog().then(result => {
             Object.assign(info, result.Info)
+            Object.assign(exec, result.Exec)
+            Object.assign(model, result.Model)
+            Object.assign(analysis, result.Analysis)
             updateRecentProjects(info.Path)
             loaded.value = true
         }).catch(err => {

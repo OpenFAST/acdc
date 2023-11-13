@@ -12,18 +12,30 @@ type Analysis struct {
 	Cases []Case `json:"Cases"`
 }
 
+func NewAnalysis() *Analysis {
+	return &Analysis{
+		Cases: []Case{
+			NewCase(),
+		},
+	}
+}
+
 type Case struct {
 	ID              int         `json:"ID"`
 	Name            string      `json:"Name"`
 	IncludeAero     bool        `json:"IncludeAero"`
 	RotorSpeedRange Range       `json:"RotorSpeedRange"`
 	WindSpeedRange  Range       `json:"WindSpeedRange"`
+	CutIn           float32     `json:"CutIn"`
+	Rated           float32     `json:"Rated"`
+	CutOut          float32     `json:"CutOut"`
 	Curve           []Condition `json:"Curve"`
 	OperatingPoints []Condition `json:"OperatingPoints"`
 }
 
 func NewCase() Case {
 	c := Case{
+		ID:              1,
 		Name:            "Base",
 		IncludeAero:     false,
 		RotorSpeedRange: Range{Min: 1, Max: 10, Num: 5},
@@ -136,14 +148,6 @@ func (c *Case) Calculate() error {
 	}
 
 	return nil
-}
-
-func NewAnalysis() *Analysis {
-	return &Analysis{
-		Cases: []Case{
-			NewCase(),
-		},
-	}
 }
 
 type Condition struct {

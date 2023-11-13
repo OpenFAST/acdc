@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sync/errgroup"
@@ -122,7 +121,12 @@ func (a *App) SaveProjectDialog() (*Project, error) {
 	}
 
 	// Save project
-	return a.SaveProject(path)
+	if _, err := a.Project.Save(path); err != nil {
+		return nil, err
+	}
+
+	// Return full project
+	return a.Project, nil
 }
 
 //------------------------------------------------------------------------------
@@ -251,10 +255,17 @@ func (a *App) RemoveAnalysisCase(ID int) (*Project, error) {
 // SelectExec opens a dialog for the user to select an OpenFAST executable.
 func (a *App) SelectExec() (*Project, error) {
 
+	// Lookup OpenFAST executable with default name
+	execPath, err := exec.LookPath("openfast")
+	if err != nil {
+		execPath = ""
+	}
+
 	// Open dialog so user can select the executable path
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:                "Select OpenFAST Executable",
 		CanCreateDirectories: false,
+		DefaultDirectory:     execPath,
 	})
 	if err != nil {
 		return nil, err
@@ -397,15 +408,11 @@ func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
 		return nil, fmt.Errorf("no linearization files found")
 	}
 
-	n := time.Now()
-
 	// Process linearization files into results
 	err = a.Project.Results.ProcessFiles(LinFiles)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("process files", time.Since(n))
 
 	// Save results to file
 	bs, err := json.Marshal(a.Project.Results)
@@ -416,8 +423,6 @@ func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("save results", time.Since(n))
 
 	return &Project{
 		Info:    a.Project.Info,
