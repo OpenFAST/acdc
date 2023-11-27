@@ -50,7 +50,7 @@ jobs:
       - name: Build App
         if: runner.os == 'macOS'
         working-directory: .
-        run: wails build -debug -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
+        run: wails build -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
         shell: bash
       - name: Build App
         if:  runner.os == 'Linux'
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           chmod +x build/bin/*/Contents/MacOS/*
-          zip ./build/bin/${{ matrix.build.name }}.app.zip ./build/bin/${{ matrix.build.name }}.app 
+          zip -j ./build/bin/${{ matrix.build.name }}.app.zip ./build/bin/${{ matrix.build.name }}.app 
       - name: Build linux zip file
         if: runner.os == 'Linux'
         working-directory: .
