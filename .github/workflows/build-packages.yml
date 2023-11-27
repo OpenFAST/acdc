@@ -17,12 +17,51 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: dAppServer/wails-build-action@v2.2
+      # - uses: dAppServer/wails-build-action@v2.2
+      #   with:
+      #     build-name: ${{ matrix.build.name }}
+      #     build-platform: ${{ matrix.build.platform }}
+      #     go-version: 1.21
+      #     package: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v4
         with:
-          build-name: ${{ matrix.build.name }}
-          build-platform: ${{ matrix.build.platform }}
+          check-latest: true
           go-version: 1.21
-          package: false
+      - run: go version
+        shell: bash
+      # Setup and configure NodeJS
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        shell: bash
+      - name: Install Linux Wails deps
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
+        shell: bash
+      - name: Install macOS Wails deps
+        if: runner.os == 'macOS'
+        run: brew install mitchellh/gon/gon
+        shell: bash
+      # Building step
+      - name: Build App
+        if: runner.os == 'macOS'
+        working-directory: .
+        run: wails build -debug -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
+        shell: bash
+      - name: Build App
+        if:  runner.os == 'Linux'
+        working-directory: .
+        run: wails build -debug -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
+        shell: bash
+      - name: Build Windows App
+        if: runner.os == 'Windows'
+        working-directory: .
+        run: wails build -debug -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
+        shell: bash
       - name: Build .app zip file
         if: runner.os == 'macOS'
         working-directory: .
@@ -48,46 +87,3 @@ jobs:
         with:
           name: ${{matrix.build.name}}-${{runner.os}}
           path: 'build/bin/*.zip'
-    
-  # build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Setup Go
-  #       uses: actions/setup-go@v4
-  #       with:
-  #         go-version: 1.21.x
-  #     - run: go version
-  #       shell: bash
-  #     - name: Setup NodeJS
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 16.x
-  #     - name: Install Wails
-  #       run: |
-  #         go install github.com/wailsapp/wails/v2/cmd/wails@latest
-  #         sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
-  #       shell: bash
-  #     - name: Build App
-  #       shell: bash
-  #       run: |
-  #         wails build -platform windows/amd64 -webview2 download -o ${{env.APP_NAME}}-amd64.exe
-  #         wails build -platform darwin/universal -webview2 download -o ${{env.APP_NAME}}
-  #         wails build -platform linux/amd64 -webview2 download -o ${{env.APP_NAME}}-amd64
-  #         ls ./build/bin
-  #         chmod +x ./build/bin/*/Contents/MacOS/*
-  #         chmod +x ./build/bin/${{env.APP_NAME}}-amd64
-  #         zip ./build/bin/${{env.APP_NAME}}.app.zip ./build/bin/${{env.APP_NAME}}.app/
-  #         zip ./build/bin/${{env.APP_NAME}}-amd64.zip ./build/bin/${{env.APP_NAME}}-amd64
-  #     - name: Upload Windows Executable
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         path: build/bin/${{env.APP_NAME}}-amd64.exe
-  #     - name: Upload MacOS Executable
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         path: build/bin/${{env.APP_NAME}}.app.zip
-  #     - name: Upload Linux Executable
-  #       uses: actions/upload-artifact@v3
-  #       with:
-  #         path: build/bin/${{env.APP_NAME}}-amd64.zip
