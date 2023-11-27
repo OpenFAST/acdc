@@ -23,7 +23,7 @@ jobs:
       #     build-platform: ${{ matrix.build.platform }}
       #     go-version: 1.21
       #     package: false
-      - name: Setup GoLang
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
           check-latest: true
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           chmod +x build/bin/*/Contents/MacOS/*
-          zip -j ./build/bin/${{ matrix.build.name }}.app.zip ./build/bin/${{ matrix.build.name }}.app 
+          ditto -c -k --keepParent ./build/bin/ACDC.app ./build/bin/ACDC.app.zip
       - name: Build linux zip file
         if: runner.os == 'Linux'
         working-directory: .
@@ -85,5 +85,5 @@ jobs:
           Compress-Archive -LiteralPath '.\build\bin\${{ matrix.build.name }}.exe' -DestinationPath ".\build\bin\${{ matrix.build.name }}.exe.zip"
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{matrix.build.name}}-${{runner.os}}
+          name: ${{ matrix.build.name }}-${{ runner.os }}
           path: 'build/bin/*.zip'
