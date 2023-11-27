@@ -2,8 +2,11 @@ package main
 
 import (
 	"acdc/mbc3"
+	"encoding/json"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -97,8 +100,8 @@ func (res *Results) ProcessFiles(LinFiles []string) (err error) {
 	for i, lfr := range linFileResults {
 
 		// Set operating point identifier for modes
-		for j := range lfr.Modes {
-			lfr.Modes[j].OP = i
+		for j := range lfr.EigRes.Modes {
+			lfr.EigRes.Modes[j].OP = i
 		}
 
 		// Store data in results
@@ -107,7 +110,7 @@ func (res *Results) ProcessFiles(LinFiles []string) (err error) {
 			ID:        i,
 			RotSpeed:  lfr.MBC.RotSpeed,
 			WindSpeed: lfr.MBC.WindSpeed,
-			Modes:     lfr.Modes,
+			Modes:     lfr.EigRes.Modes,
 		})
 	}
 
@@ -188,18 +191,21 @@ type LinFileResult struct {
 	Name   string
 	MBC    *mbc3.MBC
 	EigRes *mbc3.EigenResults
-	Modes  []mbc3.Mode
 	err    error
 }
 
 func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileResult) {
-	var err error
 
 	// Loop through linearization files sent on channel
 	for linFileGroup := range linFilesChan {
 
+		if len(linFileGroup.Files) == 0 {
+			continue
+		}
+
 		// Read linearization files
 		linFileData := make([]*mbc3.LinData, len(linFileGroup.Files))
+		var err error
 		for i, linFilePath := range linFileGroup.Files {
 			linFileData[i], err = mbc3.ReadLinFile(linFilePath)
 			if err != nil {
@@ -225,11 +231,38 @@ func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileR
 			return
 		}
 
+		// Get case directory from group name
+		caseDir := filepath.Dir(linFileGroup.Name)
+
+		// Write MBC data to file
+		bs, err := json.MarshalIndent(mbc, "", "\t")
+		if err != nil {
+			resultsChan <- LinFileResult{err: err}
+			return
+		}
+		err = os.WriteFile(filepath.Join(caseDir, linFileGroup.Name+"mbc.json"), bs, 0777)
+		if err != nil {
+			resultsChan <- LinFileResult{err: err}
+			return
+		}
+
+		// Write Eigen analysis results data to file
+		bs, err = json.MarshalIndent(eigRes.Modes, "", "\t")
+		if err != nil {
+			resultsChan <- LinFileResult{err: err}
+			return
+		}
+		err = os.WriteFile(filepath.Join(caseDir, linFileGroup.Name+"modes.json"), bs, 0777)
+		if err != nil {
+			resultsChan <- LinFileResult{err: err}
+			return
+		}
+
 		// Send MBC and mode results
-		resultsChan <- LinFileResult{Name: linFileGroup.Name,
+		resultsChan <- LinFileResult{
+			Name:   linFileGroup.Name,
 			MBC:    mbc,
 			EigRes: eigRes,
-			Modes:  eigRes.Modes,
 		}
 	}
 }

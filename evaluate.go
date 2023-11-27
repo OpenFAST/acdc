@@ -1,11 +1,9 @@
 package main
 
 import (
-	"acdc/mbc3"
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -231,59 +229,6 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 			status.Error = cause.Error()
 		}
 		runtime.EventsEmit(ctx, "evalStatus", status)
-		return err
-	}
-
-	//--------------------------------------------------------------------------
-	// Multi-Blade Coordinate Transform
-	//--------------------------------------------------------------------------
-
-	// Read linearization files for this operating point
-	linFiles, err := filepath.Glob(filepath.Join(caseDir, filePrefix+"*.lin"))
-	if err != nil {
-		return err
-	}
-
-	// Read linearization data from files
-	linFileData := make([]*mbc3.LinData, len(linFiles))
-	for i, f := range linFiles {
-		if linFileData[i], err = mbc3.ReadLinFile(f); err != nil {
-			return err
-		}
-	}
-
-	// Create matrix data from linearization file data
-	matData := mbc3.NewMatData(linFileData)
-
-	// Perform multi-blade coordinate transform
-	mbc, err := matData.MBC3()
-	if err != nil {
-		return err
-	}
-
-	// Perform eigen analysis
-	eigRes, err := mbc.EigenAnalysis()
-	if err != nil {
-		return err
-	}
-
-	// Write MBC data to file
-	bs, err := json.MarshalIndent(mbc, "", "\t")
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(filepath.Join(caseDir, filePrefix+"mbc.json"), bs, 0777)
-	if err != nil {
-		return err
-	}
-
-	// Write Eigen analysis results data to file
-	bs, err = json.MarshalIndent(eigRes.Modes, "", "\t")
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(filepath.Join(caseDir, filePrefix+"modes.json"), bs, 0777)
-	if err != nil {
 		return err
 	}
 
