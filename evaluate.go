@@ -117,10 +117,6 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		files.AeroDyn = []AeroDyn{}
 		files.AeroDyn14 = []AeroDyn14{}
 
-		// Disable ServoDyn and remove files
-		files.Main[0].CompServo.Value = 0
-		files.ServoDyn = []ServoDyn{}
-
 		// Disable ElastoDyn generator DOF
 		files.ElastoDyn[0].GenDOF.Value = false
 	}
