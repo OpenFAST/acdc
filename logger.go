@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,6 +22,5 @@ func NewLogger() (logger.Logger, error) {
 	// if err := os.MkdirAll(LogDir, 0777); err != nil {
 	// 	return nil, fmt.Errorf("error creating log directory '%s': %w", LogDir, err)
 	// }
-	fmt.Println("writing log at: " + LogPath)
 	return logger.NewFileLogger(LogPath), nil
 }
