@@ -9,6 +9,7 @@ import { OpenCaseDirectoryDialog } from "../wailsjs/go/main/App"
 import { main } from "../wailsjs/go/models"
 import { File, Field } from "./types"
 import { EventsOn } from "../wailsjs/runtime/runtime"
+import { LogError } from '../wailsjs/runtime/runtime'
 
 export const useProjectStore = defineStore('project', () => {
 
@@ -26,6 +27,7 @@ export const useProjectStore = defineStore('project', () => {
     LoadConfig().then(result => {
         Object.assign(config, result)
     }).catch(err => {
+        LogError(err)
         console.log(err)
     })
 
@@ -42,6 +44,7 @@ export const useProjectStore = defineStore('project', () => {
             updateRecentProjects(path)
             loaded.value = true
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -55,6 +58,7 @@ export const useProjectStore = defineStore('project', () => {
             updateRecentProjects(info.Path)
             loaded.value = true
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -65,6 +69,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(info, result.Info)
             saving.value = false
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -78,6 +83,7 @@ export const useProjectStore = defineStore('project', () => {
             updateRecentProjects(info.Path)
             loaded.value = true
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -87,6 +93,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(info, result.Info)
             Object.assign(exec, result.Exec)
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -99,6 +106,7 @@ export const useProjectStore = defineStore('project', () => {
         config.RecentProjects = config.RecentProjects.slice(0, 5)      // Limit to 5 items
         // Save config
         SaveConfig(config).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -108,6 +116,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(info, result.Info)
             Object.assign(model, result.Model)
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -117,6 +126,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(info, result.Info)
             Object.assign(results, result.Results)
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -126,6 +136,7 @@ export const useProjectStore = defineStore('project', () => {
         UpdateModel(model).then(result => {
             Object.assign(info, result.Info)
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -135,6 +146,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(info, result.Info)
             Object.assign(analysis, result.Analysis)
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -146,6 +158,7 @@ export const useProjectStore = defineStore('project', () => {
                 Object.assign(analysis, result.Analysis)
                 resolve(analysis.Cases[analysis.Cases.length - 1])
             }).catch(err => {
+                LogError(err)
                 console.log(err)
                 reject(err)
             })
@@ -157,6 +170,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(info, result.Info)
             Object.assign(analysis, result.Analysis)
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
@@ -192,12 +206,14 @@ export const useProjectStore = defineStore('project', () => {
                 statusMap.set(status.ID, status)
             }
         }).catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
 
     function cancelEvaluate() {
         CancelEvaluate().catch(err => {
+            LogError(err)
             console.log(err)
         })
     }
