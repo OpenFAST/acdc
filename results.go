@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -85,6 +84,12 @@ func (res *Results) ProcessFiles(LinFiles []string) (err error) {
 	linFileResults := make([]LinFileResult, len(linFileGroups))
 	for i := 0; i < len(linFileGroups); i++ {
 		linFileResults[i] = <-linFileResultChan
+	}
+
+	for i := range linFileResults {
+		if linFileResults[i].err != nil {
+			return linFileResults[i].err
+		}
 	}
 
 	// Sort results by group name
@@ -231,16 +236,13 @@ func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileR
 			return
 		}
 
-		// Get case directory from group name
-		caseDir := filepath.Dir(linFileGroup.Name)
-
 		// Write MBC data to file
 		bs, err := json.MarshalIndent(mbc, "", "\t")
 		if err != nil {
 			resultsChan <- LinFileResult{err: err}
 			return
 		}
-		err = os.WriteFile(filepath.Join(caseDir, linFileGroup.Name+"mbc.json"), bs, 0777)
+		err = os.WriteFile(linFileGroup.Name+"_mbc.json", bs, 0777)
 		if err != nil {
 			resultsChan <- LinFileResult{err: err}
 			return
@@ -252,7 +254,7 @@ func linFileWorker(linFilesChan <-chan LinFileGroup, resultsChan chan<- LinFileR
 			resultsChan <- LinFileResult{err: err}
 			return
 		}
-		err = os.WriteFile(filepath.Join(caseDir, linFileGroup.Name+"modes.json"), bs, 0777)
+		err = os.WriteFile(linFileGroup.Name+"_modes.json", bs, 0777)
 		if err != nil {
 			resultsChan <- LinFileResult{err: err}
 			return
