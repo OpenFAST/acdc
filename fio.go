@@ -539,8 +539,12 @@ func (fs *Files) parseFile(path string, s any) error {
 				p.FileType = fieldType.Tag.Get("ftype")
 			}
 
-			// Create sub path by combining directory and path value
-			subpath := filepath.Join(dir, p.Value)
+			// Get path to file for reading, if not an absolute path, prepend
+			// directory of current file
+			subpath := filepath.Clean(p.Value)
+			if filepath.IsLocal(subpath) {
+				subpath = filepath.Join(dir, subpath)
+			}
 
 			// If path has already been read, change path to name and skip reading
 			if name, ok := fs.PathMap[subpath]; ok {
@@ -573,7 +577,7 @@ func (fs *Files) parseFile(path string, s any) error {
 
 				// If path doesn't exist, skip reading
 				if stat, err := os.Stat(subpath); err != nil || stat.IsDir() {
-					p.Value = "unused"
+					p.Value = "FileNotFound"
 					continue
 				}
 
@@ -604,10 +608,16 @@ func (fs *Files) parseFile(path string, s any) error {
 			// Loop through path values
 			for i := range p.Value {
 
+				// Get path to file for reading, if not an absolute path, prepend
+				// directory of current file
+				subpath := filepath.Clean(p.Value[i])
+				if filepath.IsLocal(subpath) {
+					subpath = filepath.Join(dir, subpath)
+				}
+
 				// If path doesn't exist, skip reading
-				subpath := filepath.Join(dir, p.Value[i])
 				if stat, err := os.Stat(subpath); err != nil || stat.IsDir() {
-					p.Value[i] = "unused"
+					p.Value[i] = "FileNotFound"
 					continue
 				}
 
