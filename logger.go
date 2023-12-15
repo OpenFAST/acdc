@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -13,14 +14,8 @@ var LogDir = filepath.Join(xdg.StateHome, "acdc")
 var LogPath = filepath.Join(LogDir, LogFile)
 
 func NewLogger() (logger.Logger, error) {
-	execPath, err := os.Executable()
-	if err != nil {
-		return nil, err
+	if err := os.MkdirAll(LogDir, 0777); err != nil {
+		return nil, fmt.Errorf("error creating log directory '%s': %w", LogDir, err)
 	}
-	LogDir = filepath.Dir(execPath)
-	LogPath = filepath.Join(LogDir, "ACDC.log")
-	// if err := os.MkdirAll(LogDir, 0777); err != nil {
-	// 	return nil, fmt.Errorf("error creating log directory '%s': %w", LogDir, err)
-	// }
 	return logger.NewFileLogger(LogPath), nil
 }
