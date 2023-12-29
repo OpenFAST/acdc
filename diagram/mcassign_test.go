@@ -1,6 +1,9 @@
-package main
+package diagram_test
 
-import "testing"
+import (
+	"acdc/diagram"
+	"testing"
+)
 
 func TestMinCostAssignment(t *testing.T) {
 
@@ -13,7 +16,7 @@ func TestMinCostAssignment(t *testing.T) {
 	}
 
 	pathExp := [][2]int{{0, 1}, {1, 3}, {2, 0}, {3, 4}, {4, 2}}
-	path, err := MinCostAssignment(C)
+	path, err := diagram.MinCostAssignment(C)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +38,7 @@ func TestMinCostAssignment(t *testing.T) {
 	}
 
 	pathExp = [][2]int{{0, 3}, {1, 0}, {2, 1}, {3, 2}, {4, 4}}
-	path, err = MinCostAssignment(C)
+	path, err = diagram.MinCostAssignment(C)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,14 +15,18 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-type Exec struct {
-	Path    string `json:"Path"`
-	Version string `json:"Version"`
-	Valid   bool   `json:"Valid"`
+type Evaluate struct {
+	ExecPath    string     `json:"ExecPath"`
+	ExecVersion string     `json:"ExecVersion"`
+	ExecValid   bool       `json:"ExecValid"`
+	NumCPUs     int        `json:"NumCPUs"`
+	Status      EvalStatus `json:"Status"`
 }
 
-func NewExec() *Exec {
-	return &Exec{}
+func NewEvaluate() *Evaluate {
+	return &Evaluate{
+		NumCPUs: 1,
+	}
 }
 
 type EvalStatus struct {
@@ -30,6 +34,7 @@ type EvalStatus struct {
 	State       string `json:"State"`
 	SimProgress int    `json:"SimProgress"`
 	LinProgress int    `json:"LinProgress"`
+	LogPath     string `json:"LogPath"`
 	Error       string `json:"Error"`
 }
 
@@ -40,14 +45,14 @@ type EvalLog struct {
 
 var EvalCancel context.CancelCauseFunc = func(_ error) {}
 
-func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condition, caseDir string) error {
+func RunEvaluation(ctx context.Context, model *Model, c *Case, op *Condition, caseDir, execPath string) error {
 
 	//--------------------------------------------------------------------------
 	// Prepare input files
 	//--------------------------------------------------------------------------
 
 	// Create a local copy of the files so modifications don't affect the original
-	files, err := p.Model.Files.Copy()
+	files, err := model.Files.Copy()
 	if err != nil {
 		return err
 	}
@@ -153,7 +158,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 	//--------------------------------------------------------------------------
 
 	// Create command, get output pipe, set stderr to stdout, start command
-	cmd := exec.CommandContext(ctx, p.Exec.Path, mainPath)
+	cmd := exec.CommandContext(ctx, execPath, mainPath)
 	outputReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
@@ -172,9 +177,6 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 			return -1
 		}, scanner.Text())
 		line = strings.TrimSpace(line)
-		if len(line) > 0 {
-			runtime.EventsEmit(ctx, "evalLog", EvalLog{ID: statusID, Line: line})
-		}
 		logFile.WriteString(line + "\n")
 		if strings.Contains(line, "Time: ") && !inLinearization {
 			fields := strings.Fields(line)
@@ -190,6 +192,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 				ID:          statusID,
 				State:       "Simulation",
 				SimProgress: int(100 * currentTime / totalTime),
+				LogPath:     logPath,
 			})
 		} else if strings.Contains(line, "Performing linearization") {
 			inLinearization = true
@@ -203,6 +206,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 				State:       "Linearization",
 				SimProgress: 100,
 				LinProgress: int(100 * linNumber / float64(numLinSteps)),
+				LogPath:     logPath,
 			})
 		}
 	}
@@ -218,6 +222,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 			SimProgress: 100,
 			LinProgress: 100,
 			Error:       err.Error(),
+			LogPath:     logPath,
 		}
 		// If context was canceled, set state to canceled
 		if cause := context.Cause(ctx); cause != nil {
@@ -237,6 +242,7 @@ func (p *Project) EvaluateLinearization(ctx context.Context, c *Case, op *Condit
 		State:       "Complete",
 		SimProgress: 100,
 		LinProgress: 100,
+		LogPath:     logPath,
 	})
 
 	return nil

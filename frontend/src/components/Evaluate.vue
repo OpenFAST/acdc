@@ -1,41 +1,34 @@
 <script lang="ts" setup>
-import { reactive } from 'vue'
+import { reactive, onMounted } from 'vue'
 import { useProjectStore } from '../project';
 import { main } from '../../wailsjs/go/models';
-import { EventsOn } from "../../wailsjs/runtime/runtime"
-
-interface EvalLog {
-    ID: number;
-    Line: string;
-}
+import { GetEvaluateLog } from "../../wailsjs/go/main/App"
 
 const project = useProjectStore()
 const data = reactive({
-    caseID: 1,
     logID: 0,
-    numCPUs: 1,
-    logMap: new Map<number, string[]>()
+    logContents: "",
 })
 
-// Setup listener for evaluation status updates
-EventsOn("evalLog", (logEntry: EvalLog) => {
-    console.log(logEntry)
-    let log = data.logMap.get(logEntry.ID)
-    if (!log) log = [] as string[]
-    log.push(logEntry.Line)
-    data.logMap.set(logEntry.ID, log)
+onMounted(() => {
+    project.fetchEvaluate()
+    project.fetchAnalysis()
 })
 
 function startEvaluate() {
-    data.logMap.clear()
-    project.startEvaluate(data.caseID, data.numCPUs)
+    project.startEvaluate(project.evalCaseID)
 }
 
-function setLogID(id: number) {
-    data.logID = id
+function getLog(status: main.EvalStatus) {
+    GetEvaluateLog(status.LogPath).then((result) => {
+        data.logContents = result
+        data.logID = status.ID
+    }).catch((err) => {
+        console.log(err)
+    })
 }
 
-function clearLogID() {
+function closeLog() {
     data.logID = 0
 }
 
@@ -49,22 +42,22 @@ function clearLogID() {
             </div>
             <div class="card-body">
                 <div class="row">
-                    <label for="openfastExecutable" class="col-2 col-form-label">Executable</label>
+                    <label for="executable" class="col-2 col-form-label">Executable</label>
                     <div class="col-10">
                         <div class="input-group">
-                            <input type="text" :value="project.exec.Path" class="form-control" id="openfastExecutable"
-                                aria-describedby="openfastExecutableHelp" readonly>
-                            <button class="btn btn-outline-primary" type="button" id="openfastExecutable"
+                            <input type="text" :value="project.evaluate.ExecPath" class="form-control" id="executable"
+                                aria-describedby="executableHelp" readonly>
+                            <button class="btn btn-outline-primary" type="button" id="executable"
                                 @click="project.selectExec">Browse</button>
                         </div>
-                        <div id="openfastExecutableHelp" class="form-text">Path to OpenFAST executable</div>
+                        <div id="executableHelp" class="form-text">Path to OpenFAST executable</div>
                     </div>
                 </div>
-                <div class="row mt-3" v-if="project.exec.Version">
-                    <label for="openfastVersion" class="col-2 col-form-label">Version</label>
+                <div class="row mt-3" v-if="project.evaluate.ExecVersion">
+                    <label for="execVersion" class="col-2 col-form-label">Version</label>
                     <div class="col-10">
-                        <textarea class="form-control" id="openfastVersion" readonly rows="8"
-                            :value="project.exec.Version"></textarea>
+                        <textarea class="form-control" id="execVersion" readonly rows="8"
+                            :value="project.evaluate.ExecVersion"></textarea>
                     </div>
                 </div>
             </div>
@@ -76,7 +69,7 @@ function clearLogID() {
                 <div class="row mb-3">
                     <label for="selectedCase" class="col-sm-2 col-form-label">Select Case</label>
                     <div class="col-sm-10">
-                        <select class="form-select" id="selectedCase" v-model="data.caseID">
+                        <select class="form-select" id="selectedCase" v-model="project.evalCaseID">
                             <option :value="c.ID" v-for="c in project.analysis.Cases">{{ c.ID }} - {{ c.Name }}</option>
                         </select>
                     </div>
@@ -84,7 +77,8 @@ function clearLogID() {
                 <div class="row mb-3">
                     <label for="numCPUs" class="col-sm-2 col-form-label"># of CPUs</label>
                     <div class="col-sm-10">
-                        <select class="form-select" id="numCPUs" v-model="data.numCPUs">
+                        <select class="form-select" id="numCPUs" v-model="project.evaluate.NumCPUs"
+                            @change="project.updateEvaluate()">
                             <option :value="n" v-for="n in [1, 2, 4, 6, 8, 12, 16, 24]">{{ n }}</option>
                         </select>
                     </div>
@@ -98,8 +92,8 @@ function clearLogID() {
                 </div>
 
             </div>
-            <hr class="my-0" v-if="project.statusMap.size > 0" />
-            <div class="card-body" v-if="project.statusMap.size > 0">
+            <hr class="my-0" v-if="project.evalStatus.length > 0" />
+            <div class="card-body" v-if="project.evalStatus.length > 0">
                 <table class="table table-sm table-borderless align-middle mb-0">
                     <thead>
                         <tr>
@@ -110,25 +104,23 @@ function clearLogID() {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="[_, status] in project.statusMap">
-                            <td class="text-center">{{ status.ID }}</td>
-                            <td>{{ status.State }}</td>
+                        <tr v-for="stat in project.evalStatus">
+                            <td class="text-center">{{ stat.ID }}</td>
+                            <td>{{ stat.State }}</td>
                             <td>
-                                <div v-if="status.Error" class="text-danger">Error: {{ status.Error }}</div>
+                                <div v-if="stat.Error" class="text-danger">Error: {{ stat.Error }}</div>
                                 <div v-else class="progress-stacked">
-                                    <div class="progress" :style="{ width: (status.SimProgress * 0.5) + '%' }">
-                                        <div class="progress-bar bg-primary">{{ status.SimProgress + "%" }} </div>
+                                    <div class="progress" :style="{ width: (stat.SimProgress * 0.5) + '%' }">
+                                        <div class="progress-bar bg-primary">{{ stat.SimProgress + "%" }} </div>
                                     </div>
-                                    <div class="progress" :style="{ width: (status.LinProgress * 0.5) + '%' }">
-                                        <div class="progress-bar bg-info">{{ status.LinProgress + "%" }} </div>
+                                    <div class="progress" :style="{ width: (stat.LinProgress * 0.5) + '%' }">
+                                        <div class="progress-bar bg-info">{{ stat.LinProgress + "%" }} </div>
                                     </div>
-                                    <!-- <div :class="{ 'progress-bar': true, 'bg-info': status.State == 'Linearization', 'bg-success': status.State == 'Complete', 'bg-warning': status.State == 'Canceled' }"
-                                        :style="{ width: status.Progress + '%' }">{{ status.Progress }}%</div> -->
                                 </div>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-outline-primary btn-sm ms-3"
-                                    @click="setLogID(status.ID)">Log</button>
+                                <button class="btn btn-outline-primary btn-sm ms-3" @click="getLog(stat)"
+                                    :disabled="stat.LogPath == ''">Log</button>
                             </td>
                         </tr>
                     </tbody>
@@ -138,10 +130,10 @@ function clearLogID() {
         <div class="offcanvas offcanvas-bottom" :class="{ show: data.logID > 0 }" tabindex="-1" style="height: 50vh">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title">Operating Point {{ data.logID }} Evaluation Log</h5>
-                <button class="btn-close" @click="clearLogID"></button>
+                <button class="btn-close" @click="closeLog"></button>
             </div>
             <div class="offcanvas-body">
-                <pre><code v-for="line in data.logMap.get(data.logID)">{{ line + "\n" }}</code></pre>
+                <pre><code>{{ data.logContents }}</code></pre>
             </div>
         </div>
     </main>

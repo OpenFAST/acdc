@@ -1,7 +1,7 @@
 package viz
 
 import (
-	"acdc/mbc3"
+	"acdc/lin"
 	"bytes"
 	"context"
 	"encoding/binary"
@@ -25,7 +25,7 @@ type Options struct {
 type ModeViz struct {
 }
 
-func (opts *Options) CalcViz(execPath string, rootPath string, mbc *mbc3.MBC, eigRes *mbc3.EigenResults) error {
+func (opts *Options) CalcViz(execPath string, rootPath string, mbc *lin.MBC, eigRes *lin.EigenResults) error {
 
 	maxFreqHz := 10.0
 
@@ -34,7 +34,7 @@ func (opts *Options) CalcViz(execPath string, rootPath string, mbc *mbc3.MBC, ei
 	VTKLinPhase := 0.0
 
 	// Collect modes at or below max frequency
-	modes := []mbc3.Mode{}
+	modes := []lin.Mode{}
 	for _, m := range eigRes.Modes {
 		if m.NaturalFreqHz <= maxFreqHz {
 			modes = append(modes, m)

@@ -1,7 +1,7 @@
-package mbc3_test
+package lin_test
 
 import (
-	"acdc/mbc3"
+	"acdc/lin"
 	"path/filepath"
 	"testing"
 )
@@ -30,15 +30,15 @@ func TestAnalyze(t *testing.T) {
 	for _, linFiles := range linFileSets {
 
 		// Read linearization data from files
-		linFileData := make([]*mbc3.LinData, len(linFiles))
+		linFileData := make([]*lin.LinData, len(linFiles))
 		for i, f := range linFiles {
-			if linFileData[i], err = mbc3.ReadLinFile(f); err != nil {
+			if linFileData[i], err = lin.ReadLinFile(f); err != nil {
 				t.Fatal(err)
 			}
 		}
 
 		// Create matrix data from linearization file data
-		matData := mbc3.NewMatData(linFileData)
+		matData := lin.NewMatData(linFileData)
 
 		// Perform multi-blade coordinate transform
 		mbc, err := matData.MBC3()
@@ -56,14 +56,14 @@ func TestAnalyze(t *testing.T) {
 
 func TestMBC3(t *testing.T) {
 
-	ld, err := mbc3.ReadLinFile("testdata/5MW_Land_BD_Linear.1.lin")
-	// ld, err := mbc3.ReadLinFile("testdata/Fake5MW_AeroLin_B3_UA6.1.lin")
+	ld, err := lin.ReadLinFile("testdata/5MW_Land_BD_Linear.1.lin")
+	// ld, err := lin.ReadLinFile("testdata/Fake5MW_AeroLin_B3_UA6.1.lin")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create matrix data from linearization file data
-	matData := mbc3.NewMatData([]*mbc3.LinData{ld})
+	matData := lin.NewMatData([]*lin.LinData{ld})
 
 	// Perform multi-blade coordinate transform
 	mbc, err := matData.MBC3()
@@ -71,5 +71,5 @@ func TestMBC3(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mbc3.ToCSV(mbc.AvgA, "testdata/AvgA.csv", "%.7e")
+	lin.ToCSV(mbc.AvgA, "testdata/AvgA.csv", "%.7e")
 }

@@ -1,18 +1,21 @@
 package main
 
 import (
+	"acdc/diagram"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 type Project struct {
-	Info     Info
-	Exec     *Exec
-	Model    *Model
-	Analysis *Analysis
-	Results  Results
+	Info     Info             `json:"Info"`
+	Model    *Model           `json:"Model"`
+	Analysis *Analysis        `json:"Analysis"`
+	Evaluate *Evaluate        `json:"Evaluate"`
+	Results  *Results         `json:"Results"`
+	Diagram  *diagram.Diagram `json:"Diagram"`
 }
 
 type Info struct {
@@ -22,9 +25,8 @@ type Info struct {
 
 func NewProject() *Project {
 	return &Project{
-		Exec:     NewExec(),
+		Evaluate: NewEvaluate(),
 		Model:    NewModel(),
-		Analysis: NewAnalysis(),
 	}
 }
 
@@ -48,26 +50,61 @@ func LoadProject(path string) (*Project, error) {
 	return p, nil
 }
 
-func (p *Project) Save(path string) (*Project, error) {
+func (p *Project) Save() (*Project, error) {
 
 	if p == nil {
 		return nil, fmt.Errorf("project not loaded")
 	}
 
-	// Update path and time
-	p.Info.Path = path
+	// Update time
 	p.Info.Date = time.Now().Format(time.RFC850)
 
+	// Create temporary project to save relevant parts
+	pSave := Project{
+		Info:     p.Info,
+		Model:    p.Model,
+		Analysis: p.Analysis,
+		Evaluate: p.Evaluate,
+	}
+
 	// Convert project to json
-	bs, err := json.MarshalIndent(p, "", "\t")
+	bs, err := json.MarshalIndent(pSave, "", "\t")
 	if err != nil {
 		return nil, fmt.Errorf("error encoding project: %w", err)
 	}
 
 	// Write project file
-	err = os.WriteFile(path, bs, 0777)
+	err = os.WriteFile(p.Info.Path, bs, 0777)
 	if err != nil {
 		return nil, fmt.Errorf("error reading project: %w", err)
+	}
+
+	// If project results has a path, write file
+	if p.Results != nil && p.Results.LinDir != "" {
+
+		// Write results file
+		bs, err := json.MarshalIndent(p.Results, "", "\t")
+		if err != nil {
+			return nil, err
+		}
+		err = os.WriteFile(filepath.Join(p.Results.LinDir, "results.json"), bs, 0777)
+		if err != nil {
+			return nil, err
+		}
+
+		// If project diagram is not nil, write file
+		if p.Diagram != nil {
+
+			// Write Diagram file
+			bs, err := json.MarshalIndent(p.Diagram, "", "\t")
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(filepath.Join(p.Results.LinDir, "diagram.json"), bs, 0777)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return p, nil

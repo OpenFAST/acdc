@@ -11,6 +11,10 @@ ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScal
 const project = useProjectStore()
 const selectedCaseID = ref(1)
 
+onMounted(() => {
+    project.fetchAnalysis()
+})
+
 function addCase() {
     project.addAnalysisCase().then((c) => {
         selectedCaseID.value = c.ID
@@ -32,10 +36,10 @@ function removeCase(i: number) {
             <div class="card-header">Case</div>
             <div class="card-body">
                 <div class="row">
-                    <label for="selectedCase" class="col-sm-2 col-form-label">Select</label>
+                    <label for="selectedCaseID" class="col-sm-2 col-form-label">Select</label>
                     <div class="col-sm-6">
-                        <select class="form-select" id="selectedCase" v-model="selectedCaseID">
-                            <option :value="c.ID" v-for="c in project.analysis.Cases">{{ c.ID }} - {{ c.Name }}</option>
+                        <select class="form-select" id="selectedCaseID" v-model="selectedCaseID">
+                            <option v-for="c in project.analysis.Cases" :value="c.ID">{{ c.ID }} - {{ c.Name }}</option>
                         </select>
                     </div>
                     <div class="col-2 d-grid">

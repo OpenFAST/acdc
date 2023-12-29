@@ -1,16 +1,16 @@
 package main
 
 import (
+	"acdc/diagram"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sync/errgroup"
@@ -39,7 +39,7 @@ func (a *App) startup(ctx context.Context) {
 // Project
 //------------------------------------------------------------------------------
 
-func (a *App) OpenProjectDialog() (*Project, error) {
+func (a *App) OpenProjectDialog() (*Info, error) {
 
 	// Open dialog so user can select the file
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
@@ -57,15 +57,7 @@ func (a *App) OpenProjectDialog() (*Project, error) {
 		return nil, fmt.Errorf("no file selected")
 	}
 
-	// Open project
-	return a.OpenProject(path)
-}
-
-// OpenProject opens the project at the given path
-func (a *App) OpenProject(path string) (*Project, error) {
-
 	// Load project
-	var err error
 	a.Project, err = LoadProject(path)
 	if err != nil {
 		return nil, err
@@ -77,25 +69,12 @@ func (a *App) OpenProject(path string) (*Project, error) {
 	// set window title
 	runtime.WindowSetTitle(a.ctx, "ACDC - "+path)
 
-	return a.Project, nil
-}
-
-// SaveProject saves changes to the current project
-func (a *App) SaveProject(path string) (*Project, error) {
-
-	// Save project
-	if _, err := a.Project.Save(path); err != nil {
-		return nil, err
-	}
-
-	// Initialize return project
-	p := &Project{Info: a.Project.Info}
-
-	return p, nil
+	// Open project
+	return &a.Project.Info, err
 }
 
 // SaveProjectDialog opens a dialog to select where to save the project
-func (a *App) SaveProjectDialog() (*Project, error) {
+func (a *App) SaveProjectDialog() (*Info, error) {
 
 	// Open dialog so user can select the file
 	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
@@ -120,20 +99,63 @@ func (a *App) SaveProjectDialog() (*Project, error) {
 		a.Project = NewProject()
 	}
 
+	// Set project path
+	a.Project.Info.Path = path
+
 	// Save project
-	if _, err := a.Project.Save(path); err != nil {
+	if _, err := a.Project.Save(); err != nil {
 		return nil, err
 	}
 
 	// Return full project
-	return a.Project, nil
+	return &a.Project.Info, nil
+}
+
+func (a *App) OpenProject(path string) (*Info, error) {
+
+	// Load project
+	var err error
+	a.Project, err = LoadProject(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set project path
+	a.Project.Info.Path = path
+
+	return &a.Project.Info, nil
 }
 
 //------------------------------------------------------------------------------
-// Turbine
+// Model
 //------------------------------------------------------------------------------
 
-func (a *App) ImportModelDialog() (*Project, error) {
+// UpdateModel saves changes to the current project
+func (a *App) FetchModel() (*Model, error) {
+
+	// If no Model in project, create it
+	if a.Project.Model == nil {
+		a.Project.Model = NewModel()
+	}
+
+	return a.Project.Model, nil
+}
+
+// UpdateModel saves changes to the current project
+func (a *App) UpdateModel(model *Model) (*Model, error) {
+
+	// Update model in project
+	a.Project.Model = model
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Model, nil
+}
+
+func (a *App) ImportModelDialog() (*Model, error) {
 
 	// Open dialog so user can select the file
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
@@ -143,7 +165,8 @@ func (a *App) ImportModelDialog() (*Project, error) {
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error selecting OpenFAST file: %w", err)
+		// No file was selected
+		return a.Project.Model, nil
 	}
 
 	// Parse model files
@@ -170,70 +193,81 @@ func (a *App) ImportModelDialog() (*Project, error) {
 	}
 
 	// Save project
-	if _, err := a.SaveProject(a.Project.Info.Path); err != nil {
+	if _, err := a.Project.Save(); err != nil {
 		runtime.LogErrorf(a.ctx, "SelectExec: error saving project: %s", err)
 	}
 
-	// Initialize return Project
-	p := &Project{Info: a.Project.Info, Model: a.Project.Model}
-
 	// Parse and return model
-	return p, nil
-}
-
-// UpdateModel saves changes to the current project
-func (a *App) UpdateModel(model *Model) (*Project, error) {
-
-	// Update model in project
-	a.Project.Model = model
-
-	// Save project
-	if _, err := a.Project.Save(a.Project.Info.Path); err != nil {
-		return nil, err
-	}
-
-	// Initialize return project
-	p := &Project{Info: a.Project.Info}
-
-	return p, nil
+	return a.Project.Model, nil
 }
 
 //------------------------------------------------------------------------------
 // Analysis
 //------------------------------------------------------------------------------
 
-// UpdateAnalysis runs Analysis.Calculate and saves results
-func (a *App) UpdateAnalysis(analysis *Analysis) (*Project, error) {
+func (a *App) FetchAnalysis() (*Analysis, error) {
 
-	// Calculate analysis values
-	if err := analysis.Calculate(); err != nil {
-		return nil, err
+	// If no analysis in project, create it
+	if a.Project.Analysis == nil {
+		a.Project.Analysis = NewAnalysis()
 	}
-
-	// Update analysis in project
-	a.Project.Analysis = analysis
 
 	// Save project
-	if _, err := a.Project.Save(a.Project.Info.Path); err != nil {
+	if _, err := a.Project.Save(); err != nil {
 		return nil, err
 	}
 
-	// Initialize return project
-	p := &Project{Info: a.Project.Info, Analysis: a.Project.Analysis}
-
-	return p, nil
+	return a.Project.Analysis, nil
 }
 
-func (a *App) AddAnalysisCase() (*Project, error) {
+// UpdateEval runs Case.Calculate and saves evaluation data
+func (a *App) UpdateAnalysis(an *Analysis) (*Analysis, error) {
+
+	// Calculate analysis cases
+	if err := an.Calculate(); err != nil {
+		return nil, err
+	}
+
+	// Update analysis in the project
+	a.Project.Analysis = an
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Analysis, nil
+}
+
+func (a *App) AddAnalysisCase() (*Analysis, error) {
+
+	// If no analysis in project, create it
+	if a.Project.Analysis == nil {
+		a.Project.Analysis = NewAnalysis()
+	}
 
 	// Add new case to analysis
 	a.Project.Analysis.Cases = append(a.Project.Analysis.Cases, NewCase())
 
-	// Update analysis
-	return a.UpdateAnalysis(a.Project.Analysis)
+	// Calculate analysis cases
+	if err := a.Project.Analysis.Calculate(); err != nil {
+		return nil, err
+	}
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Analysis, nil
 }
 
-func (a *App) RemoveAnalysisCase(ID int) (*Project, error) {
+func (a *App) RemoveAnalysisCase(ID int) (*Analysis, error) {
+
+	// If no analysis in project, create it
+	if a.Project.Analysis == nil {
+		a.Project.Analysis = NewAnalysis()
+	}
 
 	// Filter out case that matches ID
 	tmp := []Case{}
@@ -244,16 +278,59 @@ func (a *App) RemoveAnalysisCase(ID int) (*Project, error) {
 	}
 	a.Project.Analysis.Cases = tmp
 
-	// Update analysis
-	return a.UpdateAnalysis(a.Project.Analysis)
+	// Calculate analysis cases
+	if err := a.Project.Analysis.Calculate(); err != nil {
+		return nil, err
+	}
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Analysis, nil
 }
 
 //------------------------------------------------------------------------------
 // Evaluate
 //------------------------------------------------------------------------------
 
+func (a *App) FetchEvaluate() (*Evaluate, error) {
+
+	// If no Eval in project, create it
+	if a.Project.Evaluate == nil {
+		a.Project.Evaluate = NewEvaluate()
+	}
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Evaluate, nil
+}
+
+// UpdateEval runs Case.Calculate and saves evaluation data
+func (a *App) UpdateEvaluate(ev *Evaluate) (*Evaluate, error) {
+
+	// Update analysis in the project
+	a.Project.Evaluate = ev
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Evaluate, nil
+}
+
 // SelectExec opens a dialog for the user to select an OpenFAST executable.
-func (a *App) SelectExec() (*Project, error) {
+func (a *App) SelectExec() (*Evaluate, error) {
+
+	// If no Eval in project, create it
+	if a.Project.Evaluate == nil {
+		a.Project.Evaluate = NewEvaluate()
+	}
 
 	// Lookup OpenFAST executable with default name
 	execPath, err := exec.LookPath("openfast")
@@ -273,7 +350,7 @@ func (a *App) SelectExec() (*Project, error) {
 
 	// If no path selected, return current exec
 	if path == "" {
-		return &Project{Info: a.Project.Info}, nil
+		return a.Project.Evaluate, nil
 	}
 
 	// Get output from running the command
@@ -293,25 +370,35 @@ func (a *App) SelectExec() (*Project, error) {
 	}
 
 	// Update executable info in project
-	a.Project.Exec = &Exec{
-		Path:    path,
-		Version: string(bytes.TrimSpace(output)),
-		Valid:   true,
-	}
+	a.Project.Evaluate.ExecPath = path
+	a.Project.Evaluate.ExecVersion = string(bytes.TrimSpace(output))
+	a.Project.Evaluate.ExecValid = true
 
 	// Save project
-	if _, err := a.SaveProject(a.Project.Info.Path); err != nil {
+	if _, err := a.Project.Save(); err != nil {
 		runtime.LogErrorf(a.ctx, "SelectExec: error saving project: %s", err)
 	}
 
-	// Initialize return project
-	p := &Project{Info: a.Project.Info, Exec: a.Project.Exec}
-
 	// Save project and return path
-	return p, nil
+	return a.Project.Evaluate, nil
 }
 
-func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) {
+func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
+
+	// Clear results
+	a.Project.Results = nil
+
+	// Get case
+	var c *Case
+	for _, cc := range a.Project.Analysis.Cases {
+		if cc.ID == ID {
+			c = &cc
+			break
+		}
+	}
+	if c == nil {
+		return nil, fmt.Errorf("Case ID %d not found", ID)
+	}
 
 	// Call existing cancel func
 	EvalCancel(fmt.Errorf("new evaluation started"))
@@ -344,14 +431,15 @@ func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) 
 	statuses := []EvalStatus{}
 
 	// Launch evaluations throttled to number of CPUs specified
-	semChan := make(chan struct{}, numCPUs)
+	semChan := make(chan struct{}, a.Project.Evaluate.NumCPUs)
 	for _, op := range c.OperatingPoints {
 		op := op
 		statuses = append(statuses, EvalStatus{ID: op.ID, State: "Queued"})
 		g.Go(func() error {
-			semChan <- struct{}{}
-			defer func() { <-semChan }()
-			return a.Project.EvaluateLinearization(ctx2, c, &op, caseDir)
+			<-semChan
+			defer func() { semChan <- struct{}{} }()
+			return RunEvaluation(ctx2, a.Project.Model, c, &op, caseDir,
+				a.Project.Evaluate.ExecPath)
 		})
 	}
 
@@ -360,7 +448,21 @@ func (a *App) EvaluateLinearization(c *Case, numCPUs int) ([]EvalStatus, error) 
 		if err := g.Wait(); err != nil {
 			runtime.LogErrorf(a.ctx, "error evaluating case: %s", err)
 		}
+		close(semChan)
+		for {
+			if _, ok := <-semChan; !ok {
+				break
+			}
+		}
 		cancelFunc(nil) // cancel the context
+	}()
+
+	// Start evaluations
+	go func() {
+		time.Sleep(time.Second)
+		for i := 0; i < a.Project.Evaluate.NumCPUs; i++ {
+			semChan <- struct{}{}
+		}
 	}()
 
 	return statuses, nil
@@ -370,11 +472,34 @@ func (a *App) CancelEvaluate() {
 	EvalCancel(fmt.Errorf("evaluation canceled"))
 }
 
+func (a *App) GetEvaluateLog(path string) (string, error) {
+	bs, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(bs), nil
+}
+
 //------------------------------------------------------------------------------
 // Results
 //------------------------------------------------------------------------------
 
-func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
+func (a *App) FetchResults() (*Results, error) {
+
+	// If no Results in project, create it
+	if a.Project.Results == nil {
+		a.Project.Results = NewResults()
+	}
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Results.ForApp(), nil
+}
+
+func (a *App) OpenCaseDirDialog() (*Results, error) {
 
 	// Get path to project, if it doesn't exist, set to empty string
 	projectDir := filepath.Dir(a.Project.Info.Path)
@@ -388,44 +513,41 @@ func (a *App) OpenCaseDirectoryDialog() (*Project, error) {
 		DefaultDirectory: projectDir,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error selecting OpenFAST file: %w", err)
+		return a.Project.Results, nil
 	}
 
-	// Search for linearization files
-	LinFiles, err := filepath.Glob(filepath.Join(path, "*.lin"))
-	if err != nil {
-		return nil, err
-	}
-	linRe := regexp.MustCompile(`.+?\.\d+\.lin`)
-	tmp := LinFiles
-	LinFiles = []string{}
-	for _, f := range tmp {
-		if linRe.MatchString(f) {
-			LinFiles = append(LinFiles, f)
-		}
-	}
-	if len(LinFiles) == 0 {
-		return nil, fmt.Errorf("no linearization files found")
-	}
-
-	// Process linearization files into results
-	err = a.Project.Results.ProcessFiles(LinFiles)
+	// Process case directory to get results
+	results, err := ProcessCaseDir(path)
 	if err != nil {
 		return nil, err
 	}
 
-	// Save results to file
-	bs, err := json.Marshal(a.Project.Results)
-	if err != nil {
+	a.Project.Results = results
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
 		return nil, err
 	}
-	err = os.WriteFile(filepath.Join(path, "results.json"), bs, 0777)
+
+	return a.Project.Results.ForApp(), nil
+}
+
+//--------------------------------------------------------------------------
+// Diagram
+//--------------------------------------------------------------------------
+
+func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagram, error) {
+
+	// Check that results have been loaded
+	if a.Project.Results == nil {
+		return nil, fmt.Errorf("load results before generating diagram")
+	}
+
+	// Generate diagram with given options
+	diag, err := diagram.New(a.Project.Results.LinOPs, maxFreqHz, doCluster)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Project{
-		Info:    a.Project.Info,
-		Results: Results{CD: *a.Project.Results.CampbellDiagram()},
-	}, nil
+	return diag, nil
 }

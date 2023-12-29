@@ -7,11 +7,9 @@ import { ChartData, ChartOptions } from 'chart.js'
 
 const project = useProjectStore()
 
-
 const props = defineProps<{
     Case: main.Case
 }>()
-
 
 function updateAnalysis() {
     project.updateAnalysis()

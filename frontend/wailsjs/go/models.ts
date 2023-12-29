@@ -1,3 +1,285 @@
+export namespace diagram {
+	
+	export class Point {
+	    OpPtID: number;
+	    ModeID: number;
+	    RotSpeed: number;
+	    WindSpeed: number;
+	    NaturalFreqHz: number;
+	    DampedFreqHz: number;
+	    DampingRatio: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Point(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.OpPtID = source["OpPtID"];
+	        this.ModeID = source["ModeID"];
+	        this.RotSpeed = source["RotSpeed"];
+	        this.WindSpeed = source["WindSpeed"];
+	        this.NaturalFreqHz = source["NaturalFreqHz"];
+	        this.DampedFreqHz = source["DampedFreqHz"];
+	        this.DampingRatio = source["DampingRatio"];
+	    }
+	}
+	export class Line {
+	    ID: number;
+	    Label: string;
+	    Points: Point[];
+	    Hide: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Line(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Label = source["Label"];
+	        this.Points = this.convertValues(source["Points"], Point);
+	        this.Hide = source["Hide"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Diagram {
+	    HasWind: boolean;
+	    RotSpeeds: number[];
+	    WindSpeeds: number[];
+	    Lines: Line[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Diagram(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.HasWind = source["HasWind"];
+	        this.RotSpeeds = source["RotSpeeds"];
+	        this.WindSpeeds = source["WindSpeeds"];
+	        this.Lines = this.convertValues(source["Lines"], Line);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+
+}
+
+export namespace lin {
+	
+	export class Mode {
+	    ID: number;
+	    OP: number;
+	    EigenValueReal: number;
+	    EigenValueImag: number;
+	    NaturalFreqRaw: number;
+	    NaturalFreqHz: number;
+	    DampedFreqRaw: number;
+	    DampedFreqHz: number;
+	    DampingRatio: number;
+	    Magnitudes: number[];
+	    Phases: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Mode(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.OP = source["OP"];
+	        this.EigenValueReal = source["EigenValueReal"];
+	        this.EigenValueImag = source["EigenValueImag"];
+	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
+	        this.NaturalFreqHz = source["NaturalFreqHz"];
+	        this.DampedFreqRaw = source["DampedFreqRaw"];
+	        this.DampedFreqHz = source["DampedFreqHz"];
+	        this.DampingRatio = source["DampingRatio"];
+	        this.Magnitudes = source["Magnitudes"];
+	        this.Phases = source["Phases"];
+	    }
+	}
+	export class EigenResults {
+	    Modes: Mode[];
+	    // Go type: mat
+	    EigenVectors?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new EigenResults(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Modes = this.convertValues(source["Modes"], Mode);
+	        this.EigenVectors = this.convertValues(source["EigenVectors"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class OPOrder {
+	    Num: number;
+	    NumFixed: number;
+	    NumRotating: number;
+	    NumTriplets: number;
+	    Indices: number[];
+	    Triplets: number[][];
+	
+	    static createFrom(source: any = {}) {
+	        return new OPOrder(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Num = source["Num"];
+	        this.NumFixed = source["NumFixed"];
+	        this.NumRotating = source["NumRotating"];
+	        this.NumTriplets = source["NumTriplets"];
+	        this.Indices = source["Indices"];
+	        this.Triplets = source["Triplets"];
+	    }
+	}
+	export class MBC {
+	    RotSpeed: number;
+	    WindSpeed: number;
+	    DescStates: string[];
+	    Azimuths: number[];
+	    OrderX: OPOrder;
+	    OrderX2: OPOrder;
+	    OrderX2dot: OPOrder;
+	    OrderX1: OPOrder;
+	    OrderU: OPOrder;
+	    OrderY: OPOrder;
+	    OrderEigen: OPOrder;
+	    DOFsEigen: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new MBC(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.RotSpeed = source["RotSpeed"];
+	        this.WindSpeed = source["WindSpeed"];
+	        this.DescStates = source["DescStates"];
+	        this.Azimuths = source["Azimuths"];
+	        this.OrderX = this.convertValues(source["OrderX"], OPOrder);
+	        this.OrderX2 = this.convertValues(source["OrderX2"], OPOrder);
+	        this.OrderX2dot = this.convertValues(source["OrderX2dot"], OPOrder);
+	        this.OrderX1 = this.convertValues(source["OrderX1"], OPOrder);
+	        this.OrderU = this.convertValues(source["OrderU"], OPOrder);
+	        this.OrderY = this.convertValues(source["OrderY"], OPOrder);
+	        this.OrderEigen = this.convertValues(source["OrderEigen"], OPOrder);
+	        this.DOFsEigen = source["DOFsEigen"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	export class OPResults {
+	    Name: string;
+	    MBC?: MBC;
+	    EigRes?: EigenResults;
+	
+	    static createFrom(source: any = {}) {
+	        return new OPResults(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.MBC = this.convertValues(source["MBC"], MBC);
+	        this.EigRes = this.convertValues(source["EigRes"], EigenResults);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace main {
 	
 	export class Paths {
@@ -375,104 +657,6 @@ export namespace main {
 		}
 	}
 	
-	export class CampbellDiagramPoint {
-	    OpPtID: number;
-	    ModeID: number;
-	    RotSpeed: number;
-	    WindSpeed: number;
-	    NaturalFreqHz: number;
-	    DampedFreqHz: number;
-	    DampingRatio: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new CampbellDiagramPoint(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.OpPtID = source["OpPtID"];
-	        this.ModeID = source["ModeID"];
-	        this.RotSpeed = source["RotSpeed"];
-	        this.WindSpeed = source["WindSpeed"];
-	        this.NaturalFreqHz = source["NaturalFreqHz"];
-	        this.DampedFreqHz = source["DampedFreqHz"];
-	        this.DampingRatio = source["DampingRatio"];
-	    }
-	}
-	export class CampbellDiagramLine {
-	    ID: number;
-	    Label: string;
-	    Points: CampbellDiagramPoint[];
-	    Hide: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new CampbellDiagramLine(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.Label = source["Label"];
-	        this.Points = this.convertValues(source["Points"], CampbellDiagramPoint);
-	        this.Hide = source["Hide"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class CampbellDiagram {
-	    HasWind: boolean;
-	    RotSpeeds: number[];
-	    WindSpeeds: number[];
-	    Lines: CampbellDiagramLine[];
-	
-	    static createFrom(source: any = {}) {
-	        return new CampbellDiagram(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.HasWind = source["HasWind"];
-	        this.RotSpeeds = source["RotSpeeds"];
-	        this.WindSpeeds = source["WindSpeeds"];
-	        this.Lines = this.convertValues(source["Lines"], CampbellDiagramLine);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	
 	
 	
 	export class Config {
@@ -588,6 +772,7 @@ export namespace main {
 	    State: string;
 	    SimProgress: number;
 	    LinProgress: number;
+	    LogPath: string;
 	    Error: string;
 	
 	    static createFrom(source: any = {}) {
@@ -600,24 +785,47 @@ export namespace main {
 	        this.State = source["State"];
 	        this.SimProgress = source["SimProgress"];
 	        this.LinProgress = source["LinProgress"];
+	        this.LogPath = source["LogPath"];
 	        this.Error = source["Error"];
 	    }
 	}
-	export class Exec {
-	    Path: string;
-	    Version: string;
-	    Valid: boolean;
+	export class Evaluate {
+	    ExecPath: string;
+	    ExecVersion: string;
+	    ExecValid: boolean;
+	    NumCPUs: number;
+	    Status: EvalStatus;
 	
 	    static createFrom(source: any = {}) {
-	        return new Exec(source);
+	        return new Evaluate(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Path = source["Path"];
-	        this.Version = source["Version"];
-	        this.Valid = source["Valid"];
+	        this.ExecPath = source["ExecPath"];
+	        this.ExecVersion = source["ExecVersion"];
+	        this.ExecValid = source["ExecValid"];
+	        this.NumCPUs = source["NumCPUs"];
+	        this.Status = this.convertValues(source["Status"], EvalStatus);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class StControl {
 	    Name: string;
@@ -1075,41 +1283,25 @@ export namespace main {
 	}
 	
 	
-	export class ModeSet {
+	export class Mode {
 	    ID: number;
-	    Label: string;
-	    Frequency: number[];
-	    Modes: mbc3.Mode[];
+	    OP: number;
+	    NaturalFreqHz: number;
+	    DampedFreqHz: number;
+	    DampingRatio: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new ModeSet(source);
+	        return new Mode(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
-	        this.Label = source["Label"];
-	        this.Frequency = source["Frequency"];
-	        this.Modes = this.convertValues(source["Modes"], mbc3.Mode);
+	        this.OP = source["OP"];
+	        this.NaturalFreqHz = source["NaturalFreqHz"];
+	        this.DampedFreqHz = source["DampedFreqHz"];
+	        this.DampingRatio = source["DampingRatio"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class Model {
 	    HasAero: boolean;
@@ -1148,16 +1340,15 @@ export namespace main {
 		}
 	}
 	
-	export class OPResults {
+	export class OperatingPoint {
 	    ID: number;
 	    Files: string[];
 	    RotSpeed: number;
 	    WindSpeed: number;
-	    Modes: mbc3.Mode[];
-	    Costs: number[][];
+	    Modes: Mode[];
 	
 	    static createFrom(source: any = {}) {
-	        return new OPResults(source);
+	        return new OperatingPoint(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -1166,8 +1357,7 @@ export namespace main {
 	        this.Files = source["Files"];
 	        this.RotSpeed = source["RotSpeed"];
 	        this.WindSpeed = source["WindSpeed"];
-	        this.Modes = this.convertValues(source["Modes"], mbc3.Mode);
-	        this.Costs = source["Costs"];
+	        this.Modes = this.convertValues(source["Modes"], Mode);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1193,24 +1383,11 @@ export namespace main {
 	
 	
 	
-	
-	export class ResultOptions {
-	    ModeScale: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new ResultOptions(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ModeScale = source["ModeScale"];
-	    }
-	}
 	export class Results {
-	    OPs: OPResults[];
-	    ModeSets: ModeSet[];
-	    CD: CampbellDiagram;
-	    Options: ResultOptions;
+	    LinDir: string;
+	    HasWind: boolean;
+	    OPs: OperatingPoint[];
+	    LinOPs: lin.OPResults[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Results(source);
@@ -1218,10 +1395,10 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.OPs = this.convertValues(source["OPs"], OPResults);
-	        this.ModeSets = this.convertValues(source["ModeSets"], ModeSet);
-	        this.CD = this.convertValues(source["CD"], CampbellDiagram);
-	        this.Options = this.convertValues(source["Options"], ResultOptions);
+	        this.LinDir = source["LinDir"];
+	        this.HasWind = source["HasWind"];
+	        this.OPs = this.convertValues(source["OPs"], OperatingPoint);
+	        this.LinOPs = this.convertValues(source["LinOPs"], lin.OPResults);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1244,43 +1421,6 @@ export namespace main {
 	}
 	
 	
-
-}
-
-export namespace mbc3 {
-	
-	export class Mode {
-	    ID: number;
-	    OP: number;
-	    EigenValueReal: number;
-	    EigenValueImag: number;
-	    NaturalFreqRaw: number;
-	    NaturalFreqHz: number;
-	    DampedFreqRaw: number;
-	    DampedFreqHz: number;
-	    DampingRatio: number;
-	    Magnitudes: number[];
-	    Phases: number[];
-	
-	    static createFrom(source: any = {}) {
-	        return new Mode(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.OP = source["OP"];
-	        this.EigenValueReal = source["EigenValueReal"];
-	        this.EigenValueImag = source["EigenValueImag"];
-	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
-	        this.NaturalFreqHz = source["NaturalFreqHz"];
-	        this.DampedFreqRaw = source["DampedFreqRaw"];
-	        this.DampedFreqHz = source["DampedFreqHz"];
-	        this.DampingRatio = source["DampingRatio"];
-	        this.Magnitudes = source["Magnitudes"];
-	        this.Phases = source["Phases"];
-	    }
-	}
 
 }
 

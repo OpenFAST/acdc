@@ -1,6 +1,7 @@
-package main
+package lin_test
 
 import (
+	"acdc/lin"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -22,8 +23,8 @@ func TestLoadResults(t *testing.T) {
 		t.Fatal("no lin files found")
 	}
 
-	res := Results{}
-	if err = res.ProcessFiles(LinFiles); err != nil {
+	res, err := lin.ProcessFiles(LinFiles)
+	if err != nil {
 		t.Fatal(err)
 	}
 

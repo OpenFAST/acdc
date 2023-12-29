@@ -1,4 +1,4 @@
-package mbc3
+package lin
 
 import (
 	"bytes"
@@ -235,8 +235,8 @@ func (md *MatData) MBC3() (*MBC, error) {
 }
 
 type EigenResults struct {
-	Modes        []Mode
-	EigenVectors *mat.CDense
+	Modes        []Mode      `json:"Modes"`
+	EigenVectors *mat.CDense `json:"EigenVectors"`
 }
 
 func (mbc MBC) EigenAnalysis() (*EigenResults, error) {

@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
-import { computed, ref, reactive } from 'vue'
-import { OpenProject, OpenProjectDialog, SaveProject, SaveProjectDialog, UpdateAnalysis } from '../wailsjs/go/main/App'
-import { LoadConfig, SaveConfig } from "../wailsjs/go/main/App"
-import { SelectExec, ImportModelDialog, UpdateModel } from "../wailsjs/go/main/App"
-import { AddAnalysisCase, RemoveAnalysisCase } from "../wailsjs/go/main/App"
-import { EvaluateLinearization, CancelEvaluate } from "../wailsjs/go/main/App"
-import { OpenCaseDirectoryDialog } from "../wailsjs/go/main/App"
-import { main } from "../wailsjs/go/models"
-import { File, Field } from "./types"
+import { ref, reactive } from 'vue'
+import { GenerateDiagram, LoadConfig, SaveConfig } from "../wailsjs/go/main/App"
+import { OpenProjectDialog, SaveProjectDialog, OpenProject } from '../wailsjs/go/main/App'
+import { FetchModel, UpdateModel, ImportModelDialog } from "../wailsjs/go/main/App"
+import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase } from "../wailsjs/go/main/App"
+import { FetchEvaluate, UpdateEvaluate, SelectExec, EvaluateCase, GetEvaluateLog, CancelEvaluate } from "../wailsjs/go/main/App"
+import { FetchResults, OpenCaseDirDialog } from "../wailsjs/go/main/App"
+// import { EvaluateLinearization, CancelEvaluate } from "../wailsjs/go/main/App"
+import { main, diagram as diag } from "../wailsjs/go/models"
 import { EventsOn } from "../wailsjs/runtime/runtime"
 import { LogError } from '../wailsjs/runtime/runtime'
 
@@ -15,13 +15,15 @@ export const useProjectStore = defineStore('project', () => {
 
     const saving = ref(false)
     const loaded = ref(false)
+    const config = reactive<main.Config>(new main.Config)
     const info = reactive<main.Info>(new main.Info)
-    const exec = reactive<main.Exec>(new main.Exec)
     const model = reactive<main.Model>(new main.Model)
     const analysis = reactive<main.Analysis>(new main.Analysis)
+    const evaluate = reactive<main.Evaluate>(new main.Evaluate)
     const results = reactive<main.Results>(new main.Results)
-    const statusMap = reactive<Map<number, main.EvalStatus>>(new Map)
-    const config = reactive<main.Config>(new main.Config)
+    const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
+    const evalCaseID = ref(1)
+    const diagram = reactive<diag.Diagram>(new diag.Diagram)
 
     // Load config when store is initialized
     LoadConfig().then(result => {
@@ -35,39 +37,15 @@ export const useProjectStore = defineStore('project', () => {
         loaded.value = false
     }
 
-    function open(path: string) {
-        OpenProject(path).then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(exec, result.Exec)
-            Object.assign(model, result.Model)
-            Object.assign(analysis, result.Analysis)
-            updateRecentProjects(path)
-            loaded.value = true
-        }).catch(err => {
-            LogError(err)
-            console.log(err)
-        })
-    }
+    //--------------------------------------------------------------------------
+    // Project
+    //--------------------------------------------------------------------------
 
     function openDialog() {
         OpenProjectDialog().then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(exec, result.Exec)
-            Object.assign(model, result.Model)
-            Object.assign(analysis, result.Analysis)
+            Object.assign(info, result)
             updateRecentProjects(info.Path)
             loaded.value = true
-        }).catch(err => {
-            LogError(err)
-            console.log(err)
-        })
-    }
-
-    function save() {
-        saving.value = true
-        SaveProject(info.Path).then(result => {
-            Object.assign(info, result.Info)
-            saving.value = false
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -76,10 +54,7 @@ export const useProjectStore = defineStore('project', () => {
 
     function saveDialog() {
         SaveProjectDialog().then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(exec, result.Exec)
-            Object.assign(model, result.Model)
-            Object.assign(analysis, result.Analysis)
+            Object.assign(info, result)
             updateRecentProjects(info.Path)
             loaded.value = true
         }).catch(err => {
@@ -88,10 +63,11 @@ export const useProjectStore = defineStore('project', () => {
         })
     }
 
-    function selectExec() {
-        SelectExec().then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(exec, result.Exec)
+    function open(path: string) {
+        OpenProject(path).then(result => {
+            Object.assign(info, result)
+            updateRecentProjects(info.Path)
+            loaded.value = true
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -102,8 +78,12 @@ export const useProjectStore = defineStore('project', () => {
         // If path in recent, remove it
         const index = config.RecentProjects.indexOf(path)
         if (index > -1) config.RecentProjects.splice(index, 1)
-        config.RecentProjects.unshift(path) // Prepend new path
-        config.RecentProjects = config.RecentProjects.slice(0, 5)      // Limit to 5 items
+
+        // Prepend new path
+        config.RecentProjects.unshift(path)
+
+        // Limit to 5 items
+        config.RecentProjects = config.RecentProjects.slice(0, 5)
         // Save config
         SaveConfig(config).catch(err => {
             LogError(err)
@@ -111,40 +91,61 @@ export const useProjectStore = defineStore('project', () => {
         })
     }
 
-    function importModel() {
+    //--------------------------------------------------------------------------
+    // Model
+    //--------------------------------------------------------------------------
+
+    function fetchModel() {
+        return new Promise<main.Model>((resolve, reject) => {
+            FetchModel().then(result => {
+                Object.assign(model, result)
+                resolve(model)
+            }).catch(err => {
+                LogError(err)
+                console.log(err)
+                reject(err)
+            })
+        })
+    }
+
+    function importModelDialog() {
         ImportModelDialog().then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(model, result.Model)
+            Object.assign(model, result)
         }).catch(err => {
             LogError(err)
             console.log(err)
         })
     }
-
-    function openCaseDirectory() {
-        OpenCaseDirectoryDialog().then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(results, result.Results)
-        }).catch(err => {
-            LogError(err)
-            console.log(err)
-        })
-    }
-
 
     function updateModel() {
         UpdateModel(model).then(result => {
-            Object.assign(info, result.Info)
+            Object.assign(model, result)
         }).catch(err => {
             LogError(err)
             console.log(err)
+        })
+    }
+
+    //--------------------------------------------------------------------------
+    // Analysis
+    //--------------------------------------------------------------------------
+
+    function fetchAnalysis() {
+        return new Promise<main.Analysis>((resolve, reject) => {
+            FetchAnalysis().then(result => {
+                Object.assign(analysis, result)
+                resolve(analysis)
+            }).catch(err => {
+                LogError(err)
+                console.log(err)
+                reject(err)
+            })
         })
     }
 
     function updateAnalysis() {
         UpdateAnalysis(analysis).then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(analysis, result.Analysis)
+            Object.assign(analysis, result)
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -154,9 +155,8 @@ export const useProjectStore = defineStore('project', () => {
     function addAnalysisCase() {
         return new Promise<main.Case>((resolve, reject) => {
             AddAnalysisCase().then(result => {
-                Object.assign(info, result.Info)
-                Object.assign(analysis, result.Analysis)
-                resolve(analysis.Cases[analysis.Cases.length - 1])
+                Object.assign(analysis, result)
+                resolve(result.Cases[result.Cases.length - 1])
             }).catch(err => {
                 LogError(err)
                 console.log(err)
@@ -167,44 +167,56 @@ export const useProjectStore = defineStore('project', () => {
 
     function removeAnalysisCase(id: number) {
         RemoveAnalysisCase(id).then(result => {
-            Object.assign(info, result.Info)
-            Object.assign(analysis, result.Analysis)
+            Object.assign(analysis, result)
         }).catch(err => {
             LogError(err)
             console.log(err)
         })
     }
 
-    function instanceOfField(obj: any): obj is Field {
-        return typeof obj == 'object' && 'Name' in obj && 'Type' in obj;
+    //--------------------------------------------------------------------------
+    // Evaluate
+    //--------------------------------------------------------------------------
+
+    function fetchEvaluate() {
+        return new Promise<main.Evaluate>((resolve, reject) => {
+            FetchEvaluate().then(result => {
+                Object.assign(evaluate, result)
+                resolve(evaluate)
+            }).catch(err => {
+                LogError(err)
+                console.log(err)
+                reject(err)
+            })
+        })
     }
 
-    const modelFileOptions = computed<File[]>(() => {
-        const options: File[] = []
-        if (!model.Files) return options
-        for (const files of Object.values(model.Files) as File[][]) {
-            for (const file of files) {
-                options.push({
-                    Name: file.Name,
-                    Type: file.Type,
-                    Fields: Object.values(file).filter(instanceOfField),
-                } as File)
-            }
-        }
-        return options
-    })
+    function updateEvaluate() {
+        UpdateEvaluate(evaluate).then(result => {
+            Object.assign(evaluate, result)
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
+
+    function selectExec() {
+        SelectExec().then(result => {
+            Object.assign(evaluate, result)
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
 
     // Setup listener for evaluation status updates
     EventsOn("evalStatus", (status: main.EvalStatus) => {
-        statusMap.set(status.ID, status)
+        Object.assign(evalStatus[status.ID - 1], status)
     })
 
-    function startEvaluate(caseID: number, numCPUs: number) {
-        EvaluateLinearization(analysis.Cases[caseID - 1], numCPUs).then(result => {
-            statusMap.clear()
-            for (const status of result) {
-                statusMap.set(status.ID, status)
-            }
+    function startEvaluate(caseID: number) {
+        EvaluateCase(caseID).then(result => {
+            Object.assign(evalStatus, result)
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -218,11 +230,98 @@ export const useProjectStore = defineStore('project', () => {
         })
     }
 
+    //--------------------------------------------------------------------------
+    // Results
+    //--------------------------------------------------------------------------
+
+    function fetchResults() {
+        FetchResults().then(result => {
+            Object.assign(results, result)
+            console.log(result)
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
+
+    function openCaseDirDialog() {
+        return new Promise<main.Results>((resolve, reject) => {
+            OpenCaseDirDialog().then(result => {
+                Object.assign(results, result)
+                resolve(results)
+            }).catch(err => {
+                LogError(err)
+                console.log(err)
+                reject(err)
+            })
+        })
+    }
+
+    //--------------------------------------------------------------------------
+    // Diagram
+    //--------------------------------------------------------------------------
+
+    function generateDiagram(maxFreqHz: number, doCluster: boolean) {
+        return new Promise<diag.Diagram>((resolve, reject) => {
+            GenerateDiagram(maxFreqHz, doCluster).then(result => {
+                Object.assign(diagram, result)
+                console.log(diagram)
+                resolve(diagram)
+            }).catch(err => {
+                LogError(err)
+                console.log(err)
+                reject(err)
+            })
+        })
+    }
+
+    //--------------------------------------------------------------------------
+    // Visualization
+    //--------------------------------------------------------------------------
+
+
+    //--------------------------------------------------------------------------
+    // Other
+    //--------------------------------------------------------------------------
+
+
+
     return {
-        loaded, saving, config, info, exec, model, analysis, results, statusMap, modelFileOptions,
-        $reset, open, saveDialog, save, openDialog, selectExec,
-        importModel, updateModel,
-        openCaseDirectory, updateAnalysis, addAnalysisCase, removeAnalysisCase,
-        startEvaluate, cancelEvaluate
+        loaded,
+        saving,
+        $reset,
+        // Project
+        config,
+        info,
+        saveDialog,
+        openDialog,
+        open,
+        // Model
+        model,
+        fetchModel,
+        importModelDialog,
+        updateModel,
+        // Analysis
+        analysis,
+        fetchAnalysis,
+        updateAnalysis,
+        addAnalysisCase,
+        removeAnalysisCase,
+        // Evaluate
+        evaluate,
+        evalStatus,
+        fetchEvaluate,
+        updateEvaluate,
+        startEvaluate,
+        cancelEvaluate,
+        selectExec,
+        evalCaseID,
+        // Results
+        results,
+        fetchResults,
+        openCaseDirDialog,
+        // Diagram
+        diagram,
+        generateDiagram
     }
 })

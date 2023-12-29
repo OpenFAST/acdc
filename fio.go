@@ -353,6 +353,8 @@ func ParseFiles(MainPath string) (*Files, error) {
 	return files, nil
 }
 
+var parensReplacer = strings.NewReplacer("(", "", ")", "")
+
 func (fs *Files) parseFile(path string, s any) error {
 
 	lines, err := readLines(path)
@@ -379,6 +381,10 @@ func (fs *Files) parseFile(path string, s any) error {
 			fieldName = key
 		}
 		fieldNameLower := strings.ToLower(fieldName)
+		fieldNameLowerNoParens := parensReplacer.Replace(fieldNameLower)
+		if fieldNameLowerNoParens == fieldNameLower {
+			fieldNameLowerNoParens = ""
+		}
 
 		// Create backup of lines to search
 		linesSave := lines
@@ -391,46 +397,33 @@ func (fs *Files) parseFile(path string, s any) error {
 			line := lines[0]
 			lines = lines[1:]
 
-			// Remove comment from line and convert to lowercase
+			// Remove comment from line and trim whitespace
 			found, desc := false, ""
 			if line, desc, found = strings.Cut(line, "- "); !found {
 				line, desc, _ = strings.Cut(line, "! ")
 			}
+			line = strings.TrimSpace(line)
+
+			// Find index of field name in line
+			lineLower := strings.ToLower(line)
+			j := strings.Index(lineLower, fieldNameLower)
+			if j == -1 && fieldNameLowerNoParens != "" {
+				j = strings.Index(lineLower, fieldNameLowerNoParens)
+			}
+
+			// Field name not found in line, continue
+			if j == -1 {
+				continue
+			}
 
 			// Split line into field while respecting quotes
 			quoted := false
-			tokens := strings.FieldsFunc(line, func(r rune) bool {
+			values := strings.FieldsFunc(line[:j], func(r rune) bool {
 				if r == '"' {
 					quoted = !quoted
 				}
 				return !quoted && (unicode.IsSpace(r) || r == ',')
 			})
-
-			// Loop through tokens to see if any match the field name and
-			// get values in a slice (tokens before field name)
-			values := []string{}
-			for j, token := range tokens {
-				if strings.ToLower(token) == fieldNameLower {
-					values = tokens[:j]
-				}
-			}
-
-			// If no values were found, and field name contains parentheses,
-			// remove parentheses from field name and look in tokens again
-			if len(values) == 0 && strings.Contains(fieldNameLower, "(") {
-				r := strings.NewReplacer("(", "", ")", "")
-				fieldNameLower = r.Replace(fieldNameLower)
-				for j, token := range tokens {
-					if strings.ToLower(token) == fieldNameLower {
-						values = tokens[:j]
-					}
-				}
-			}
-
-			// If no values were found, token not in line, go to next line
-			if len(values) == 0 {
-				continue
-			}
 
 			// Get field value
 			fieldVal := sVal.Field(i)

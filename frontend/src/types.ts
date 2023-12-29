@@ -18,3 +18,6 @@ export interface File {
     Fields: Field[]
 }
 
+export function instanceOfField(obj: any): obj is Field {
+    return typeof obj == 'object' && 'Name' in obj && 'Type' in obj;
+}

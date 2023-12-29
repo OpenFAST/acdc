@@ -13,7 +13,6 @@ const project = useProjectStore()
                 <p class="card-text" v-if="project.loaded">Updated: {{ project.info.Date }}</p>
                 <a class="btn btn-success" @click="project.saveDialog">{{ project.loaded ? "Save As" : "New" }}</a>
                 <a class="btn btn-primary ms-3" @click="project.openDialog">Open</a>
-                <a class="btn btn-success float-end" @click="project.save">Save</a>
             </div>
         </div>
         <div class="card" v-if="project.config.RecentProjects.length > 0">

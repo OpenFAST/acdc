@@ -1,27 +1,30 @@
 <script lang="ts" setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useProjectStore } from '../project';
 import ModelProp from './ModelProp.vue'
-import { File } from "../types"
+import { File, instanceOfField } from "../types"
 const project = useProjectStore()
 
 const selectedFile = ref<File>()
 
 onMounted(() => {
-    if (project.modelFileOptions.length > 0) {
-        selectedFile.value = project.modelFileOptions[0]
-    }
+    project.fetchModel()
 })
 
-watch(
-    () => project.modelFileOptions,
-    () => {
-        if (project.modelFileOptions.length > 0) {
-            selectedFile.value = project.modelFileOptions[0]
-        } else {
-            selectedFile.value = undefined
+const modelFileOptions = computed<File[]>(() => {
+    const options: File[] = []
+    if (!project.model.Files) return options
+    for (const files of Object.values(project.model.Files) as File[][]) {
+        for (const file of files) {
+            options.push({
+                Name: file.Name,
+                Type: file.Type,
+                Fields: Object.values(file).filter(instanceOfField),
+            } as File)
         }
-    })
+    }
+    return options
+})
 
 function setDefaults() {
 
@@ -73,7 +76,7 @@ function setDefaults() {
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>OpenFAST Turbine</span>
-                <a class="btn btn-primary btn-sm" @click="project.importModel">Import</a>
+                <a class="btn btn-primary btn-sm" @click="project.importModelDialog">Import</a>
             </div>
             <ul class="list-group list-group-flush" v-if="project.model.Files">
                 <li class="list-group-item" v-if="project.model.ImportedPaths.length > 0">
@@ -87,7 +90,7 @@ function setDefaults() {
             </ul>
         </div>
 
-        <div class="card mb-3" v-if="project.modelFileOptions.length > 0">
+        <div class="card mb-3" v-if="modelFileOptions.length > 0">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Linearization Quick Setup</span>
                 <a class="btn btn-primary btn-sm" @click="setDefaults">Defaults</a>
@@ -136,14 +139,14 @@ function setDefaults() {
             </ul>
         </div>
 
-        <div class="card mb-3" v-if="project.modelFileOptions.length > 0">
+        <div class="card mb-3" v-if="modelFileOptions.length > 0">
             <div class="card-header">Modify File</div>
             <div class="card-body">
                 <div class="row">
                     <label for="fileSelect" class="col-sm-2 col-form-label">File</label>
                     <div class="col-sm-10">
                         <select class="form-select" v-model="selectedFile">
-                            <option v-for="(item, i) in project.modelFileOptions" :value="item">
+                            <option v-for="(item, i) in modelFileOptions" :value="item">
                                 {{ item.Type }} - {{ item.Name }}
                             </option>
                         </select>

@@ -1,4 +1,4 @@
-package mbc3
+package lin
 
 import (
 	"bufio"

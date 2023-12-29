@@ -1,13 +1,13 @@
-package mbc3_test
+package lin_test
 
 import (
-	"acdc/mbc3"
+	"acdc/lin"
 	"testing"
 )
 
 func TestReadLinFile(t *testing.T) {
 
-	ld, err := mbc3.ReadLinFile("testdata/StC_test_OC4Semi_Linear_Tow.1.lin")
+	ld, err := lin.ReadLinFile("testdata/StC_test_OC4Semi_Linear_Tow.1.lin")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestReadLinFile(t *testing.T) {
 		t.Fatalf("ld.D.Dims() = [%v,%v], expected [%v,%v]", rAct, cAct, rExp, cExp)
 	}
 
-	ld, err = mbc3.ReadLinFile("testdata/Ideal_Beam_Fixed_Free_Linear.1.lin")
+	ld, err = lin.ReadLinFile("testdata/Ideal_Beam_Fixed_Free_Linear.1.lin")
 	if err != nil {
 		t.Fatal(err)
 	}

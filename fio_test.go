@@ -10,7 +10,7 @@ import (
 func TestFiles(t *testing.T) {
 
 	// Find all FAST files
-	matches, err := filepath.Glob("testdata/reference/*/*.fst")
+	matches, err := filepath.Glob("testdata/*-ED.fst")
 	if err != nil {
 		t.Fatal(err)
 	}

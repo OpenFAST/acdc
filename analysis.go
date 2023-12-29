@@ -20,6 +20,16 @@ func NewAnalysis() *Analysis {
 	}
 }
 
+func (an *Analysis) Calculate() error {
+	for i := range an.Cases {
+		an.Cases[i].ID = i + 1
+		if err := an.Cases[i].Calculate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type Case struct {
 	ID              int         `json:"ID"`
 	Name            string      `json:"Name"`
@@ -183,7 +193,7 @@ type AeroStructure struct {
 	OperatingPoints []Condition `json:"OperatingPoints"`
 }
 
-func (an *Analysis) Calculate() error {
+func (an *Analysis) CalculateCases() error {
 
 	for i := range an.Cases {
 		an.Cases[i].ID = i + 1
