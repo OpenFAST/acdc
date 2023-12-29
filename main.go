@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"flag"
+	"fmt"
 
 	"github.com/labstack/gommon/log"
 	"github.com/wailsapp/wails/v2"
@@ -14,6 +16,13 @@ import (
 var assets embed.FS
 
 func main() {
+
+	showVersion := flag.Bool("version", false, "display version information")
+	flag.Parse()
+	if *showVersion {
+		fmt.Println("v0.1.0-alpha")
+		return
+	}
 
 	// Create an instance of the app structure
 	app := NewApp()
