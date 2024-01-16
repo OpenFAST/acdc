@@ -2,10 +2,12 @@ package lin
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 )
 
 type FileGroup struct {
@@ -36,22 +38,25 @@ func ProcessFiles(LinFiles []string) ([]OPResults, error) {
 	linFileResultChan := make(chan OPResults, len(linFileGroups))
 
 	// Launch workers
-	for i := 0; i < min(len(linFileGroups), 1+2*runtime.NumCPU()/3); i++ {
-		go linFileWorker(linFileGroupChan, linFileResultChan)
-	}
+	wg := &sync.WaitGroup{}
+	go func() {
+		for i := 0; i < min(len(linFileGroups), 1+2*runtime.NumCPU()/3); i++ {
+			wg.Add(1)
+			go linFileWorker(wg, linFileGroupChan, linFileResultChan)
+		}
+		wg.Wait()
+		close(linFileResultChan)
+	}()
 
 	// Distribute linearization file groups to workers
 	for groupName, files := range linFileGroups {
 		linFileGroupChan <- FileGroup{Name: groupName, Files: files}
 	}
 
-	// Close group chan
-	close(linFileGroupChan)
-
 	// Collect results
 	groupResults := make([]OPResults, len(linFileGroups))
-	for i := 0; i < len(linFileGroups); i++ {
-		groupResults[i] = <-linFileResultChan
+	for res := range linFileResultChan {
+		groupResults = append(groupResults, res)
 	}
 
 	for i := range groupResults {
@@ -78,7 +83,8 @@ func ProcessFiles(LinFiles []string) ([]OPResults, error) {
 	return groupResults, nil
 }
 
-func linFileWorker(linFilesChan <-chan FileGroup, resultsChan chan<- OPResults) {
+func linFileWorker(wg *sync.WaitGroup, linFilesChan <-chan FileGroup, resultsChan chan<- OPResults) {
+	defer wg.Done()
 
 	// Loop through linearization files sent on channel
 	for linFileGroup := range linFilesChan {
@@ -93,7 +99,7 @@ func linFileWorker(linFilesChan <-chan FileGroup, resultsChan chan<- OPResults) 
 		for i, linFilePath := range linFileGroup.Files {
 			linFileData[i], err = ReadLinFile(linFilePath)
 			if err != nil {
-				resultsChan <- OPResults{err: err}
+				resultsChan <- OPResults{err: fmt.Errorf("error reading '%s': %w", linFilePath, err)}
 				return
 			}
 		}
