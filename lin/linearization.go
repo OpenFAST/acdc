@@ -48,21 +48,69 @@ func ProcessFiles(LinFiles []string) ([]OPResults, error) {
 		close(linFileResultChan)
 	}()
 
-	// Distribute linearization file groups to workers
-	for groupName, files := range linFileGroups {
-		linFileGroupChan <- FileGroup{Name: groupName, Files: files}
-	}
-
 	// Collect results
-	groupResults := make([]OPResults, len(linFileGroups))
-	for res := range linFileResultChan {
-		groupResults = append(groupResults, res)
-	}
+	groupResults := []OPResults{}
 
-	for i := range groupResults {
-		if groupResults[i].err != nil {
-			return nil, groupResults[i].err
+	// Loop through linearization files sent on channel
+	for groupName, files := range linFileGroups {
+
+		linFileGroup := FileGroup{Name: groupName, Files: files}
+
+		if len(linFileGroup.Files) == 0 {
+			continue
 		}
+
+		// Read linearization files
+		linFileData := make([]*LinData, len(linFileGroup.Files))
+		var err error
+		for i, linFilePath := range linFileGroup.Files {
+			linFileData[i], err = ReadLinFile(linFilePath)
+			if err != nil {
+				return nil, fmt.Errorf("error reading '%s': %w", linFilePath, err)
+			}
+		}
+
+		// Extract matrix data from linearization file data
+		matData := NewMatData(linFileData)
+
+		// Perform multi-blade coordinate transform
+		mbc, err := matData.MBC3()
+		if err != nil {
+			return nil, err
+		}
+
+		// Perform Eigenanalysis to get modes
+		eigRes, err := mbc.EigenAnalysis()
+		if err != nil {
+			return nil, err
+		}
+
+		// Write MBC data to file
+		bs, err := json.MarshalIndent(mbc, "", "\t")
+		if err != nil {
+			return nil, err
+		}
+		err = os.WriteFile(linFileGroup.Name+"_mbc.json", bs, 0777)
+		if err != nil {
+			return nil, err
+		}
+
+		// Write Eigen analysis results data to file
+		bs, err = json.MarshalIndent(eigRes.Modes, "", "\t")
+		if err != nil {
+			return nil, err
+		}
+		err = os.WriteFile(linFileGroup.Name+"_modes.json", bs, 0777)
+		if err != nil {
+			return nil, err
+		}
+
+		// Send MBC and mode results
+		groupResults = append(groupResults, OPResults{
+			Name:   linFileGroup.Name,
+			MBC:    mbc,
+			EigRes: eigRes,
+		})
 	}
 
 	// Sort results by group name
