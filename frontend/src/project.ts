@@ -11,6 +11,22 @@ import { main, diagram as diag } from "../wailsjs/go/models"
 import { EventsOn } from "../wailsjs/runtime/runtime"
 import { LogError } from '../wailsjs/runtime/runtime'
 
+export const NOT_LOADED = 0;
+export const LOADING = 1;
+export const LOADED = 2;
+
+// Contains loading status of the various project components
+class Loading {
+    project: number = 0;
+    config: number = 0;
+    info: number = 0;
+    model: number = 0;
+    analysis: number = 0;
+    evaluate: number = 0;
+    results: number = 0;
+    diagram: number = 0;
+}
+
 export const useProjectStore = defineStore('project', () => {
 
     const saving = ref(false)
@@ -24,6 +40,7 @@ export const useProjectStore = defineStore('project', () => {
     const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
     const evalCaseID = ref(1)
     const diagram = reactive<diag.Diagram>(new diag.Diagram)
+    const loading = reactive<Loading>(new Loading)
 
     // Load config when store is initialized
     LoadConfig().then(result => {
@@ -235,23 +252,29 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
 
     function fetchResults() {
+        loading.results = LOADING
         FetchResults().then(result => {
             Object.assign(results, result)
             console.log(result)
+            loading.results = LOADED
         }).catch(err => {
             LogError(err)
             console.log(err)
+            loading.results = NOT_LOADED
         })
     }
 
     function openCaseDirDialog() {
+        loading.results = LOADING
         return new Promise<main.Results>((resolve, reject) => {
             OpenCaseDirDialog().then(result => {
                 Object.assign(results, result)
+                loading.results = LOADED
                 resolve(results)
             }).catch(err => {
                 LogError(err)
                 console.log(err)
+                loading.results = NOT_LOADED
                 reject(err)
             })
         })
@@ -262,14 +285,17 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
 
     function generateDiagram(maxFreqHz: number, doCluster: boolean) {
+        loading.diagram = LOADING
         return new Promise<diag.Diagram>((resolve, reject) => {
             GenerateDiagram(maxFreqHz, doCluster).then(result => {
                 Object.assign(diagram, result)
                 console.log(diagram)
+                loading.diagram = LOADED
                 resolve(diagram)
             }).catch(err => {
                 LogError(err)
                 console.log(err)
+                loading.diagram = NOT_LOADED
                 reject(err)
             })
         })
@@ -287,6 +313,7 @@ export const useProjectStore = defineStore('project', () => {
 
 
     return {
+        status: loading,
         loaded,
         saving,
         $reset,

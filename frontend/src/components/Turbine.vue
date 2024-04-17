@@ -34,16 +34,15 @@ function setDefaults() {
     // Set main file linearization defaults
     files.Main[0].Linearize.Value = true
     files.Main[0].CalcSteady.Value = true
-    files.Main[0].TrimCase.Value = 2
     files.Main[0].TrimTol.Value = 0.001
     files.Main[0].TrimGain.Value = 100
     files.Main[0].Twr_Kdmp.Value = 100
     files.Main[0].Bld_Kdmp.Value = 100
     files.Main[0].NLinTimes.Value = 36
     files.Main[0].Gravity.Value = 0
+    files.Main[0].SttsTime.Value = files.Main[0].TMax.Value / 100
     files.Main[0].OutFmt.Value = "ES16.9E2"
-    files.Main[0].WrVTK.Value = 3
-    files.Main[0].VTK_type.Value = 2
+    files.Main[0].WrVTK.Value = 0
 
     // Set ElastoDyn file linearization defaults
     files.ElastoDyn[0].ShftTilt.Value = 0
@@ -75,13 +74,17 @@ function setDefaults() {
     <main>
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>OpenFAST Turbine</span>
+                <span>OpenFAST Model Files</span>
                 <a class="btn btn-primary btn-sm" @click="project.importModelDialog">Import</a>
             </div>
             <ul class="list-group list-group-flush" v-if="project.model.Files">
                 <li class="list-group-item" v-if="project.model.ImportedPaths.length > 0">
                     <div class="fw-bold mb-2">Imported Files</div>
-                    <div v-for="path in project.model.ImportedPaths">{{ path }}</div>
+                    <div class="row">
+                        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6" v-for="path in project.model.ImportedPaths">{{
+                    path }}
+                        </div>
+                    </div>
                 </li>
                 <li class="list-group-item" v-if="project.model.Notes.length > 0">
                     <div class="fw-bold mb-2">Notes</div>
@@ -101,7 +104,6 @@ function setDefaults() {
                     <div>
                         <ModelProp :field="project.model.Files.Main[0].Linearize" />
                         <ModelProp :field="project.model.Files.Main[0].CalcSteady" />
-                        <ModelProp :field="project.model.Files.Main[0].TrimCase" />
                         <ModelProp :field="project.model.Files.Main[0].TrimTol" />
                         <ModelProp :field="project.model.Files.Main[0].TrimGain" />
                         <ModelProp :field="project.model.Files.Main[0].Twr_Kdmp" />

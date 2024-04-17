@@ -243,18 +243,20 @@ export namespace lin {
 	}
 	
 	
-	export class OPResults {
+	export class OPResult {
 	    Name: string;
+	    HasAeroStates: boolean;
 	    MBC?: MBC;
 	    EigRes?: EigenResults;
 	
 	    static createFrom(source: any = {}) {
-	        return new OPResults(source);
+	        return new OPResult(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
+	        this.HasAeroStates = source["HasAeroStates"];
 	        this.MBC = this.convertValues(source["MBC"], MBC);
 	        this.EigRes = this.convertValues(source["EigRes"], EigenResults);
 	    }
@@ -1128,6 +1130,7 @@ export namespace main {
 	    SubFile: Path;
 	    MooringFile: Path;
 	    IceFile: Path;
+	    SttsTime: Real;
 	    OutFmt: String;
 	    Linearize: Bool;
 	    CalcSteady: Bool;
@@ -1177,6 +1180,7 @@ export namespace main {
 	        this.SubFile = this.convertValues(source["SubFile"], Path);
 	        this.MooringFile = this.convertValues(source["MooringFile"], Path);
 	        this.IceFile = this.convertValues(source["IceFile"], Path);
+	        this.SttsTime = this.convertValues(source["SttsTime"], Real);
 	        this.OutFmt = this.convertValues(source["OutFmt"], String);
 	        this.Linearize = this.convertValues(source["Linearize"], Bool);
 	        this.CalcSteady = this.convertValues(source["CalcSteady"], Bool);
@@ -1386,8 +1390,8 @@ export namespace main {
 	export class Results {
 	    LinDir: string;
 	    HasWind: boolean;
+	    MaxFreq: number;
 	    OPs: OperatingPoint[];
-	    LinOPs: lin.OPResults[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Results(source);
@@ -1397,8 +1401,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.LinDir = source["LinDir"];
 	        this.HasWind = source["HasWind"];
+	        this.MaxFreq = source["MaxFreq"];
 	        this.OPs = this.convertValues(source["OPs"], OperatingPoint);
-	        this.LinOPs = this.convertValues(source["LinOPs"], lin.OPResults);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
