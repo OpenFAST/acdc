@@ -124,6 +124,10 @@ func RunEvaluation(ctx context.Context, model *Model, c *Case, op *Condition, ca
 
 		// Disable ElastoDyn generator DOF
 		files.ElastoDyn[0].GenDOF.Value = false
+
+		// Disable ServoDyn and remove files
+		files.Main[0].CompServo.Value = 0
+		files.ServoDyn = []ServoDyn{}
 	}
 
 	// Write modified turbine files
