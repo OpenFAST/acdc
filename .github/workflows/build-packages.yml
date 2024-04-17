@@ -27,14 +27,14 @@ jobs:
         uses: actions/setup-go@v4
         with:
           check-latest: true
-          go-version: 1.21
+          go-version: 1.22
       - run: go version
         shell: bash
       # Setup and configure NodeJS
       - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: lts
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
         shell: bash
