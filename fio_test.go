@@ -4,42 +4,48 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestFiles(t *testing.T) {
 
-	// Find all FAST files
-	matches, err := filepath.Glob("testdata/*-ED.fst")
+	// Find all FAST files in test-data directory
+	matches, err := filepath.Glob("testdata/fio/*.fst")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, filePath := range matches {
+	// Loop through .fst files and parse them
+	for _, fstPath := range matches {
 
-		files, err := ParseFiles(filePath)
+		// Parse main file and associated files
+		files, err := ParseFiles(fstPath)
 		if err != nil {
-			t.Fatalf("error parsing '%s': %s", filePath, err)
+			t.Fatalf("error parsing '%s': %s", fstPath, err)
 		}
 
-		b, err := json.MarshalIndent(files, "", "\t")
-		if err != nil {
-			t.Fatal(err)
-		}
+		// Get model name
+		modelName := filepath.Base(fstPath)
+		modelName = strings.TrimSuffix(modelName, filepath.Ext(modelName))
 
-		// Get directory
-		dir := filepath.Base(filepath.Dir(filePath))
-
-		path := filepath.Join("testdata", "output", dir)
+		// Create output directory to write files to
+		path := filepath.Join("testdata", "output", modelName)
 		if err := os.MkdirAll(path, 0777); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := os.WriteFile(filepath.Join(path, "files.json"), b, 0777); err != nil {
+		// Use files structure to recreate input files
+		if err := files.Write(path, ""); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := files.Write(path, ""); err != nil {
+		// Write file data as JSON file
+		b, err := json.MarshalIndent(files, "", "\t")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(path, "files.json"), b, 0777); err != nil {
 			t.Fatal(err)
 		}
 	}
