@@ -2,8 +2,6 @@ package lin_test
 
 import (
 	"acdc/lin"
-	"encoding/json"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -13,7 +11,8 @@ func TestLoadResults(t *testing.T) {
 	// dir := "../samples/NREL_5MW-ED/case01"
 	// dir := "../samples/autoModeTrackingModels/nrel5mw/structOnly75_fast"
 	// dir := "../samples/autoModeTrackingModels/nrel5mw/aeroStructSteady"
-	dir := "../samples/autoModeTrackingModels/iea15mw/structOnly75"
+	// dir := "../samples/autoModeTrackingModels/iea15mw/structOnly75"
+	dir := "testdata/large"
 
 	LinFiles, err := filepath.Glob(filepath.Join(dir, "*.lin"))
 	if err != nil {
@@ -23,17 +22,7 @@ func TestLoadResults(t *testing.T) {
 		t.Fatal("no lin files found")
 	}
 
-	res, err := lin.ProcessFiles(LinFiles)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Save results to file
-	bs, err := json.MarshalIndent(res, "", "\t")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(filepath.Join(dir, "results.json"), bs, 0777)
+	_, err = lin.ProcessFiles(LinFiles)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -52,7 +52,7 @@ type ModeIndex struct {
 }
 
 // CampbellDiagram returns a Campbell Diagram structure from the results
-func New(OPs []lin.OPResults, maxFreqHz float64, doCluster bool) (*Diagram, error) {
+func New(OPs []lin.OPResult, maxFreqHz float64, doCluster bool) (*Diagram, error) {
 
 	// Collect operating point data
 	rotSpeeds := make([]float32, len(OPs))
@@ -62,7 +62,6 @@ func New(OPs []lin.OPResults, maxFreqHz float64, doCluster bool) (*Diagram, erro
 		rotSpeeds[i] = float32(g.MBC.RotSpeed)
 		windSpeeds[i] = float32(g.MBC.WindSpeed)
 		hasWind = g.MBC.WindSpeed > 0 || hasWind
-
 	}
 
 	// Build mode sets based on modal assurance criteria
@@ -110,7 +109,7 @@ func New(OPs []lin.OPResults, maxFreqHz float64, doCluster bool) (*Diagram, erro
 }
 
 // connectModesMAC builds connected sets of modes from linearization results
-func connectModesMAC(OPs []lin.OPResults, maxFreqHz float64) ([]*ModeSet, error) {
+func connectModesMAC(OPs []lin.OPResult, maxFreqHz float64) ([]*ModeSet, error) {
 
 	// Create array of mode sets
 	modeSets := []*ModeSet{}
@@ -260,7 +259,7 @@ func connectModesMAC(OPs []lin.OPResults, maxFreqHz float64) ([]*ModeSet, error)
 	return modeSets, nil
 }
 
-func clusterModes(OPs []lin.OPResults, modeSets []*ModeSet) error {
+func clusterModes(OPs []lin.OPResult, modeSets []*ModeSet) error {
 
 	// Find groups of potentially overlapping mode sets
 	modeSetGroups := [][]*ModeSet{{}}
