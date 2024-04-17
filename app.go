@@ -549,5 +549,13 @@ func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagr
 		return nil, err
 	}
 
+	// Save diagram in project
+	a.Project.Diagram = diag
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
 	return diag, nil
 }
