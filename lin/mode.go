@@ -4,39 +4,33 @@ import (
 	"fmt"
 	"math"
 	"math/cmplx"
-
-	"github.com/kelindar/dbscan"
 )
 
 type Mode struct {
-	ID             int       `json:"ID"`
-	OP             int       `json:"OP"`
-	EigenValueReal float64   `json:"EigenValueReal"`
-	EigenValueImag float64   `json:"EigenValueImag"`
-	NaturalFreqRaw float64   `json:"NaturalFreqRaw"`
-	NaturalFreqHz  float64   `json:"NaturalFreqHz"`
-	DampedFreqRaw  float64   `json:"DampedFreqRaw"`
-	DampedFreqHz   float64   `json:"DampedFreqHz"`
-	DampingRatio   float64   `json:"DampingRatio"`
-	Magnitudes     []float32 `json:"Magnitudes"`
-	Phases         []float32 `json:"Phases"`
+	ID             int     `json:"ID"`
+	OP             int     `json:"OP"`
+	NaturalFreqRaw float64 `json:"NaturalFreqRaw"`
+	NaturalFreqHz  float64 `json:"NaturalFreqHz"`
+	DampedFreqRaw  float64 `json:"DampedFreqRaw"`
+	DampedFreqHz   float64 `json:"DampedFreqHz"`
+	DampingRatio   float64 `json:"DampingRatio"`
 
-	EigenValue      complex128   `json:"-"`
-	EigenVector     []complex128 `json:"-"`
-	EigenVectorFull []complex128 `json:"-"`
+	EigenIndices []int        `json:"-"`
+	EigenValue   complex128   `json:"-"`
+	EigenVector  []complex128 `json:"-"`
 }
 
 // MAC returns the modal assurance criteria indicating mode shape similarity.
 // 0=no correlation, 1=total correlation.
 func (md1 Mode) MAC(md2 *Mode) (float64, error) {
 
-	if len(md1.EigenVector) != len(md2.EigenVector) {
+	if len(md1.EigenIndices) != len(md2.EigenIndices) {
 		return 0, fmt.Errorf("EigenVectors are different lengths")
 	}
 
 	var numer complex128
 	var denom1, denom2 complex128
-	for i := range md1.EigenVector {
+	for _, i := range md1.EigenIndices {
 		numer += md1.EigenVector[i] * cmplx.Conj(md2.EigenVector[i])
 		denom1 += md1.EigenVector[i] * cmplx.Conj(md1.EigenVector[i])
 		denom2 += md2.EigenVector[i] * cmplx.Conj(md2.EigenVector[i])
@@ -50,12 +44,12 @@ func (md1 Mode) MAC(md2 *Mode) (float64, error) {
 // https://past.isma-isaac.be/downloads/isma2010/papers/isma2010_0103.pdf
 func (md1 Mode) MACX(md2 *Mode) (float64, error) {
 
-	if len(md1.EigenVector) != len(md2.EigenVector) {
+	if len(md1.EigenIndices) != len(md2.EigenIndices) {
 		return 0, fmt.Errorf("EigenVectors are different lengths")
 	}
 
 	var numer1, numer2, denom11, denom12, denom21, denom22 complex128
-	for i := range md1.EigenVector {
+	for _, i := range md1.EigenIndices {
 		numer1 += md1.EigenVector[i] * cmplx.Conj(md2.EigenVector[i])
 		numer2 += md1.EigenVector[i] * md2.EigenVector[i]
 
@@ -76,7 +70,7 @@ func (md1 Mode) MACX(md2 *Mode) (float64, error) {
 // https://past.isma-isaac.be/downloads/isma2010/papers/isma2010_0103.pdf
 func (md1 *Mode) MACXP(md2 *Mode) (float64, error) {
 
-	if len(md1.EigenVector) != len(md2.EigenVector) {
+	if len(md1.EigenIndices) != len(md2.EigenIndices) {
 		return 0, fmt.Errorf("EigenVectors are different lengths")
 	}
 
@@ -86,7 +80,8 @@ func (md1 *Mode) MACXP(md2 *Mode) (float64, error) {
 	lam2 := md2.EigenValue
 
 	var numer1, numer2, denom11, denom12, denom21, denom22 complex128
-	for i := range mu1 {
+
+	for _, i := range md1.EigenIndices {
 		numer1 += cmplx.Conj(mu1[i]) * mu2[i]
 		numer2 += mu1[i] * mu2[i]
 
@@ -104,11 +99,6 @@ func (md1 *Mode) MACXP(md2 *Mode) (float64, error) {
 		(cmplx.Abs(denom21)/(2*real(lam2)) + cmplx.Abs(denom22)/(2*cmplx.Abs(lam2)))
 
 	return math.Pow(num, 2) / den, nil
-}
-
-func (md1 *Mode) DistanceTo(p dbscan.Point) float64 {
-	mac, _ := md1.MAC(p.(*Mode))
-	return 1 / mac
 }
 
 func (m *Mode) Name() string {
