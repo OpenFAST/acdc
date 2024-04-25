@@ -27,8 +27,10 @@ export namespace diagram {
 	export class Line {
 	    ID: number;
 	    Label: string;
+	    Color: string;
+	    Dash: number[];
+	    Hidden: boolean;
 	    Points: Point[];
-	    Hide: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Line(source);
@@ -38,8 +40,10 @@ export namespace diagram {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
 	        this.Label = source["Label"];
+	        this.Color = source["Color"];
+	        this.Dash = source["Dash"];
+	        this.Hidden = source["Hidden"];
 	        this.Points = this.convertValues(source["Points"], Point);
-	        this.Hide = source["Hide"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -112,8 +116,6 @@ export namespace lin {
 	    DampedFreqRaw: number;
 	    DampedFreqHz: number;
 	    DampingRatio: number;
-	    Magnitudes: number[];
-	    Phases: number[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Mode(source);
@@ -130,8 +132,6 @@ export namespace lin {
 	        this.DampedFreqRaw = source["DampedFreqRaw"];
 	        this.DampedFreqHz = source["DampedFreqHz"];
 	        this.DampingRatio = source["DampingRatio"];
-	        this.Magnitudes = source["Magnitudes"];
-	        this.Phases = source["Phases"];
 	    }
 	}
 	export class EigenResults {
@@ -1390,8 +1390,10 @@ export namespace main {
 	export class Results {
 	    LinDir: string;
 	    HasWind: boolean;
+	    MinFreq: number;
 	    MaxFreq: number;
 	    OPs: OperatingPoint[];
+	    LinOPs: lin.OPResult[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Results(source);
@@ -1401,8 +1403,10 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.LinDir = source["LinDir"];
 	        this.HasWind = source["HasWind"];
+	        this.MinFreq = source["MinFreq"];
 	        this.MaxFreq = source["MaxFreq"];
 	        this.OPs = this.convertValues(source["OPs"], OperatingPoint);
+	        this.LinOPs = this.convertValues(source["LinOPs"], lin.OPResult);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

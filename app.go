@@ -2,9 +2,11 @@ package main
 
 import (
 	"acdc/diagram"
+	"acdc/viz"
 	"bytes"
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -409,14 +411,14 @@ func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
 		return nil, fmt.Errorf("error creating directory '%s': %w", caseDir, err)
 	}
 
-	// Remove existing linearization files
-	linFiles, err := filepath.Glob(filepath.Join(caseDir, "*.lin"))
-	if err != nil {
-		return nil, err
-	}
-	for _, linFile := range linFiles {
-		os.Remove(linFile)
-	}
+	// Remove existing output files
+	extsToRemove := map[string]struct{}{".lin": {}, ".stamp": {}, ".out": {}, ".vtp": {}}
+	filepath.WalkDir(caseDir, func(path string, d fs.DirEntry, err error) error {
+		if _, ok := extsToRemove[filepath.Ext(path)]; ok {
+			os.Remove(path)
+		}
+		return nil
+	})
 
 	// Wrap app context with cancel function
 	ctx, cancelFunc := context.WithCancelCause(a.ctx)
@@ -445,16 +447,31 @@ func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
 
 	// Wait for evaluations to complete. If error, print
 	go func() {
-		if err := g.Wait(); err != nil {
+
+		// Get error from group
+		err := g.Wait()
+		if err != nil {
 			runtime.LogErrorf(a.ctx, "error evaluating case: %s", err)
 		}
+
+		// Close semaphore channel
 		close(semChan)
+
+		// Drain channel
 		for {
 			if _, ok := <-semChan; !ok {
 				break
 			}
 		}
-		cancelFunc(nil) // cancel the context
+
+		// Cancel the context for cleanup
+		cancelFunc(nil)
+
+		// If no error, write timestamp of evaluation completion
+		if err == nil {
+			os.WriteFile(filepath.Join(caseDir, "complete.stamp"),
+				[]byte(time.Now().Format(time.RFC3339)), 0777)
+		}
 	}()
 
 	// Start evaluations
@@ -513,7 +530,12 @@ func (a *App) OpenCaseDirDialog() (*Results, error) {
 		DefaultDirectory: projectDir,
 	})
 	if err != nil {
-		return a.Project.Results, nil
+		return a.Project.Results.ForApp(), nil
+	}
+
+	// No path was selected, return current results
+	if path == "" {
+		return a.Project.Results.ForApp(), nil
 	}
 
 	// Process case directory to get results
@@ -532,9 +554,9 @@ func (a *App) OpenCaseDirDialog() (*Results, error) {
 	return a.Project.Results.ForApp(), nil
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Diagram
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagram, error) {
 
@@ -557,5 +579,37 @@ func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagr
 		return nil, err
 	}
 
-	return diag, nil
+	return a.Project.Diagram, nil
+}
+
+//------------------------------------------------------------------------------
+// Visualization
+//------------------------------------------------------------------------------
+
+func (a *App) CalcModeViz(OP int, ModeID int) (*viz.ModeViz, error) {
+
+	// Check that results have been loaded
+	if a.Project.Results == nil {
+		return nil, fmt.Errorf("load results before generating visualization")
+	}
+
+	// Create visualization options
+	opts := viz.Options{Scale: 1.0}
+
+	// Cal``
+	_, err := opts.CalcViz(a.Project.Evaluate.ExecPath,
+		&a.Project.Results.LinOPs[OP], []int{ModeID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Save diagram in project
+	// a.Project.Diagram = diag
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return &viz.ModeViz{}, nil
 }

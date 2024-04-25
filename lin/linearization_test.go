@@ -8,11 +8,7 @@ import (
 
 func TestLoadResults(t *testing.T) {
 
-	// dir := "../samples/NREL_5MW-ED/case01"
-	// dir := "../samples/autoModeTrackingModels/nrel5mw/structOnly75_fast"
-	// dir := "../samples/autoModeTrackingModels/nrel5mw/aeroStructSteady"
-	// dir := "../samples/autoModeTrackingModels/iea15mw/structOnly75"
-	dir := "testdata/large"
+	dir := "testdata"
 
 	LinFiles, err := filepath.Glob(filepath.Join(dir, "*.lin"))
 	if err != nil {

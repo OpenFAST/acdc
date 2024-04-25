@@ -14,8 +14,8 @@ type FileGroup struct {
 }
 
 type OPResult struct {
-	Name          string        `json:"Name"`
-	Files         []string      `json:"-"`
+	RootPath      string        `json:"Name"`
+	FilePaths     []string      `json:"-"`
 	HasAeroStates bool          `json:"HasAeroStates"`
 	MBC           *MBC          `json:"MBC"`
 	EigRes        *EigenResults `json:"EigRes"`
@@ -24,23 +24,31 @@ type OPResult struct {
 func ProcessFiles(LinFiles []string) ([]OPResult, error) {
 
 	// Group linearization files by operating point using the file name
-	fileGroupMap := map[string]*FileGroup{}
+	opFilesMap := map[string]*FileGroup{}
 	for _, filePath := range LinFiles {
+
+		// Split file path by '.'
 		tmp := strings.Split(filePath, ".")
-		filePathNoLinExt := strings.Join(tmp[:len(tmp)-2], ".")
-		fileGroup, ok := fileGroupMap[filePathNoLinExt]
+
+		// Get the root name of the file without extension or lin numbers
+		rootName := strings.Join(tmp[:len(tmp)-2], ".")
+
+		// Get file group for this operating point, create it if it doesn't exist
+		opFiles, ok := opFilesMap[rootName]
 		if !ok {
-			fileGroup = &FileGroup{Name: filePathNoLinExt}
+			opFiles = &FileGroup{Name: rootName}
+			opFilesMap[rootName] = opFiles
 		}
-		fileGroup.Files = append(fileGroup.Files, filePath)
-		fileGroupMap[filePathNoLinExt] = fileGroup
+
+		// Append current file path to slice of files
+		opFiles.Files = append(opFiles.Files, filePath)
 	}
 
 	// Initialize flag that wind was present to false
 	hasWind := false
 
 	results := []OPResult{}
-	for _, fg := range fileGroupMap {
+	for _, fg := range opFilesMap {
 		// Read all linearization files in group
 		linFileData := make([]*LinData, len(fg.Files))
 		var err error
@@ -102,8 +110,8 @@ func ProcessFiles(LinFiles []string) ([]OPResult, error) {
 
 		// Return MBC and eigen analysis results
 		results = append(results, OPResult{
-			Name:          fg.Name,
-			Files:         fg.Files,
+			RootPath:      fg.Name,
+			FilePaths:     fg.Files,
 			HasAeroStates: hasAeroStates,
 			MBC:           mbc,
 			EigRes:        eigRes,

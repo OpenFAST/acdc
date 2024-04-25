@@ -6,6 +6,10 @@ export function AddAnalysisCase() {
   return window['go']['main']['App']['AddAnalysisCase']();
 }
 
+export function CalcModeViz(arg1, arg2) {
+  return window['go']['main']['App']['CalcModeViz'](arg1, arg2);
+}
+
 export function CancelEvaluate() {
   return window['go']['main']['App']['CancelEvaluate']();
 }

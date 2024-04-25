@@ -36,5 +36,5 @@ func TestDiagramNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Log(diag)
+	t.Logf("%#v", diag)
 }

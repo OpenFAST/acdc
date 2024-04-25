@@ -24,8 +24,10 @@ type Diagram struct {
 type Line struct {
 	ID     int     `json:"ID"`
 	Label  string  `json:"Label"`
+	Color  string  `json:"Color"`
+	Dash   []int   `json:"Dash"`
+	Hidden bool    `json:"Hidden"`
 	Points []Point `json:"Points"`
-	Hide   bool    `json:"Hide"`
 }
 
 type Point struct {

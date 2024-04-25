@@ -44,7 +44,7 @@ func LoadProject(path string) (*Project, error) {
 		return nil, fmt.Errorf("error parsing project: %w", err)
 	}
 
-	// Update project path
+	// Save project path
 	p.Info.Path = path
 
 	return p, nil

@@ -3,6 +3,7 @@ package main
 import (
 	"acdc/lin"
 	"fmt"
+	"math"
 	"path/filepath"
 	"regexp"
 )
@@ -10,9 +11,10 @@ import (
 type Results struct {
 	LinDir  string           `json:"LinDir"`
 	HasWind bool             `json:"HasWind"`
+	MinFreq float32          `json:"MinFreq"`
 	MaxFreq float32          `json:"MaxFreq"`
 	OPs     []OperatingPoint `json:"OPs"`
-	LinOPs  []lin.OPResult   `json:"-"`
+	LinOPs  []lin.OPResult   `json:"LinOPs"`
 }
 
 type OperatingPoint struct {
@@ -92,7 +94,7 @@ func ProcessCaseDir(path string) (*Results, error) {
 		results.OPs = append(results.OPs,
 			OperatingPoint{
 				ID:        i,
-				Files:     lr.Files,
+				Files:     lr.FilePaths,
 				RotSpeed:  float32(lr.MBC.RotSpeed),
 				WindSpeed: float32(lr.MBC.WindSpeed),
 				Modes:     modes,
@@ -106,7 +108,7 @@ func ProcessCaseDir(path string) (*Results, error) {
 	}
 
 	// Calculate the recommended max diagram frequency
-	results.MaxFreq = float32(maxRotSpeed / 60 * 15)
+	results.MaxFreq = float32(math.Trunc(100*maxRotSpeed/60*15) / 100)
 
 	return results, nil
 }
