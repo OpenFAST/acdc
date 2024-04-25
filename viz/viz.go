@@ -61,7 +61,7 @@ func (opts *Options) CalcViz(execPath string, op *lin.OPResult, modeIDs []int) (
 		mags[i] = make([][]float64, len(op.MBC.Azimuths))
 		phases[i] = make([][]float64, len(op.MBC.Azimuths))
 
-		ev := make([]complex128, len(m.EigenVectorFull))
+		ev := make([]complex128, len(m.EigenVector))
 
 		// Loop through azimuths
 		for j, azimuth := range op.MBC.Azimuths {
@@ -74,7 +74,7 @@ func (opts *Options) CalcViz(execPath string, op *lin.OPResult, modeIDs []int) (
 			}
 
 			// Copy eigenvector from mode for modification
-			copy(ev, m.EigenVectorFull)
+			copy(ev, m.EigenVector)
 
 			// If first value in eigenvector is negative, invert eigenvector
 			// so all eigenvectors have the same sign (arbitrary)

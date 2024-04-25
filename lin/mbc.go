@@ -241,9 +241,6 @@ type EigenResults struct {
 
 func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 
-	// Get indices of eigenvector rows to keep
-	rows := mbc.OrderEigen.Indices
-
 	// Calculate eigenvalues/eigenvectors analysis
 	eig := mat.Eigen{}
 	if ok := eig.Factorize(mbc.AvgA, mat.EigenRight); !ok {
@@ -266,30 +263,19 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 
 		// Create mode
 		mode := Mode{
-			EigenValueReal:  real(ev),
-			EigenValueImag:  imag(ev),
-			NaturalFreqRaw:  cmplx.Abs(ev),
-			NaturalFreqHz:   cmplx.Abs(ev) / (2 * math.Pi),
-			DampedFreqRaw:   imag(ev),
-			DampedFreqHz:    imag(ev) / (2 * math.Pi),
-			DampingRatio:    -real(ev) / cmplx.Abs(ev),
-			Magnitudes:      make([]float32, len(rows)),
-			Phases:          make([]float32, len(rows)),
-			EigenValue:      ev,
-			EigenVector:     make([]complex128, len(rows)),
-			EigenVectorFull: make([]complex128, len(eigenValues)),
+			NaturalFreqRaw: cmplx.Abs(ev),
+			NaturalFreqHz:  cmplx.Abs(ev) / (2 * math.Pi),
+			DampedFreqRaw:  imag(ev),
+			DampedFreqHz:   imag(ev) / (2 * math.Pi),
+			DampingRatio:   -real(ev) / cmplx.Abs(ev),
+			EigenValue:     ev,
+			EigenIndices:   mbc.OrderEigen.Indices,
+			EigenVector:    make([]complex128, len(eigenValues)),
 		}
 
 		// Store full eigenvector to mode visualization
 		for j := range eigenValues {
-			mode.EigenVectorFull[j] = eigenVectors.At(j, i)
-		}
-
-		// Store eigenvector for given rows
-		for j, r := range rows {
-			mode.EigenVector[j] = eigenVectors.At(r, i)
-			m, p := cmplx.Polar(mode.EigenVector[j])
-			mode.Magnitudes[j], mode.Phases[j] = float32(m), float32(p)
+			mode.EigenVector[j] = eigenVectors.At(j, i)
 		}
 
 		// Add mode to slice of modes
