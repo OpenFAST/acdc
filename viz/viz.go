@@ -10,9 +10,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/dominikbraun/graph"
 	"gonum.org/v1/gonum/cmplxs"
 )
 
@@ -20,10 +22,21 @@ type Options struct {
 	Scale float32
 }
 
-type ModeViz struct {
+type Line [][3]float32
+
+type Component struct {
+	Lines []Line
 }
 
-func (opts *Options) CalcViz(execPath string, op *lin.OPResult, modeIDs []int) (*ModeViz, error) {
+type Frame struct {
+	Components map[string]*Component
+}
+
+type ModeData struct {
+	Frames []Frame
+}
+
+func (opts *Options) CalcViz(execPath string, op *lin.LinOP, modeIDs []int) (*ModeData, error) {
 
 	// Create checkpoint file name
 	checkpointFileName := filepath.Base(op.RootPath) + ".ModeShapeVTK"
@@ -153,11 +166,116 @@ func (opts *Options) CalcViz(execPath string, op *lin.OPResult, modeIDs []int) (
 		return nil, err
 	}
 
+	// Open log file for writing
+	logFile, err := os.Create(op.RootPath + ".ModeShapeVTK.log")
+	if err != nil {
+		return nil, err
+	}
+	defer logFile.Close()
+
 	// Create command to generate vtk output and run it
 	cmd := exec.Command(execPath, "-VTKLin", vizFilePath)
-	if err := cmd.Run(); err != nil {
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
+	err = cmd.Run()
+	if err != nil {
 		return nil, err
 	}
 
-	return &ModeViz{}, nil
+	// Get list of VTP files for this mode visualization
+	rootName := filepath.Base(op.RootPath)
+	vtpFilePaths, err := filepath.Glob(filepath.Join(filepath.Dir(op.RootPath), "vtk", rootName+"*.vtp"))
+	if err != nil {
+		return nil, err
+	}
+
+	return BuildModeViz(vtpFilePaths)
+}
+
+func BuildModeViz(vtpFilePaths []string) (*ModeData, error) {
+
+	sort.Strings(vtpFilePaths)
+
+	// Create mode viz struct
+	mv := ModeData{}
+
+	// Loop through files
+	for _, vtpFile := range vtpFilePaths {
+
+		// Load vtk file
+		vtk, err := LoadVTK(vtpFile)
+		if err != nil {
+			return nil, err
+		}
+
+		// Skip files without lines
+		// TODO: add handling files only containing points
+		if vtk.PolyData.Piece.NumberOfLines == 0 {
+			continue
+		}
+
+		// Split file name
+		tmp := strings.Split(filepath.Base(vtpFile), ".")
+
+		// Get frame number for file
+		frameNum, err := strconv.Atoi(tmp[len(tmp)-2])
+		if err != nil {
+			return nil, err
+		}
+
+		// If mode viz has fewer frames than frame number, append empty frames
+		if len(mv.Frames) < frameNum {
+			newFrames := make([]Frame, frameNum-len(mv.Frames))
+			for i := range newFrames {
+				newFrames[i].Components = make(map[string]*Component)
+			}
+			mv.Frames = append(mv.Frames, newFrames...)
+		}
+
+		// Get pointer to frame corresponding to this file
+		frame := &mv.Frames[frameNum-1]
+
+		// Get component name from file name
+		componentName := tmp[len(tmp)-3]
+
+		// Get component, if it doesn't exist create it
+		component, ok := frame.Components[componentName]
+		if !ok {
+			component = &Component{}
+			frame.Components[componentName] = component
+		}
+
+		// Generate list of connectivity
+		connectivity := [][]int32{}
+		offsetStart := 0
+		for _, offsetEnd := range vtk.PolyData.Piece.Lines.DataArray[1].Offsets {
+			connectivity = append(connectivity, vtk.PolyData.Piece.Lines.DataArray[0].Connectivity[offsetStart:offsetEnd])
+			offsetStart = int(offsetEnd)
+		}
+
+		// Build graph and get sorted connectivity
+		g := graph.New(graph.IntHash, graph.Directed())
+		for _, c := range vtk.PolyData.Piece.Lines.DataArray[0].Connectivity {
+			g.AddVertex(int(c))
+		}
+		for _, conn := range connectivity {
+			for i := 0; i < len(conn)-1; i++ {
+				g.AddEdge(int(conn[i]), int(conn[i+1]))
+			}
+		}
+		conn, err := graph.TopologicalSort(g)
+		if err != nil {
+			return nil, err
+		}
+
+		// Copy line data into component
+		component.Lines = []Line{make(Line, len(conn))}
+		for j, c := range conn {
+			copy(component.Lines[0][j][:], vtk.PolyData.Piece.Points.DataArray.MatrixF32[c])
+		}
+	}
+
+	fmt.Printf("%#v", mv)
+
+	return &mv, nil
 }

@@ -586,30 +586,37 @@ func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagr
 // Visualization
 //------------------------------------------------------------------------------
 
-func (a *App) CalcModeViz(OP int, ModeID int) (*viz.ModeViz, error) {
+func (a *App) GetModeViz(opID int, modeID int, scale float32) (*viz.ModeData, error) {
 
-	// Check that results have been loaded
+	// If executable path is not valid, return error
+	if _, err := exec.LookPath(a.Project.Evaluate.ExecPath); err != nil {
+		return nil, fmt.Errorf("executable path is not valid")
+	}
+
+	// If results haven't been loaded, return error
 	if a.Project.Results == nil {
 		return nil, fmt.Errorf("load results before generating visualization")
 	}
 
-	// Create visualization options
-	opts := viz.Options{Scale: 1.0}
+	// If operating point index is not valid, return error
+	if opID < 0 || opID >= len(a.Project.Results.LinOPs) {
+		return nil, fmt.Errorf("invalid operating point ID: %d", opID)
+	}
 
-	// Cal``
-	_, err := opts.CalcViz(a.Project.Evaluate.ExecPath,
-		&a.Project.Results.LinOPs[OP], []int{ModeID})
+	// If mode index is not valid, return error
+	if modeID < 0 || modeID >= len(a.Project.Results.LinOPs[opID].EigRes.Modes) {
+		return nil, fmt.Errorf("invalid mode ID (%d) for operating point (%d)", modeID, opID)
+	}
+
+	// Create visualization options
+	opts := viz.Options{Scale: scale}
+
+	// Calculate visualization data
+	vizData, err := opts.CalcViz(a.Project.Evaluate.ExecPath,
+		&a.Project.Results.LinOPs[opID], []int{modeID})
 	if err != nil {
 		return nil, err
 	}
 
-	// Save diagram in project
-	// a.Project.Diagram = diag
-
-	// Save project
-	if _, err := a.Project.Save(); err != nil {
-		return nil, err
-	}
-
-	return &viz.ModeViz{}, nil
+	return vizData, nil
 }
