@@ -1,6 +1,7 @@
 package lin
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,7 +14,7 @@ type FileGroup struct {
 	Files []string
 }
 
-type OPResult struct {
+type LinOP struct {
 	RootPath      string        `json:"Name"`
 	FilePaths     []string      `json:"-"`
 	HasAeroStates bool          `json:"HasAeroStates"`
@@ -21,11 +22,14 @@ type OPResult struct {
 	EigRes        *EigenResults `json:"EigRes"`
 }
 
-func ProcessFiles(LinFiles []string) ([]OPResult, error) {
+// ProcessFiles takes a slice of linearization file paths, groups them by
+// operating point and performs MBC/Eigenanalysis for each OP. It returns
+// a slice of operating point linearization results.
+func ProcessFiles(LinFilePaths []string) ([]LinOP, error) {
 
 	// Group linearization files by operating point using the file name
 	opFilesMap := map[string]*FileGroup{}
-	for _, filePath := range LinFiles {
+	for _, filePath := range LinFilePaths {
 
 		// Split file path by '.'
 		tmp := strings.Split(filePath, ".")
@@ -47,7 +51,7 @@ func ProcessFiles(LinFiles []string) ([]OPResult, error) {
 	// Initialize flag that wind was present to false
 	hasWind := false
 
-	results := []OPResult{}
+	results := []LinOP{}
 	for _, fg := range opFilesMap {
 		// Read all linearization files in group
 		linFileData := make([]*LinData, len(fg.Files))
@@ -84,12 +88,10 @@ func ProcessFiles(LinFiles []string) ([]OPResult, error) {
 			return nil, err
 		}
 
-		// Write Eigen analysis results data to file
-		bs, err = json.MarshalIndent(eigRes.Modes, "", "\t")
-		if err != nil {
-			return nil, err
-		}
-		err = os.WriteFile(fg.Name+"_modes.json", bs, 0777)
+		// Write Eigen analysis mode results data to file
+		w := &bytes.Buffer{}
+		eigRes.Modes.ToCSV(w)
+		err = os.WriteFile(fg.Name+"_modes.csv", w.Bytes(), 0777)
 		if err != nil {
 			return nil, err
 		}
@@ -109,7 +111,7 @@ func ProcessFiles(LinFiles []string) ([]OPResult, error) {
 		}
 
 		// Return MBC and eigen analysis results
-		results = append(results, OPResult{
+		results = append(results, LinOP{
 			RootPath:      fg.Name,
 			FilePaths:     fg.Files,
 			HasAeroStates: hasAeroStates,

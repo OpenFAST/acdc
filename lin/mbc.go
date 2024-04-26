@@ -235,7 +235,7 @@ func (md *MatData) MBC3() (*MBC, error) {
 }
 
 type EigenResults struct {
-	Modes        []Mode      `json:"Modes"`
+	Modes        Modes       `json:"Modes"`
 	EigenVectors *mat.CDense `json:"EigenVectors"`
 }
 

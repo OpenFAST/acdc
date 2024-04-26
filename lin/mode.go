@@ -1,10 +1,15 @@
 package lin
 
 import (
+	"encoding/csv"
 	"fmt"
+	"io"
 	"math"
 	"math/cmplx"
+	"strconv"
 )
+
+type Modes []Mode
 
 type Mode struct {
 	ID             int     `json:"ID"`
@@ -15,9 +20,89 @@ type Mode struct {
 	DampedFreqHz   float64 `json:"DampedFreqHz"`
 	DampingRatio   float64 `json:"DampingRatio"`
 
-	EigenIndices []int        `json:"-"`
 	EigenValue   complex128   `json:"-"`
 	EigenVector  []complex128 `json:"-"`
+	EigenIndices []int        `json:"-"`
+}
+
+func (ms Modes) ToCSV(w io.Writer) {
+	cw := csv.NewWriter(w)
+	cw.Write([]string{"ID", "OP", "EVSize", "IndSize", "NaturalFreqRaw", "NaturalFreqHz",
+		"DampedFreqRaw", "DampedFreqHz", "DampingRatio", "EigenValue"})
+	for _, m := range ms {
+		rec := []string{
+			strconv.Itoa(m.ID),
+			strconv.Itoa(m.OP),
+			strconv.Itoa(len(m.EigenVector)),
+			strconv.Itoa(len(m.EigenIndices)),
+			strconv.FormatFloat(m.NaturalFreqRaw, 'g', -1, 64),
+			strconv.FormatFloat(m.NaturalFreqHz, 'g', -1, 64),
+			strconv.FormatFloat(m.DampedFreqRaw, 'g', -1, 64),
+			strconv.FormatFloat(m.DampedFreqHz, 'g', -1, 64),
+			strconv.FormatFloat(m.DampingRatio, 'g', -1, 64),
+			strconv.FormatComplex(m.EigenValue, 'g', -1, 64),
+		}
+		for _, v := range m.EigenVector {
+			rec = append(rec, strconv.FormatComplex(v, 'g', -1, 64))
+		}
+		for _, v := range m.EigenIndices {
+			rec = append(rec, strconv.Itoa(v))
+		}
+		cw.Write(rec)
+	}
+	cw.Flush()
+}
+
+func ReadModesCSV(r io.Reader) (Modes, error) {
+
+	// Read all records
+	cr := csv.NewReader(r)
+	recs, err := cr.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// If no records return
+	if len(recs) <= 1 {
+		return Modes{}, nil
+	}
+
+	// Remove header record
+	recs = recs[1:]
+
+	// Loop through records and create modes
+	modes := make(Modes, len(recs))
+	for _, rec := range recs {
+
+		evSize := 0
+		fmt.Sscan(rec[2], &evSize)
+		indSize := 0
+		fmt.Sscan(rec[3], &indSize)
+
+		m := Mode{
+			EigenVector:  make([]complex128, evSize),
+			EigenIndices: make([]int, indSize),
+		}
+		fmt.Sscan(rec[0], &m.ID)
+		fmt.Sscan(rec[1], &m.OP)
+		fmt.Sscan(rec[4], &m.NaturalFreqRaw)
+		fmt.Sscan(rec[5], &m.NaturalFreqHz)
+		fmt.Sscan(rec[6], &m.DampedFreqRaw)
+		fmt.Sscan(rec[7], &m.DampedFreqHz)
+		fmt.Sscan(rec[8], &m.DampingRatio)
+		fmt.Sscan(rec[9], &m.EigenValue)
+		j := 10
+		for i := 0; i < evSize; i, j = i+1, j+1 {
+			fmt.Sscan(rec[j], &m.EigenVector[i])
+		}
+		for i := 0; i < indSize; i, j = i+1, j+1 {
+			fmt.Sscan(rec[j], &m.EigenIndices[i])
+		}
+
+		modes = append(modes, m)
+	}
+
+	return modes, nil
 }
 
 // MAC returns the modal assurance criteria indicating mode shape similarity.
