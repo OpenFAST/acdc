@@ -611,12 +611,16 @@ func (a *App) GetModeViz(opID int, modeID int, scale float32) (*viz.ModeData, er
 	// Create visualization options
 	opts := viz.Options{Scale: scale}
 
-	// Calculate visualization data
-	vizData, err := opts.CalcViz(a.Project.Evaluate.ExecPath,
+	// Generate mode visualization data
+	modeData, err := opts.GenerateModeData(a.Project.Evaluate.ExecPath,
 		&a.Project.Results.LinOPs[opID], []int{modeID})
 	if err != nil {
 		return nil, err
 	}
 
-	return vizData, nil
+	// Populate operating point ID and mode ID
+	modeData.OPID = opID
+	modeData.ModeID = modeID
+
+	return modeData, nil
 }

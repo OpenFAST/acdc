@@ -1428,3 +1428,96 @@ export namespace main {
 
 }
 
+export namespace viz {
+	
+	export class Point {
+	    XYZ: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Point(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.XYZ = source["XYZ"];
+	    }
+	}
+	export class Component {
+	    Line: Point[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Component(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Line = this.convertValues(source["Line"], Point);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class Frame {
+	    Components: {[key: string]: Component};
+	
+	    static createFrom(source: any = {}) {
+	        return new Frame(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Components = source["Components"];
+	    }
+	}
+	export class ModeData {
+	    OPID: number;
+	    ModeID: number;
+	    Frames: Frame[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ModeData(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.OPID = source["OPID"];
+	        this.ModeID = source["ModeID"];
+	        this.Frames = this.convertValues(source["Frames"], Frame);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+

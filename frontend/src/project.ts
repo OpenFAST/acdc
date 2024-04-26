@@ -6,9 +6,9 @@ import { FetchModel, UpdateModel, ImportModelDialog } from "../wailsjs/go/main/A
 import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase } from "../wailsjs/go/main/App"
 import { FetchEvaluate, UpdateEvaluate, SelectExec, EvaluateCase, GetEvaluateLog, CancelEvaluate } from "../wailsjs/go/main/App"
 import { FetchResults, OpenCaseDirDialog } from "../wailsjs/go/main/App"
-import { CalcModeViz } from "../wailsjs/go/main/App"
+import { GetModeViz } from "../wailsjs/go/main/App"
 // import { EvaluateLinearization, CancelEvaluate } from "../wailsjs/go/main/App"
-import { main, diagram as diag } from "../wailsjs/go/models"
+import { main, diagram as diag, viz } from "../wailsjs/go/models"
 import { EventsOn } from "../wailsjs/runtime/runtime"
 import { LogError } from '../wailsjs/runtime/runtime'
 
@@ -29,6 +29,8 @@ class Loading {
     viz: number = 0;
 }
 
+
+
 export const useProjectStore = defineStore('project', () => {
 
     const saving = ref(false)
@@ -43,6 +45,7 @@ export const useProjectStore = defineStore('project', () => {
     const evalCaseID = ref(1)
     const diagram = reactive<diag.Diagram>(new diag.Diagram)
     const status = reactive<Loading>(new Loading)
+    const modeViz = reactive<Array<viz.ModeData>>(new Array)
 
     // Load config when store is initialized
     LoadConfig().then(result => {
@@ -304,11 +307,17 @@ export const useProjectStore = defineStore('project', () => {
     // Visualization
     //--------------------------------------------------------------------------
 
-    function getModeViz(opID: number, modeID: number) {
+    function getModeViz(opID: number, modeID: number, scale: number) {
         status.viz = LOADING
-        return new Promise<diag.Diagram>((resolve, reject) => {
-            CalcModeViz(opID, modeID).then(result => {
+        return new Promise<viz.ModeData>((resolve, reject) => {
+            GetModeViz(opID, modeID, scale).then(result => {
                 console.log(result)
+                const found = modeViz.find((md) => result.OPID == md.OPID && result.ModeID == md.ModeID)
+                if (found !== undefined) {
+                    Object.assign(found, result)
+                } else {
+                    modeViz.push(result);
+                }
                 status.viz = LOADED
                 resolve(result)
             }).catch(err => {
@@ -323,8 +332,6 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
     // Other
     //--------------------------------------------------------------------------
-
-
 
     return {
         status: status,
@@ -366,5 +373,6 @@ export const useProjectStore = defineStore('project', () => {
         generateDiagram,
         // Visualization
         getModeViz,
+        modeViz,
     }
 })

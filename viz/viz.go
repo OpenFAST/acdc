@@ -22,21 +22,25 @@ type Options struct {
 	Scale float32
 }
 
-type Line [][3]float32
+type Point struct {
+	XYZ [3]float32 `json:"XYZ"`
+}
 
 type Component struct {
-	Lines []Line
+	Line []Point `json:"Line"`
 }
 
 type Frame struct {
-	Components map[string]*Component
+	Components map[string]*Component `json:"Components"`
 }
 
 type ModeData struct {
-	Frames []Frame
+	OPID   int     `json:"OPID"`
+	ModeID int     `json:"ModeID"`
+	Frames []Frame `json:"Frames"`
 }
 
-func (opts *Options) CalcViz(execPath string, op *lin.LinOP, modeIDs []int) (*ModeData, error) {
+func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []int) (*ModeData, error) {
 
 	// Create checkpoint file name
 	checkpointFileName := filepath.Base(op.RootPath) + ".ModeShapeVTK"
@@ -132,15 +136,15 @@ func (opts *Options) CalcViz(execPath string, op *lin.LinOP, modeIDs []int) (*Mo
 	fmt.Fprintf(w, "------- OpenFAST MODE-SHAPE INPUT FILE -------------------------------------------\n")
 	fmt.Fprintf(w, "# Options for visualizing mode shapes\n")
 	fmt.Fprintf(w, "---------------------- FILE NAMES ----------------------------------------------\n")
-	fmt.Fprintf(w, "%-20s CheckpointRoot - Rootname of the checkpoint file written when OpenFAST generated the linearization files (without the \".chkp\" extension)\n", `"`+checkpointFileName+`"`)
-	fmt.Fprintf(w, "%-20s ModesFileName  - Name of the mode-shape file (with eigenvectors)\n", `"`+modesFileName+`"`)
+	fmt.Fprintf(w, "%-20v CheckpointRoot - Rootname of the checkpoint file written when OpenFAST generated the linearization files (without the \".chkp\" extension)\n", `"`+checkpointFileName+`"`)
+	fmt.Fprintf(w, "%-20v ModesFileName  - Name of the mode-shape file (with eigenvectors)\n", `"`+modesFileName+`"`)
 	fmt.Fprintf(w, "---------------------- VISUALIZATION OPTIONS -----------------------------------\n")
-	fmt.Fprintf(w, "%-20d VTKLinModes    - Number of modes to visualize (0 <= VTKLinModes <= NumModes)\n", numModes)
-	fmt.Fprintf(w, "%-20s VTKModes       - List of which VTKLinModes modes will be visualized (modes will be added sequentially from the last value entered)\n", strings.Join(modeStr, ", "))
-	fmt.Fprintf(w, "%-20g VTKLinScale    - Mode shape visualization scaling factor (exaggerates mode shapes: try 10 for ElastoDyn; 0.1 for BeamDyn)\n", opts.Scale)
-	fmt.Fprintf(w, "%-20d VTKLinTim      - Switch to make one animation for all LinTimes together (VTKLinTim=1) or separate animations for each LinTimes (VTKLinTim=2)\n", 2)
+	fmt.Fprintf(w, "%-20v VTKLinModes    - Number of modes to visualize (0 <= VTKLinModes <= NumModes)\n", numModes)
+	fmt.Fprintf(w, "%-20v VTKModes       - List of which VTKLinModes modes will be visualized (modes will be added sequentially from the last value entered)\n", 1)
+	fmt.Fprintf(w, "%-20v VTKLinScale    - Mode shape visualization scaling factor (exaggerates mode shapes: try 10 for ElastoDyn; 0.1 for BeamDyn)\n", opts.Scale)
+	fmt.Fprintf(w, "%-20v VTKLinTim      - Switch to make one animation for all LinTimes together (VTKLinTim=1) or separate animations for each LinTimes (VTKLinTim=2)\n", 2)
 	fmt.Fprintf(w, "%-20v VTKLinTimes1   - If VTKLinTim=2, visualize modes at LinTimes(1) only? (if false, files will be generated at all LinTimes)\n", true)
-	fmt.Fprintf(w, "%-20f VTKLinPhase    - Phase used when making one animation for all LinTimes together (used only when VTKLinTim=1)\n", 0.0)
+	fmt.Fprintf(w, "%-20v VTKLinPhase    - Phase used when making one animation for all LinTimes together (used only when VTKLinTim=1)\n", 0.0)
 	if err := os.WriteFile(vizFilePath, w.Bytes(), 0777); err != nil {
 		return nil, err
 	}
@@ -189,10 +193,16 @@ func (opts *Options) CalcViz(execPath string, op *lin.LinOP, modeIDs []int) (*Mo
 		return nil, err
 	}
 
-	return BuildModeViz(vtpFilePaths)
+	// Parse mode data from files
+	md, err := ParseModeData(vtpFilePaths)
+	if err != nil {
+		return nil, err
+	}
+
+	return md, nil
 }
 
-func BuildModeViz(vtpFilePaths []string) (*ModeData, error) {
+func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 
 	sort.Strings(vtpFilePaths)
 
@@ -269,13 +279,11 @@ func BuildModeViz(vtpFilePaths []string) (*ModeData, error) {
 		}
 
 		// Copy line data into component
-		component.Lines = []Line{make(Line, len(conn))}
+		component.Line = make([]Point, len(conn))
 		for j, c := range conn {
-			copy(component.Lines[0][j][:], vtk.PolyData.Piece.Points.DataArray.MatrixF32[c])
+			copy(component.Line[j].XYZ[:], vtk.PolyData.Piece.Points.DataArray.MatrixF32[c])
 		}
 	}
-
-	fmt.Printf("%#v", mv)
 
 	return &mv, nil
 }

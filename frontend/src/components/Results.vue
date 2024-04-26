@@ -4,8 +4,9 @@ import { useProjectStore, LOADED, LOADING, NOT_LOADED } from '../project';
 import { Scatter } from 'vue-chartjs'
 import { Chart, ChartData, ChartOptions, ChartEvent, ActiveElement, ScriptableContext } from 'chart.js'
 import { ChartComponentRef } from "vue-chartjs"
-import { main, diagram as diag } from "../../wailsjs/go/models"
+import { main, diagram } from "../../wailsjs/go/models"
 import chroma from 'chroma-js'
+import ModeViz from "./ModeViz.vue"
 
 const project = useProjectStore()
 
@@ -14,8 +15,8 @@ onMounted(() => {
 })
 
 const selectedOP = ref<main.OperatingPoint>()
-const selectedLine = ref<diag.Line | null>(null)
-const selectedMode = ref<diag.Point | null>(null)
+const selectedLine = ref<diagram.Line | null>(null)
+const selectedMode = ref<diagram.Point | null>(null)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const doCluster = ref(false)
@@ -34,9 +35,17 @@ function selectPoint(event: ChartEvent, elements: ActiveElement[], chart: Chart<
     selectedMode.value = selectedLine.value.Points[elements[0].index];
 }
 
-function selectLine(line: diag.Line) {
+function selectLine(line: diagram.Line) {
     selectedLine.value = line;
     selectedMode.value = null;
+}
+
+function getModeViz(opID: number, modeID: number) {
+    project.getModeViz(opID, modeID, 15.0).then(result => {
+
+    }).catch(err => {
+
+    })
 }
 
 const charts = computed(() => {
@@ -348,7 +357,7 @@ const charts = computed(() => {
                     <div class="card-header hstack">
                         <span>Mode</span>
                         <a class="btn btn-primary btn-sm ms-auto"
-                            @click="project.getModeViz(selectedMode.OpPtID, selectedMode.ModeID)">
+                            @click="getModeViz(selectedMode.OpPtID, selectedMode.ModeID)">
                             Visualize
                         </a>
                     </div>
@@ -395,6 +404,29 @@ const charts = computed(() => {
             </div>
         </div>
 
+        <div class="card mb-3" v-if="selectedMode != null && project.modeViz.length > 0">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Mode Visualization</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-9">
+                        <div style="width:100%; height: 500px">
+                            <ModeViz :ModeData="project.modeViz[project.modeViz.length - 1]">
+                            </ModeViz>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="list-group">
+                            <a class="list-group-item list-group-item-action" v-for="mv in project.modeViz"
+                                :class="{ active: (selectedMode.OpPtID == mv.OPID) && (selectedMode.ModeID == mv.ModeID) }">
+                                OP: {{ mv.OPID }}, Mode: {{ mv.ModeID }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 </template>
 

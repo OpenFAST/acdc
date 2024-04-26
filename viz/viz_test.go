@@ -7,7 +7,7 @@ import (
 
 func TestBuildModeViz(t *testing.T) {
 
-	data, err := viz.BuildModeViz([]string{
+	data, err := viz.ParseModeData([]string{
 		"testdata/03_NREL_5MW-ED.Mode1.LinTime1.ED_TowerLn2Mesh_motion.001.vtp",
 		"testdata/03_NREL_5MW-ED.Mode1.LinTime1.ED_TowerLn2Mesh_motion.002.vtp",
 		"testdata/03_NREL_5MW-ED.Mode1.LinTime1.ED_TowerLn2Mesh_motion.003.vtp",
