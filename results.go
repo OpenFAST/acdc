@@ -14,7 +14,7 @@ type Results struct {
 	MinFreq float32          `json:"MinFreq"`
 	MaxFreq float32          `json:"MaxFreq"`
 	OPs     []OperatingPoint `json:"OPs"`
-	LinOPs  []lin.OPResult   `json:"LinOPs"`
+	LinOPs  []lin.LinOP      `json:"LinOPs"`
 }
 
 type OperatingPoint struct {
