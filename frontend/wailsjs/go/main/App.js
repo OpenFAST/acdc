@@ -6,10 +6,6 @@ export function AddAnalysisCase() {
   return window['go']['main']['App']['AddAnalysisCase']();
 }
 
-export function CalcModeViz(arg1, arg2) {
-  return window['go']['main']['App']['CalcModeViz'](arg1, arg2);
-}
-
 export function CancelEvaluate() {
   return window['go']['main']['App']['CancelEvaluate']();
 }
@@ -40,6 +36,10 @@ export function GenerateDiagram(arg1, arg2) {
 
 export function GetEvaluateLog(arg1) {
   return window['go']['main']['App']['GetEvaluateLog'](arg1);
+}
+
+export function GetModeViz(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetModeViz'](arg1, arg2, arg3);
 }
 
 export function ImportModelDialog() {

@@ -109,8 +109,6 @@ export namespace lin {
 	export class Mode {
 	    ID: number;
 	    OP: number;
-	    EigenValueReal: number;
-	    EigenValueImag: number;
 	    NaturalFreqRaw: number;
 	    NaturalFreqHz: number;
 	    DampedFreqRaw: number;
@@ -125,8 +123,6 @@ export namespace lin {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
 	        this.OP = source["OP"];
-	        this.EigenValueReal = source["EigenValueReal"];
-	        this.EigenValueImag = source["EigenValueImag"];
 	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
 	        this.NaturalFreqHz = source["NaturalFreqHz"];
 	        this.DampedFreqRaw = source["DampedFreqRaw"];
@@ -241,16 +237,14 @@ export namespace lin {
 		    return a;
 		}
 	}
-	
-	
-	export class OPResult {
+	export class LinOP {
 	    Name: string;
 	    HasAeroStates: boolean;
 	    MBC?: MBC;
 	    EigRes?: EigenResults;
 	
 	    static createFrom(source: any = {}) {
-	        return new OPResult(source);
+	        return new LinOP(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -279,6 +273,8 @@ export namespace lin {
 		    return a;
 		}
 	}
+	
+	
 
 }
 
@@ -1393,7 +1389,7 @@ export namespace main {
 	    MinFreq: number;
 	    MaxFreq: number;
 	    OPs: OperatingPoint[];
-	    LinOPs: lin.OPResult[];
+	    LinOPs: lin.LinOP[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Results(source);
@@ -1406,7 +1402,7 @@ export namespace main {
 	        this.MinFreq = source["MinFreq"];
 	        this.MaxFreq = source["MaxFreq"];
 	        this.OPs = this.convertValues(source["OPs"], OperatingPoint);
-	        this.LinOPs = this.convertValues(source["LinOPs"], lin.OPResult);
+	        this.LinOPs = this.convertValues(source["LinOPs"], lin.LinOP);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

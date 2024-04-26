@@ -28,6 +28,7 @@ interface Graph {
 }
 
 function selectPoint(event: ChartEvent, elements: ActiveElement[], chart: Chart<"scatter">) {
+    if (elements.length == 0) return
     if (elements[0].datasetIndex >= project.diagram.Lines.length) return;
     selectedLine.value = project.diagram.Lines[elements[0].datasetIndex];
     selectedMode.value = selectedLine.value.Points[elements[0].index];
@@ -45,7 +46,6 @@ const charts = computed(() => {
     const xValues = (xAxisWS && CD.HasWind) ? CD.WindSpeeds : CD.RotSpeeds
     const freqMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.NaturalFreqHz))))
     const dampMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.DampingRatio))))
-    console.log(CD.Lines)
 
     let objs = new Array<Graph>;
 
