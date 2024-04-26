@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/adrg/xdg v0.4.0
+	github.com/dominikbraun/graph v0.23.0
 	github.com/labstack/gommon v0.4.2
 	github.com/mkmik/argsort v1.1.0
 	github.com/parallelo-ai/kmeans v0.1.1
