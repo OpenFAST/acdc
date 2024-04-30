@@ -68,6 +68,12 @@ func RunEvaluation(ctx context.Context, model *Model, c *Case, op *Condition, ca
 			files.Main[0].LinTimes.Value = make([]float64, files.Main[0].NLinTimes.Value)
 		}
 
+		// Write checkpoint files for later generation of mode shapes
+		files.Main[0].WrVTK.Value = 3
+
+		// Write lines
+		files.Main[0].VTK_type.Value = 2
+
 	} else {
 		return fmt.Errorf("no Main files were imported")
 	}
