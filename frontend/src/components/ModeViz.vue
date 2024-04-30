@@ -43,7 +43,7 @@ function addFrames(modeData: viz.ModeData) {
                 c.Line.map((p) => new THREE.Vector3(p.XYZ[0], p.XYZ[1], p.XYZ[2])))
             const points = curve.getPoints(50);
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 4 });
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 100 });
             const curveObject = new THREE.Line(geometry, material);
             frameGroup.add(curveObject)
             allFramesGroup.add(curveObject.clone()) // Add clone of object to be used for view sizing
