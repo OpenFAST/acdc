@@ -558,7 +558,7 @@ func (a *App) OpenCaseDirDialog() (*Results, error) {
 // Diagram
 //------------------------------------------------------------------------------
 
-func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagram, error) {
+func (a *App) GenerateDiagram(minFreqHz float64, maxFreqHz float64, doCluster bool) (*diagram.Diagram, error) {
 
 	// Check that results have been loaded
 	if a.Project.Results == nil {
@@ -566,7 +566,7 @@ func (a *App) GenerateDiagram(maxFreqHz float64, doCluster bool) (*diagram.Diagr
 	}
 
 	// Generate diagram with given options
-	diag, err := diagram.New(a.Project.Results.LinOPs, maxFreqHz, doCluster)
+	diag, err := diagram.New(a.Project.Results.LinOPs, [2]float64{minFreqHz, maxFreqHz}, doCluster)
 	if err != nil {
 		return nil, err
 	}

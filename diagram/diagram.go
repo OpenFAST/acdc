@@ -54,7 +54,7 @@ type ModeIndex struct {
 }
 
 // CampbellDiagram returns a Campbell Diagram structure from the results
-func New(OPs []lin.LinOP, maxFreqHz float64, doCluster bool) (*Diagram, error) {
+func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool) (*Diagram, error) {
 
 	// Collect operating point data
 	rotSpeeds := make([]float32, len(OPs))
@@ -67,7 +67,7 @@ func New(OPs []lin.LinOP, maxFreqHz float64, doCluster bool) (*Diagram, error) {
 	}
 
 	// Build mode sets based on modal assurance criteria
-	modeSets, err := connectModesMAC(OPs, maxFreqHz)
+	modeSets, err := connectModesMAC(OPs, freqRangeHz)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func New(OPs []lin.LinOP, maxFreqHz float64, doCluster bool) (*Diagram, error) {
 }
 
 // connectModesMAC builds connected sets of modes from linearization results
-func connectModesMAC(OPs []lin.LinOP, maxFreqHz float64) ([]*ModeSet, error) {
+func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64) ([]*ModeSet, error) {
 
 	// Create array of mode sets
 	modeSets := []*ModeSet{}
@@ -122,8 +122,8 @@ func connectModesMAC(OPs []lin.LinOP, maxFreqHz float64) ([]*ModeSet, error) {
 		// Get pointer to mode
 		m := &OPs[0].EigRes.Modes[i]
 
-		// If mode natural frequency exceeds limit, continue
-		if m.NaturalFreqHz > maxFreqHz {
+		// If mode natural frequency is outside range, continue
+		if m.NaturalFreqHz < freqRangeHz[0] || m.NaturalFreqHz > freqRangeHz[1] {
 			continue
 		}
 
@@ -163,7 +163,7 @@ func connectModesMAC(OPs []lin.LinOP, maxFreqHz float64) ([]*ModeSet, error) {
 				mn := &op.EigRes.Modes[l]
 
 				// If mode natural frequency exceeds limit, continue
-				if mn.NaturalFreqHz > maxFreqHz {
+				if mn.NaturalFreqHz < freqRangeHz[0] || mn.NaturalFreqHz > freqRangeHz[1] {
 					continue
 				}
 
@@ -174,7 +174,7 @@ func connectModesMAC(OPs []lin.LinOP, maxFreqHz float64) ([]*ModeSet, error) {
 				}
 
 				// Modify MAC by change in frequency
-				mac *= 1 - math.Abs(mn.NaturalFreqHz-mp.NaturalFreqHz)/maxFreqHz
+				mac *= 1 - math.Abs(mn.NaturalFreqHz-mp.NaturalFreqHz)/(freqRangeHz[1]-freqRangeHz[0])
 
 				// Add MAC to weight matrix
 				w.Set(j, k, mac)

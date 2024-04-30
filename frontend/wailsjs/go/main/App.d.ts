@@ -18,7 +18,7 @@ export function FetchModel():Promise<main.Model>;
 
 export function FetchResults():Promise<main.Results>;
 
-export function GenerateDiagram(arg1:number,arg2:boolean):Promise<diagram.Diagram>;
+export function GenerateDiagram(arg1:number,arg2:number,arg3:boolean):Promise<diagram.Diagram>;
 
 export function GetEvaluateLog(arg1:string):Promise<string>;
 

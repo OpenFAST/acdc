@@ -4,7 +4,7 @@ import { useProjectStore, LOADED, LOADING, NOT_LOADED } from '../project';
 import { Scatter } from 'vue-chartjs'
 import { Chart, ChartData, ChartOptions, ChartEvent, ActiveElement, ScriptableContext } from 'chart.js'
 import { ChartComponentRef } from "vue-chartjs"
-import { main, diagram } from "../../wailsjs/go/models"
+import { main, diagram, viz } from "../../wailsjs/go/models"
 import chroma from 'chroma-js'
 import ModeViz from "./ModeViz.vue"
 
@@ -16,7 +16,7 @@ onMounted(() => {
 
 const selectedOP = ref<main.OperatingPoint>()
 const selectedLine = ref<diagram.Line | null>(null)
-const selectedMode = ref<diagram.Point | null>(null)
+const selectedPoint = ref<diagram.Point | null>(null)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const doCluster = ref(false)
@@ -32,12 +32,12 @@ function selectPoint(event: ChartEvent, elements: ActiveElement[], chart: Chart<
     if (elements.length == 0) return
     if (elements[0].datasetIndex >= project.diagram.Lines.length) return;
     selectedLine.value = project.diagram.Lines[elements[0].datasetIndex];
-    selectedMode.value = selectedLine.value.Points[elements[0].index];
+    selectedPoint.value = selectedLine.value.Points[elements[0].index];
 }
 
 function selectLine(line: diagram.Line) {
     selectedLine.value = line;
-    selectedMode.value = null;
+    selectedPoint.value = null;
 }
 
 function getModeViz(opID: number, modeID: number) {
@@ -53,7 +53,9 @@ const charts = computed(() => {
     const CD = project.diagram
     const xLabel = (xAxisWS && CD.HasWind) ? "Wind Speed (m/s)" : "Rotor Speed (RPM)"
     const xValues = (xAxisWS && CD.HasWind) ? CD.WindSpeeds : CD.RotSpeeds
+    const freqMin = Math.min(...CD.Lines.filter(line => !line.Hidden).map(line => Math.min(...line.Points.map(p => p.NaturalFreqHz))))
     const freqMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.NaturalFreqHz))))
+    const dampMin = Math.min(...CD.Lines.filter(line => !line.Hidden).map(line => Math.min(...line.Points.map(p => p.DampingRatio))))
     const dampMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.DampingRatio))))
 
     let objs = new Array<Graph>;
@@ -106,9 +108,9 @@ const charts = computed(() => {
             })))
         }
 
-        // Plot selected point if one is selected
-        if (selectedMode.value != null) {
-            const p = selectedMode.value;
+        // Plot selected point and visualization points if one is selected
+        if (selectedPoint.value != null) {
+            const p = selectedPoint.value;
             data.datasets.push({
                 label: 'selectedPoint',
                 data: [{
@@ -149,6 +151,7 @@ const charts = computed(() => {
                     y: {
                         title: { display: true, text: cfg.label, font: { size: 18 } },
                         ticks: { font: { size: 16 } },
+                        min: 0.95 * (cfg.isNatFreq ? freqMin : dampMin),
                         max: 1.05 * (cfg.isNatFreq ? freqMax : dampMax),
                     },
                 },
@@ -244,8 +247,7 @@ const charts = computed(() => {
                         </select>
                     </div>
                     <div class="col-12">
-                        <a class=" btn btn-primary"
-                            @click="project.generateDiagram(project.results.MaxFreq, doCluster)">Generate</a>
+                        <a class=" btn btn-primary" @click="project.generateDiagram(doCluster)">Generate</a>
                     </div>
                 </form>
             </div>
@@ -339,7 +341,7 @@ const charts = computed(() => {
                             </div> -->
                             <div class="col-12" v-if="!selectedLine.Hidden">
                                 <label for="linePoints" class="col-form-label">Points</Label>
-                                <select class="form-select" id="linePoints" v-model="selectedMode">
+                                <select class="form-select" id="linePoints" v-model="selectedPoint">
                                     <option v-for="point in selectedLine.Points" :value="point">OP: {{ point.OpPtID }},
                                         Rotor Speed: {{ point.RotSpeed.toFixed(2) }}, Wind Speed: {{
                     point.WindSpeed.toFixed(2) }}, Natural Frequency: {{
@@ -353,11 +355,11 @@ const charts = computed(() => {
             </div>
 
             <div class="col">
-                <div class="card h-100" v-if="selectedMode != null">
+                <div class="card h-100" v-if="selectedPoint != null">
                     <div class="card-header hstack">
                         <span>Mode</span>
                         <a class="btn btn-primary btn-sm ms-auto"
-                            @click="getModeViz(selectedMode.OpPtID, selectedMode.ModeID)">
+                            @click="getModeViz(selectedPoint.OpPtID, selectedPoint.ModeID)">
                             Visualize
                         </a>
                     </div>
@@ -365,38 +367,38 @@ const charts = computed(() => {
                         <form class="row row-cols-auto g-3">
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeOP" class="col-form-label">Operating Point</label>
-                                <input type="text" class="form-control" id="modeOP" v-model.number="selectedMode.OpPtID"
-                                    disabled>
+                                <input type="text" class="form-control" id="modeOP"
+                                    v-model.number="selectedPoint.OpPtID" disabled>
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeID" class="col-form-label">Mode ID</Label>
-                                <input type="text" class="form-control" id="modeID" v-model.number="selectedMode.ModeID"
-                                    disabled>
+                                <input type="text" class="form-control" id="modeID"
+                                    v-model.number="selectedPoint.ModeID" disabled>
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeRotSpeed" class="col-form-label">Rotor Speed (RPM)</Label>
                                 <input type="text" class="form-control" id="modeRotSpeed"
-                                    v-model.number="selectedMode.RotSpeed" disabled>
+                                    v-model.number="selectedPoint.RotSpeed" disabled>
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeWindSpeed" class="col-form-label">Wind Speed (m/s)</Label>
                                 <input type="text" class="form-control" id="modeWindSpeed"
-                                    v-model.number="selectedMode.WindSpeed" disabled>
+                                    v-model.number="selectedPoint.WindSpeed" disabled>
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeOP" class="col-form-label">Natural Frequency (Hz)</label>
                                 <input type="text" class="form-control" id="modeOP"
-                                    v-model.number="selectedMode.NaturalFreqHz" disabled>
+                                    v-model.number="selectedPoint.NaturalFreqHz" disabled>
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeID" class="col-form-label">Damped Frequency (Hz)</Label>
                                 <input type="text" class="form-control" id="modeID"
-                                    v-model.number="selectedMode.DampedFreqHz" disabled>
+                                    v-model.number="selectedPoint.DampedFreqHz" disabled>
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeRotSpeed" class="col-form-label">Damping Ratio (%)</Label>
                                 <input type="text" class="form-control" id="modeRotSpeed"
-                                    v-model.number="selectedMode.DampingRatio" disabled>
+                                    v-model.number="selectedPoint.DampingRatio" disabled>
                             </div>
                         </form>
                     </div>
@@ -404,9 +406,12 @@ const charts = computed(() => {
             </div>
         </div>
 
-        <div class="card mb-3" v-if="selectedMode != null && project.modeViz.length > 0">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card mb-3" v-if="selectedPoint != null && project.modeViz.length > 0">
+            <div class="card-header hstack">
                 <span>Mode Visualization</span>
+                <a class="btn btn-primary btn-sm ms-auto" @click="project.clearModeViz">
+                    Clear
+                </a>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -419,7 +424,7 @@ const charts = computed(() => {
                     <div class="col-3">
                         <div class="list-group">
                             <a class="list-group-item list-group-item-action" v-for="mv in project.modeViz"
-                                :class="{ active: (selectedMode.OpPtID == mv.OPID) && (selectedMode.ModeID == mv.ModeID) }">
+                                :class="{ active: (selectedPoint.OpPtID == mv.OPID) && (selectedPoint.ModeID == mv.ModeID) }">
                                 OP: {{ mv.OPID }}, Mode: {{ mv.ModeID }}
                             </a>
                         </div>

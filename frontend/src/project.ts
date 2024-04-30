@@ -287,10 +287,10 @@ export const useProjectStore = defineStore('project', () => {
     // Diagram
     //--------------------------------------------------------------------------
 
-    function generateDiagram(maxFreqHz: number, doCluster: boolean) {
+    function generateDiagram(doCluster: boolean) {
         status.diagram = LOADING
         return new Promise<diag.Diagram>((resolve, reject) => {
-            GenerateDiagram(maxFreqHz, doCluster).then(result => {
+            GenerateDiagram(results.MinFreq, results.MaxFreq, doCluster).then(result => {
                 Object.assign(diagram, result)
                 status.diagram = LOADED
                 resolve(diagram)
@@ -327,6 +327,10 @@ export const useProjectStore = defineStore('project', () => {
                 reject(err)
             })
         })
+    }
+
+    function clearModeViz() {
+        modeViz.splice(0);
     }
 
     //--------------------------------------------------------------------------
@@ -373,6 +377,7 @@ export const useProjectStore = defineStore('project', () => {
         generateDiagram,
         // Visualization
         getModeViz,
+        clearModeViz,
         modeViz,
     }
 })

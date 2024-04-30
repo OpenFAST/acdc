@@ -24,6 +24,7 @@ let frameCenter = new THREE.Vector3;
 let frameSize = new THREE.Vector3;
 let clock = new THREE.Clock();
 let delta = 0;
+const FOV = 10;
 
 function addFrames(modeData: viz.ModeData) {
     scene.clear()
@@ -45,9 +46,9 @@ function addFrames(modeData: viz.ModeData) {
             const material = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 4 });
             const curveObject = new THREE.Line(geometry, material);
             frameGroup.add(curveObject)
-            allFramesGroup.add(curveObject.clone())
+            allFramesGroup.add(curveObject.clone()) // Add clone of object to be used for view sizing
         }
-        frameGroup.visible = false
+        frameGroup.visible = false // Initialize each group to not visible for animation
         frames.push(frameGroup)
         scene.add(frameGroup)
     }
@@ -60,57 +61,56 @@ function addFrames(modeData: viz.ModeData) {
 
 let scene: THREE.Scene;
 let renderer: THREE.WebGLRenderer;
-let windowWidth: number, windowHeight: number;
-let mouseX: number = 0;
 
 const views = [
     {
         // Front View
         left: 0,
         bottom: 0,
-        width: 0.33,
+        width: 0.495,
         height: 1.0,
         background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
         eye: [-175, 0, frameCenter.z],
         up: [0, 0, 1],
-        fov: 50,
-        updateCamera: function (camera: THREE.Camera, scene: THREE.Scene, mouseX: number) {
-            // camera.position.x += mouseX * 0.05;
-            // camera.position.x = Math.max(Math.min(camera.position.x, 2000), - 2000);
+        updateCamera: function (camera: THREE.PerspectiveCamera) {
+            // Calculate distance along -X axis to fit model in frame vertically
+            // See https://wejn.org/2020/12/cracking-the-threejs-object-fitting-nut/ for equation
+            let distance = 1.05 * (frameSize.z / 2 / Math.tan(camera.fov * Math.PI / 180 / 2) + frameSize.x / 2)
+            camera.position.fromArray([-distance, 0, frameCenter.z]); // Looking along X (downwind)
             camera.lookAt(frameCenter);
         },
         camera: new THREE.PerspectiveCamera,
     },
     {
         // Side View
-        left: 1 / 3.0,
+        left: 0.5,
         bottom: 0,
-        width: 0.33,
+        width: 0.245,
         height: 1.0,
         background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
         eye: [0, -175, frameCenter.z],
         up: [0, 0, 1],
-        fov: 50,
-        updateCamera: function (camera: THREE.Camera, scene: THREE.Scene, mouseX: number) {
-            // camera.position.x -= mouseX * 0.05;
-            // camera.position.x = Math.max(Math.min(camera.position.x, 2000), - 2000);
+        updateCamera: function (camera: THREE.PerspectiveCamera) {
+            // Calculate distance along -Y axis to fit model in frame vertically
+            let distance = 1.05 * (frameSize.z / 2 / Math.tan(camera.fov * Math.PI / 180 / 2) + frameSize.y / 2)
+            camera.position.fromArray([0, -distance, frameCenter.z]); // Looking along -Y (side)
             camera.lookAt(frameCenter);
         },
         camera: new THREE.PerspectiveCamera,
     },
     {
         // Top View
-        left: 2 / 3.0,
+        left: 0.75,
         bottom: 0,
-        width: 0.33,
+        width: 0.25,
         height: 1.0,
         background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
         eye: [0, 0, 200],
         up: [0, 1, 0],
-        fov: 50,
-        updateCamera: function (camera: THREE.Camera, scene: THREE.Scene, mouseX: number) {
-            // camera.position.y -= mouseX * 0.05;
-            // camera.position.y = Math.max(Math.min(camera.position.y, 1600), - 1600);
+        updateCamera: function (camera: THREE.PerspectiveCamera) {
+            // Calculate distance along Z axis to fit model in frame vertically
+            let distance = 1.05 * (frameSize.y / 2 / Math.tan(camera.fov * Math.PI / 180 / 2) + frameSize.z)
+            camera.position.fromArray([0, 0, distance]); // Looking along -Z (downward)
             camera.lookAt(frameCenter);
         },
         camera: new THREE.PerspectiveCamera,
@@ -144,7 +144,7 @@ function render() {
         const view = views[ii];
         const camera = view.camera;
 
-        view.updateCamera(camera, scene, mouseX);
+        view.updateCamera(camera);
 
         const left = Math.floor(canvasWidth * view.left);
         const bottom = Math.floor(canvasHeight * view.bottom);
@@ -163,9 +163,7 @@ function render() {
     }
 }
 
-function onDocumentMouseMove(event: MouseEvent) {
-    mouseX = (event.clientX - windowWidth / 2);
-}
+
 
 onMounted(() => {
 
@@ -173,7 +171,7 @@ onMounted(() => {
 
     for (let ii = 0; ii < views.length; ++ii) {
         const view = views[ii];
-        const camera = new THREE.PerspectiveCamera(view.fov, 2, 1, 10000);
+        const camera = new THREE.PerspectiveCamera(FOV, 2, 1, 10000);
         camera.position.fromArray(view.eye);
         camera.up.fromArray(view.up);
         view.camera = camera;
@@ -184,7 +182,7 @@ onMounted(() => {
 
     renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
 
-    document.addEventListener('mousemove', onDocumentMouseMove);
+    // document.addEventListener('mousemove', onDocumentMouseMove);
 
     animate();
 })
