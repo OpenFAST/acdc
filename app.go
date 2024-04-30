@@ -344,7 +344,7 @@ func (a *App) SelectExec() (*Evaluate, error) {
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title:                "Select OpenFAST Executable",
 		CanCreateDirectories: false,
-		DefaultDirectory:     execPath,
+		DefaultDirectory:     filepath.Dir(execPath),
 	})
 	if err != nil {
 		return nil, err
