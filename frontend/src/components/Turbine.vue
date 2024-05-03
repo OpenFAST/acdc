@@ -38,14 +38,15 @@ function setDefaults() {
     files.Main[0].TrimGain.Value = 100
     files.Main[0].Twr_Kdmp.Value = 100
     files.Main[0].Bld_Kdmp.Value = 100
-    files.Main[0].NLinTimes.Value = 36
+    files.Main[0].NLinTimes.Value = 1
     files.Main[0].Gravity.Value = 0
     files.Main[0].SttsTime.Value = files.Main[0].TMax.Value / 100
     files.Main[0].OutFmt.Value = "ES16.9E2"
-    files.Main[0].WrVTK.Value = 0
+    files.Main[0].WrVTK.Value = 3
+    files.Main[0].VTK_type.Value = 2
 
     // Set ElastoDyn file linearization defaults
-    files.ElastoDyn[0].ShftTilt.Value = 0
+    // files.ElastoDyn[0].ShftTilt.Value = 0
     files.ElastoDyn[0].YawDOF.Value = false
 
     // Set AeroDyn file linearization defaults

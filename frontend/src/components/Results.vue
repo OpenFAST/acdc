@@ -17,6 +17,7 @@ onMounted(() => {
 const selectedOP = ref<main.OperatingPoint>()
 const selectedLine = ref<diagram.Line | null>(null)
 const selectedPoint = ref<diagram.Point | null>(null)
+const vizScale = ref(10)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const doCluster = ref(false)
@@ -41,7 +42,7 @@ function selectLine(line: diagram.Line) {
 }
 
 function getModeViz(opID: number, modeID: number) {
-    project.getModeViz(opID, modeID, 15.0).then(result => {
+    project.getModeViz(opID, modeID, 50.0).then(result => {
 
     }).catch(err => {
 
@@ -173,10 +174,10 @@ const charts = computed(() => {
 <template>
     <main>
         <div class="card mb-3">
-            <div class="card-header hstack gap-3">
+            <div class="card-header hstack">
                 <span>Linearization Data</span>
-                <!-- <a class="btn btn-primary btn-sm me-3" @click="openResults">Open Results</a> -->
-                <a class="btn btn-primary ms-auto" @click="project.openCaseDirDialog">Import Data</a>
+                <!-- <a class="btn btn-primary me-3" @click="openResults">Open Results</a> -->
+                <a class="btn btn-primary ms-auto" @click="project.openCaseDirDialog">Import</a>
             </div>
 
             <div v-if="project.status.results == LOADING" class="spinner-border text-primary my-3 mx-auto"
@@ -226,8 +227,9 @@ const charts = computed(() => {
         </div>
 
         <div class="card mb-3" v-if="project.status.results == LOADED">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header hstack">
                 <span>Campbell Diagram</span>
+                <a class="btn btn-primary ms-auto" @click="project.generateDiagram(doCluster)">Generate</a>
             </div>
             <div class="card-body" v-if="project.results.LinDir">
                 <form class="row g-3">
@@ -245,9 +247,6 @@ const charts = computed(() => {
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
                         </select>
-                    </div>
-                    <div class="col-12">
-                        <a class=" btn btn-primary" @click="project.generateDiagram(doCluster)">Generate</a>
                     </div>
                 </form>
             </div>
@@ -312,7 +311,7 @@ const charts = computed(() => {
                 <div class="card h-100" v-if="selectedLine != null">
                     <div class="card-header hstack">
                         <span>Line</span>
-                        <a class="btn btn-primary btn-sm ms-auto" @click="selectedLine.Hidden = !selectedLine.Hidden">
+                        <a class="btn btn-primary ms-auto" @click="selectedLine.Hidden = !selectedLine.Hidden">
                             {{ selectedLine.Hidden ? "Show" : "Hide" }}
                         </a>
                     </div>
@@ -320,8 +319,8 @@ const charts = computed(() => {
                         <form class="row g-3">
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="lineNumber" class="col-form-label">Number</label>
-                                <input type="text" class="form-control" id="lineNumber" :value="selectedLine.ID"
-                                    disabled>
+                                <input type="text" class="form-control-plaintext" id="lineNumber"
+                                    :value="selectedLine.ID">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="lineLabel" class="col-form-label">Label</label>
@@ -358,7 +357,7 @@ const charts = computed(() => {
                 <div class="card h-100" v-if="selectedPoint != null">
                     <div class="card-header hstack">
                         <span>Mode</span>
-                        <a class="btn btn-primary btn-sm ms-auto"
+                        <a class="btn btn-primary ms-auto"
                             @click="getModeViz(selectedPoint.OpPtID, selectedPoint.ModeID)">
                             Visualize
                         </a>
@@ -367,38 +366,50 @@ const charts = computed(() => {
                         <form class="row row-cols-auto g-3">
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeOP" class="col-form-label">Operating Point</label>
-                                <input type="text" class="form-control" id="modeOP"
-                                    v-model.number="selectedPoint.OpPtID" disabled>
+                                <input type="text" readonly class="form-control-plaintext" id="modeOP"
+                                    :value="selectedPoint.OpPtID">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeID" class="col-form-label">Mode ID</Label>
-                                <input type="text" class="form-control" id="modeID"
-                                    v-model.number="selectedPoint.ModeID" disabled>
+                                <input type="text" class="form-control-plaintext" id="modeID"
+                                    :value="selectedPoint.ModeID">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeRotSpeed" class="col-form-label">Rotor Speed (RPM)</Label>
-                                <input type="text" class="form-control" id="modeRotSpeed"
-                                    v-model.number="selectedPoint.RotSpeed" disabled>
+                                <input type="text" class="form-control-plaintext" id="modeRotSpeed"
+                                    :value="selectedPoint.RotSpeed.toFixed(3)">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeWindSpeed" class="col-form-label">Wind Speed (m/s)</Label>
-                                <input type="text" class="form-control" id="modeWindSpeed"
-                                    v-model.number="selectedPoint.WindSpeed" disabled>
+                                <input type="text" class="form-control-plaintext" id="modeWindSpeed"
+                                    :value="selectedPoint.WindSpeed.toFixed(3)">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeOP" class="col-form-label">Natural Frequency (Hz)</label>
-                                <input type="text" class="form-control" id="modeOP"
-                                    v-model.number="selectedPoint.NaturalFreqHz" disabled>
+                                <input type="text" class="form-control-plaintext" id="modeOP"
+                                    :value="selectedPoint.NaturalFreqHz.toFixed(3)">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeID" class="col-form-label">Damped Frequency (Hz)</Label>
-                                <input type="text" class="form-control" id="modeID"
-                                    v-model.number="selectedPoint.DampedFreqHz" disabled>
+                                <input type="text" class="form-control-plaintext" id="modeID"
+                                    :value="selectedPoint.DampedFreqHz.toFixed(3)">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="modeRotSpeed" class="col-form-label">Damping Ratio (%)</Label>
-                                <input type="text" class="form-control" id="modeRotSpeed"
-                                    v-model.number="selectedPoint.DampingRatio" disabled>
+                                <input type="text" class="form-control-plaintext" id="modeRotSpeed"
+                                    :value="selectedPoint.DampingRatio.toFixed(3)">
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-4">
+                                <label for="vizScale" class="col-form-label">Visualization Scale</Label>
+                                <select class="form-select" v-model="vizScale">
+                                    <option :value="10">10</option>
+                                    <option :value="20">20</option>
+                                    <option :value="30">30</option>
+                                    <option :value="40">40</option>
+                                    <option :value="50">50</option>
+                                    <option :value="60">60</option>
+                                    <option :value="70">70</option>
+                                </select>
                             </div>
                         </form>
                     </div>
@@ -409,7 +420,7 @@ const charts = computed(() => {
         <div class="card mb-3" v-if="selectedPoint != null && project.modeViz.length > 0">
             <div class="card-header hstack">
                 <span>Mode Visualization</span>
-                <a class="btn btn-primary btn-sm ms-auto" @click="project.clearModeViz">
+                <a class="btn btn-primary ms-auto" @click="project.clearModeViz">
                     Clear
                 </a>
             </div>

@@ -117,6 +117,26 @@ func RunEvaluation(ctx context.Context, model *Model, c *Case, op *Condition, ca
 			return fmt.Errorf("no InflowWind files were imported")
 		}
 
+		files.ElastoDyn[0].BlPitch1.Value = op.BladePitch
+		files.ElastoDyn[0].BlPitch2.Value = op.BladePitch
+		files.ElastoDyn[0].BlPitch3.Value = op.BladePitch
+
+		files.ElastoDyn[0].RotSpeed.Value = op.RotorSpeed
+
+		files.ElastoDyn[0].GenDOF.Value = false
+
+		// Disable ServoDyn and remove files
+		files.Main[0].CompServo.Value = 0
+		files.ServoDyn = []ServoDyn{}
+
+		// if len(files.ServoDyn) > 0 {
+		// 	files.ServoDyn[0].WindType.Value = 1
+		// 	files.ServoDyn[0].HWindSpeed.Value = op.WindSpeed
+		// 	files.ServoDyn[0].PLExp.Value = 0
+		// } else {
+		// 	return fmt.Errorf("no ServoDyn files were imported")
+		// }
+
 	} else {
 
 		// Disable InflowWind and remove files
