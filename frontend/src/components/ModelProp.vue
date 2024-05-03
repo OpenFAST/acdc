@@ -33,7 +33,8 @@ function updateValidate() {
             </div>
             <div v-else-if="isPaths(field)">
                 <input v-for="(_, i) in field.Value" type="text" class="form-control-plaintext"
-                    :id="field.Name + (i == 0 ? '' : i)" v-model="field.Value[i]" readonly :class="i == 0 ? '' : 'mt-1'" />
+                    :id="field.Name + (i == 0 ? '' : i)" v-model="field.Value[i]" readonly
+                    :class="i == 0 ? '' : 'mt-1'" />
             </div>
             <div v-else-if="isBool(field)">
                 <select class="form-select" :id="field.Name" v-model="field.Value" @change="project.updateModel">
@@ -42,7 +43,8 @@ function updateValidate() {
                 </select>
             </div>
             <div v-if="isString(field)">
-                <input type="text" class="form-control" :id="field.Name" v-model="field.Value" />
+                <input type="text" class="form-control" :id="field.Name" v-model="field.Value"
+                    @change="project.updateModel" />
             </div>
             <div v-else-if="isInteger(field)">
                 <input type="text" class="form-control" :id="field.Name" v-model.number="field.Value"
@@ -53,8 +55,9 @@ function updateValidate() {
                     @change="project.updateModel" />
             </div>
             <div v-if="isReals(field)">
-                <input v-for="(_, i) in field.Value" type="text" class="form-control" :id="field.Name + (i == 0 ? '' : i)"
-                    v-model.number="field.Value[i]" :class="i == 0 ? '' : 'mt-1'" @change="project.updateModel" />
+                <input v-for="(_, i) in field.Value" type="text" class="form-control"
+                    :id="field.Name + (i == 0 ? '' : i)" v-model.number="field.Value[i]" :class="i == 0 ? '' : 'mt-1'"
+                    @change="project.updateModel" />
             </div>
         </div>
         <div class="col-8"><span class="form-text">{{ field.Desc }}</span></div>
