@@ -30,7 +30,7 @@ interface Graph {
 }
 
 function selectPoint(event: ChartEvent, elements: ActiveElement[], chart: Chart<"scatter">) {
-    if (elements.length == 0) return
+    if (elements.length == 0 || project.diagram == null) return
     if (elements[0].datasetIndex >= project.diagram.Lines.length) return;
     selectedLine.value = project.diagram.Lines[elements[0].datasetIndex];
     selectedPoint.value = selectedLine.value.Points[elements[0].index];
@@ -46,7 +46,8 @@ function getModeViz(opID: number, modeID: number) {
 }
 
 const charts = computed(() => {
-
+    let objs = new Array<Graph>;
+    if (project.diagram == null) return objs
     const CD = project.diagram
     const xLabel = (xAxisWS && CD.HasWind) ? "Wind Speed (m/s)" : "Rotor Speed (RPM)"
     const xValues = (xAxisWS && CD.HasWind) ? CD.WindSpeeds : CD.RotSpeeds
@@ -55,7 +56,7 @@ const charts = computed(() => {
     const dampMin = Math.min(...CD.Lines.filter(line => !line.Hidden).map(line => Math.min(...line.Points.map(p => p.DampingRatio))))
     const dampMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.DampingRatio))))
 
-    let objs = new Array<Graph>;
+
 
     const configs = [
         { label: "Natural Frequency (Hz)", isNatFreq: true },
@@ -255,7 +256,7 @@ const charts = computed(() => {
                 </div>
             </div>
 
-            <div class="card-body border-top" v-if="project.status.diagram == LOADED">
+            <div class="card-body border-top" v-if="project.diagram != null">
                 <div class="row">
                     <div class="col-sm-12 col-lg-6">
                         <div style="position: relative; height: 65vh">
@@ -307,7 +308,8 @@ const charts = computed(() => {
                 <div class="card h-100" v-if="selectedLine != null">
                     <div class="card-header hstack">
                         <span>Line</span>
-                        <a class="btn btn-primary ms-auto" @click="selectedLine.Hidden = !selectedLine.Hidden">
+                        <a class="btn btn-primary ms-auto"
+                            @click="selectedLine.Hidden = !selectedLine.Hidden; project.updateDiagram()">
                             {{ selectedLine.Hidden ? "Show" : "Hide" }}
                         </a>
                     </div>
@@ -316,16 +318,17 @@ const charts = computed(() => {
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="lineNumber" class="col-form-label">Number</label>
                                 <input type="text" class="form-control-plaintext" id="lineNumber"
-                                    :value="selectedLine.ID">
+                                    :value="selectedLine.ID" @change="project.updateDiagram()">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="lineLabel" class="col-form-label">Label</label>
-                                <input type="text" class="form-control" id="lineLabel" v-model="selectedLine.Label">
+                                <input type="text" class="form-control" id="lineLabel" v-model="selectedLine.Label"
+                                    @change="project.updateDiagram()">
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="lineColor" class="col-form-label">Color</Label>
                                 <input type="color" class="form-control form-control-color w-100" id="lineColor"
-                                    v-model="selectedLine.Color">
+                                    v-model="selectedLine.Color" @change="project.updateDiagram()">
                             </div>
                             <!-- <div class="col-3">
                                 <label for="lineColor" class="col-form-label">Style</Label>

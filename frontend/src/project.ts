@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import { GenerateDiagram, LoadConfig, SaveConfig } from "../wailsjs/go/main/App"
+import { GenerateDiagram, LoadConfig, SaveConfig, UpdateDiagram } from "../wailsjs/go/main/App"
 import { OpenProjectDialog, SaveProjectDialog, OpenProject } from '../wailsjs/go/main/App'
 import { FetchModel, UpdateModel, ImportModelDialog } from "../wailsjs/go/main/App"
 import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase } from "../wailsjs/go/main/App"
@@ -35,7 +35,6 @@ export const useProjectStore = defineStore('project', () => {
     const config = ref<main.Config | null>(null)
     const info = ref<main.Info | null>(null)
     const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
-    const diagram = reactive<diag.Diagram>(new diag.Diagram)
     const status = reactive<Loading>(new Loading)
     const modeViz = reactive<Array<viz.ModeData>>(new Array)
 
@@ -282,16 +281,26 @@ export const useProjectStore = defineStore('project', () => {
     // Diagram
     //--------------------------------------------------------------------------
 
+    const diagram = ref<diag.Diagram | null>(null)
+
     function generateDiagram(doCluster: boolean) {
         if (results.value == null) return
         status.diagram = LOADING
         GenerateDiagram(results.value.MinFreq, results.value.MaxFreq, doCluster).then(result => {
-            Object.assign(diagram, result)
+            diagram.value = result
             status.diagram = LOADED
         }).catch(err => {
             LogError(err)
             console.log(err)
             status.diagram = NOT_LOADED
+        })
+    }
+
+    function updateDiagram() {
+        if (diagram.value == null) return
+        UpdateDiagram(diagram.value).catch(err => {
+            LogError(err)
+            console.log(err)
         })
     }
 
@@ -364,6 +373,7 @@ export const useProjectStore = defineStore('project', () => {
         // Diagram
         diagram,
         generateDiagram,
+        updateDiagram,
         // Visualization
         getModeViz,
         clearModeViz,
