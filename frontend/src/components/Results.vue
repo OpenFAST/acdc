@@ -17,7 +17,7 @@ onMounted(() => {
 const selectedOP = ref<main.OperatingPoint>()
 const selectedLine = ref<diagram.Line | null>(null)
 const selectedPoint = ref<diagram.Point | null>(null)
-const vizScale = ref(10)
+const vizScale = ref(50)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const doCluster = ref(false)
@@ -400,14 +400,8 @@ const charts = computed(() => {
                             </div>
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="vizScale" class="col-form-label">Visualization Scale</Label>
-                                <select class="form-select" v-model="vizScale">
-                                    <option :value="10">10</option>
-                                    <option :value="20">20</option>
-                                    <option :value="30">30</option>
-                                    <option :value="40">40</option>
-                                    <option :value="50">50</option>
-                                    <option :value="60">60</option>
-                                    <option :value="70">70</option>
+                                <select class="form-select" v-model.number="vizScale">
+                                    <option :value="n * 10" v-for="n in 20">{{ n * 10 }}</option>
                                 </select>
                             </div>
                         </form>
