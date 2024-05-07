@@ -32,11 +32,14 @@ class Loading {
 
 export const useProjectStore = defineStore('project', () => {
 
+    const status = reactive<Loading>(new Loading)
+
+    //--------------------------------------------------------------------------
+    // Project
+    //--------------------------------------------------------------------------
+
     const config = ref<main.Config | null>(null)
     const info = ref<main.Info | null>(null)
-    const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
-    const status = reactive<Loading>(new Loading)
-    const modeViz = reactive<Array<viz.ModeData>>(new Array)
 
     // Load config when store is initialized
     LoadConfig().then(result => {
@@ -45,10 +48,6 @@ export const useProjectStore = defineStore('project', () => {
         LogError(err)
         console.log(err)
     })
-
-    //--------------------------------------------------------------------------
-    // Project
-    //--------------------------------------------------------------------------
 
     function openDialog() {
         OpenProjectDialog().then(result => {
@@ -197,6 +196,7 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
 
     const evaluate = ref<main.Evaluate | null>(null)
+    const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
 
     function fetchEvaluate() {
         FetchEvaluate().then(result => {
@@ -228,7 +228,7 @@ export const useProjectStore = defineStore('project', () => {
 
     // Setup listener for evaluation status updates
     EventsOn("evalStatus", (status: main.EvalStatus) => {
-        Object.assign(evalStatus[status.ID - 1], status)
+        Object.assign(evalStatus[status.ID], status)
     })
 
     function startEvaluate(caseID: number) {
@@ -283,10 +283,9 @@ export const useProjectStore = defineStore('project', () => {
 
     const diagram = ref<diag.Diagram | null>(null)
 
-    function generateDiagram(doCluster: boolean) {
-        if (results.value == null) return
+    function generateDiagram(minFreq: number, maxFreq: number, doCluster: boolean, filterStructural: boolean) {
         status.diagram = LOADING
-        GenerateDiagram(results.value.MinFreq, results.value.MaxFreq, doCluster).then(result => {
+        GenerateDiagram(minFreq, maxFreq, doCluster, filterStructural).then(result => {
             diagram.value = result
             status.diagram = LOADED
         }).catch(err => {
@@ -307,6 +306,8 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
     // Visualization
     //--------------------------------------------------------------------------
+
+    const modeViz = reactive<Array<viz.ModeData>>(new Array)
 
     function getModeViz(opID: number, modeID: number, scale: number) {
         status.viz = LOADING

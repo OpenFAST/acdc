@@ -128,7 +128,7 @@ func (c *Case) Calculate() error {
 		for i := range c.OperatingPoints {
 			windSpeed := c.WindSpeedRange.Min + delta*float64(i)
 			op := &c.OperatingPoints[i]
-			op.ID = i + 1
+			op.ID = i
 			op.WindSpeed = windSpeed
 			op.RotorSpeed = rsSpline.Predict(windSpeed)
 			op.BladePitch = bpSpline.Predict(windSpeed)
@@ -152,7 +152,7 @@ func (c *Case) Calculate() error {
 		for i := range c.OperatingPoints {
 			rotorSpeed := c.RotorSpeedRange.Min + delta*float64(i)
 			op := &c.OperatingPoints[i]
-			op.ID = i + 1
+			op.ID = i
 			op.RotorSpeed = rotorSpeed
 			op.BladePitch = bpSpline.Predict(rotorSpeed)
 		}

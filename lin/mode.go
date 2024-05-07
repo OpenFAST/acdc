@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/cmplx"
 	"strconv"
+	"strings"
 )
 
 type Modes []Mode
@@ -14,6 +15,7 @@ type Modes []Mode
 type Mode struct {
 	ID             int     `json:"ID"`
 	OP             int     `json:"OP"`
+	MaxMod         string  `json:"MaxMod"`
 	NaturalFreqRaw float64 `json:"NaturalFreqRaw"`
 	NaturalFreqHz  float64 `json:"NaturalFreqHz"`
 	DampedFreqRaw  float64 `json:"DampedFreqRaw"`
@@ -27,12 +29,13 @@ type Mode struct {
 
 func (ms Modes) ToCSV(w io.Writer) {
 	cw := csv.NewWriter(w)
-	cw.Write([]string{"ID", "OP", "EVSize", "IndSize", "NaturalFreqRaw", "NaturalFreqHz",
+	cw.Write([]string{"ID", "OP", "MaxMod", "EVSize", "IndSize", "NaturalFreqRaw", "NaturalFreqHz",
 		"DampedFreqRaw", "DampedFreqHz", "DampingRatio", "EigenValue"})
 	for _, m := range ms {
 		rec := []string{
 			strconv.Itoa(m.ID),
 			strconv.Itoa(m.OP),
+			m.MaxMod,
 			strconv.Itoa(len(m.EigenVector)),
 			strconv.Itoa(len(m.EigenIndices)),
 			strconv.FormatFloat(m.NaturalFreqRaw, 'g', -1, 64),
@@ -75,9 +78,9 @@ func ReadModesCSV(r io.Reader) (Modes, error) {
 	for _, rec := range recs {
 
 		evSize := 0
-		fmt.Sscan(rec[2], &evSize)
+		fmt.Sscan(rec[3], &evSize)
 		indSize := 0
-		fmt.Sscan(rec[3], &indSize)
+		fmt.Sscan(rec[4], &indSize)
 
 		m := Mode{
 			EigenVector:  make([]complex128, evSize),
@@ -85,13 +88,14 @@ func ReadModesCSV(r io.Reader) (Modes, error) {
 		}
 		fmt.Sscan(rec[0], &m.ID)
 		fmt.Sscan(rec[1], &m.OP)
-		fmt.Sscan(rec[4], &m.NaturalFreqRaw)
-		fmt.Sscan(rec[5], &m.NaturalFreqHz)
-		fmt.Sscan(rec[6], &m.DampedFreqRaw)
-		fmt.Sscan(rec[7], &m.DampedFreqHz)
-		fmt.Sscan(rec[8], &m.DampingRatio)
-		fmt.Sscan(rec[9], &m.EigenValue)
-		j := 10
+		m.MaxMod = rec[2]
+		fmt.Sscan(rec[5], &m.NaturalFreqRaw)
+		fmt.Sscan(rec[6], &m.NaturalFreqHz)
+		fmt.Sscan(rec[7], &m.DampedFreqRaw)
+		fmt.Sscan(rec[8], &m.DampedFreqHz)
+		fmt.Sscan(rec[9], &m.DampingRatio)
+		fmt.Sscan(rec[10], &m.EigenValue)
+		j := 11
 		for i := 0; i < evSize; i, j = i+1, j+1 {
 			fmt.Sscan(rec[j], &m.EigenVector[i])
 		}
@@ -103,6 +107,26 @@ func ReadModesCSV(r io.Reader) (Modes, error) {
 	}
 
 	return modes, nil
+}
+
+// Filter returns true if mode should be included based on arguments.
+func (m Mode) Filter(freqRangeHz [2]float64, structMax bool) bool {
+
+	// If mode natural frequency is outside range, continue
+	if m.NaturalFreqHz < freqRangeHz[0] || m.NaturalFreqHz > freqRangeHz[1] {
+		return false
+	}
+
+	// If structural max is enabled, return false
+	if structMax {
+
+		// If maximum eigenvector magnitude occurs for a state not in ElastoDyn, BeamDyn, or SubDyn, return false
+		if !(strings.HasPrefix(m.MaxMod, "ED") || strings.HasPrefix(m.MaxMod, "BD") || strings.HasPrefix(m.MaxMod, "SD")) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // MAC returns the modal assurance criteria indicating mode shape similarity.

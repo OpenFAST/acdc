@@ -7,6 +7,7 @@ import (
 	"math/cmplx"
 	"os"
 	"sort"
+	"strings"
 
 	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/mat"
@@ -278,6 +279,16 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 			mode.EigenVector[j] = eigenVectors.At(j, i)
 		}
 
+		// Find module where maximum eigenvector value magnitude occurs
+		maxMagnitude := 0.0
+		for j, v := range mode.EigenVector {
+			if mag := cmplx.Abs(v); mag > maxMagnitude {
+				maxMagnitude = mag
+				mod, _, _ := strings.Cut(mbc.DescStates[j], " ")
+				mode.MaxMod = strings.TrimRight(mod, "_1234567890")
+			}
+		}
+
 		// Add mode to slice of modes
 		modes = append(modes, mode)
 	}
@@ -287,9 +298,9 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 		return modes[i].NaturalFreqRaw < modes[j].NaturalFreqRaw
 	})
 
-	// Set mode identifiers (starting at 0)
+	// Set mode identifiers (starting at 1)
 	for i := range modes {
-		modes[i].ID = i
+		modes[i].ID = i + 1
 	}
 
 	return &EigenResults{Modes: modes, EigenVectors: eigenVectors}, nil

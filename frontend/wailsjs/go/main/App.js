@@ -30,8 +30,8 @@ export function FetchResults() {
   return window['go']['main']['App']['FetchResults']();
 }
 
-export function GenerateDiagram(arg1, arg2, arg3) {
-  return window['go']['main']['App']['GenerateDiagram'](arg1, arg2, arg3);
+export function GenerateDiagram(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['GenerateDiagram'](arg1, arg2, arg3, arg4);
 }
 
 export function GetEvaluateLog(arg1) {

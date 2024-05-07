@@ -31,6 +31,7 @@ type Line struct {
 }
 
 type Point struct {
+	Line          int     `json:"Line"`
 	OP            int     `json:"OpPtID"`
 	Mode          int     `json:"ModeID"`
 	RotSpeed      float32 `json:"RotSpeed"`
@@ -54,7 +55,7 @@ type ModeIndex struct {
 }
 
 // CampbellDiagram returns a Campbell Diagram structure from the results
-func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool) (*Diagram, error) {
+func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool, structMax bool) (*Diagram, error) {
 
 	// Collect operating point data
 	rotSpeeds := make([]float32, len(OPs))
@@ -67,7 +68,7 @@ func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool) (*Diagram, err
 	}
 
 	// Build mode sets based on modal assurance criteria
-	modeSets, err := connectModesMAC(OPs, freqRangeHz)
+	modeSets, err := connectModesMAC(OPs, freqRangeHz, structMax)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +81,16 @@ func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool) (*Diagram, err
 	}
 
 	// Create diagram lines
-	lines := make([]Line, len(modeSets))
+	lines := []Line{}
 	for i, ms := range modeSets {
-		points := make([]Point, len(ms.Modes))
+		line := Line{
+			ID:     i + 1,
+			Label:  "Line " + strconv.Itoa(i+1),
+			Points: make([]Point, len(ms.Modes)),
+		}
 		for j, m := range ms.Modes {
-			points[j] = Point{
+			line.Points[j] = Point{
+				Line:          line.ID,
 				OP:            m.OP,
 				Mode:          m.ID,
 				RotSpeed:      float32(rotSpeeds[m.OP]),
@@ -94,11 +100,7 @@ func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool) (*Diagram, err
 				DampingRatio:  float32(m.DampingRatio),
 			}
 		}
-		lines[i] = Line{
-			ID:     i + 1,
-			Label:  strconv.Itoa(i + 1),
-			Points: points,
-		}
+		lines = append(lines, line)
 	}
 
 	// Return the diagram
@@ -111,7 +113,7 @@ func New(OPs []lin.LinOP, freqRangeHz [2]float64, doCluster bool) (*Diagram, err
 }
 
 // connectModesMAC builds connected sets of modes from linearization results
-func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64) ([]*ModeSet, error) {
+func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64, structMax bool) ([]*ModeSet, error) {
 
 	// Create array of mode sets
 	modeSets := []*ModeSet{}
@@ -122,8 +124,8 @@ func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64) ([]*ModeSet, error
 		// Get pointer to mode
 		m := &OPs[0].EigRes.Modes[i]
 
-		// If mode natural frequency is outside range, continue
-		if m.NaturalFreqHz < freqRangeHz[0] || m.NaturalFreqHz > freqRangeHz[1] {
+		// If mode should not be filtered, continue
+		if !m.Filter(freqRangeHz, structMax) {
 			continue
 		}
 
@@ -162,8 +164,8 @@ func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64) ([]*ModeSet, error
 				// Get mode
 				mn := &op.EigRes.Modes[l]
 
-				// If mode natural frequency exceeds limit, continue
-				if mn.NaturalFreqHz < freqRangeHz[0] || mn.NaturalFreqHz > freqRangeHz[1] {
+				// If mode should not be filtered, continue
+				if !mn.Filter(freqRangeHz, structMax) {
 					continue
 				}
 

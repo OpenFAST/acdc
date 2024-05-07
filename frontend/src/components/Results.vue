@@ -21,6 +21,7 @@ const vizScale = ref(50)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const doCluster = ref(false)
+const filterStructural = ref(false)
 const xAxisWS = ref(true)
 const rotorSpeedMods = [1, 3, 6, 9, 12, 15]
 
@@ -38,7 +39,22 @@ function selectPoint(event: ChartEvent, elements: ActiveElement[], chart: Chart<
 
 function selectLine(line: diagram.Line) {
     selectedLine.value = line;
-    selectedPoint.value = null;
+    selectedPoint.value = line.Points[0];
+}
+
+function toggleLineVisibility() {
+    if (selectedLine.value == null) return
+    selectedLine.value.Hidden = !selectedLine.value.Hidden;
+    project.updateDiagram()
+}
+
+function swapModeLine(e: {
+    originalEvent: Event;
+    value: diagram.Line;
+}) {
+    e.value
+
+    project.updateDiagram()
 }
 
 function getModeViz(opID: number, modeID: number) {
@@ -55,8 +71,6 @@ const charts = computed(() => {
     const freqMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.NaturalFreqHz))))
     const dampMin = Math.min(...CD.Lines.filter(line => !line.Hidden).map(line => Math.min(...line.Points.map(p => p.DampingRatio))))
     const dampMax = Math.max(...CD.Lines.filter(line => !line.Hidden).map(line => Math.max(...line.Points.map(p => p.DampingRatio))))
-
-
 
     const configs = [
         { label: "Natural Frequency (Hz)", isNatFreq: true },
@@ -223,24 +237,32 @@ const charts = computed(() => {
             </div>
         </div>
 
-        <div class="card mb-3" v-if="project.status.results == LOADED">
+        <div class="card mb-3" v-if="project.results != null">
             <div class="card-header hstack">
                 <span>Campbell Diagram</span>
-                <a class="btn btn-primary ms-auto" @click="project.generateDiagram(doCluster)">Generate</a>
+                <a class="btn btn-primary ms-auto"
+                    @click="project.generateDiagram(project.results.MinFreq, project.results.MaxFreq, doCluster, filterStructural)">Generate</a>
             </div>
             <div class="card-body" v-if="project.results != null">
-                <form class="row g-3">
-                    <div class="col-3">
+                <form class="row row-cols-auto g-3">
+                    <div class="col-4 col-md-3 col-xl-2">
                         <label for="minFreq" class="col-form-label">Min Frequency (Hz)</label>
                         <input type="text" class="form-control" id="minFreq" v-model.number="project.results.MinFreq">
                     </div>
-                    <div class="col-3">
+                    <div class="col-4 col-md-3 col-xl-2">
                         <label for="maxFreq" class="col-form-label">Max Frequency (Hz)</label>
                         <input type="text" class="form-control" id="maxFreq" v-model.number="project.results.MaxFreq">
                     </div>
-                    <div class="col-3">
+                    <div class="col-4 col-md-3 col-xl-2">
                         <label for="doCluster" class="col-form-label ms-auto">Spectral Clustering</label>
                         <select class="form-select" v-model="doCluster">
+                            <option :value="true" selected>Enable</option>
+                            <option :value="false">Disable</option>
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-3 col-xl-2">
+                        <label for="filterStructural" class="col-form-label ms-auto">Filter Nonstructural Modes</label>
+                        <select class="form-select" v-model="filterStructural">
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
                         </select>
@@ -308,8 +330,7 @@ const charts = computed(() => {
                 <div class="card h-100" v-if="selectedLine != null">
                     <div class="card-header hstack">
                         <span>Line</span>
-                        <a class="btn btn-primary ms-auto"
-                            @click="selectedLine.Hidden = !selectedLine.Hidden; project.updateDiagram()">
+                        <a class="btn btn-primary ms-auto" @click="toggleLineVisibility">
                             {{ selectedLine.Hidden ? "Show" : "Hide" }}
                         </a>
                     </div>
@@ -401,7 +422,19 @@ const charts = computed(() => {
                             <div class="col-12 col-md-6 col-xl-4">
                                 <label for="vizScale" class="col-form-label">Visualization Scale</Label>
                                 <select class="form-select" v-model.number="vizScale">
-                                    <option :value="n * 10" v-for="n in 20">{{ n * 10 }}</option>
+                                    <option value="1">1</option>
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="75">75</option>
+                                    <option value="100">100</option>
+                                    <option value="150">150</option>
+                                    <option value="200">200</option>
+                                    <option value="300">300</option>
+                                    <option value="400">400</option>
+                                    <option value="500">500</option>
+                                    <option value="1000">1000</option>
+                                    <option value="2000">2000</option>
                                 </select>
                             </div>
                         </form>

@@ -1,6 +1,7 @@
 export namespace diagram {
 	
 	export class Point {
+	    Line: number;
 	    OpPtID: number;
 	    ModeID: number;
 	    RotSpeed: number;
@@ -15,6 +16,7 @@ export namespace diagram {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Line = source["Line"];
 	        this.OpPtID = source["OpPtID"];
 	        this.ModeID = source["ModeID"];
 	        this.RotSpeed = source["RotSpeed"];
@@ -109,6 +111,7 @@ export namespace lin {
 	export class Mode {
 	    ID: number;
 	    OP: number;
+	    MaxMod: string;
 	    NaturalFreqRaw: number;
 	    NaturalFreqHz: number;
 	    DampedFreqRaw: number;
@@ -123,6 +126,7 @@ export namespace lin {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ID = source["ID"];
 	        this.OP = source["OP"];
+	        this.MaxMod = source["MaxMod"];
 	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
 	        this.NaturalFreqHz = source["NaturalFreqHz"];
 	        this.DampedFreqRaw = source["DampedFreqRaw"];
