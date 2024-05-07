@@ -42,11 +42,7 @@ function selectLine(line: diagram.Line) {
 }
 
 function getModeViz(opID: number, modeID: number) {
-    project.getModeViz(opID, modeID, 50.0).then(result => {
-
-    }).catch(err => {
-
-    })
+    project.getModeViz(opID, modeID, vizScale.value)
 }
 
 const charts = computed(() => {
@@ -184,7 +180,7 @@ const charts = computed(() => {
                 role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <div class="card-body" v-if="project.status.results == LOADED && project.results.LinDir">
+            <div class="card-body" v-if="project.results != null">
                 <div class="mb-3 row">
                     <label for="case-dir" class="col-sm-2 col-form-label">Directory</label>
                     <div class="col-sm-10">
@@ -231,7 +227,7 @@ const charts = computed(() => {
                 <span>Campbell Diagram</span>
                 <a class="btn btn-primary ms-auto" @click="project.generateDiagram(doCluster)">Generate</a>
             </div>
-            <div class="card-body" v-if="project.results.LinDir">
+            <div class="card-body" v-if="project.results != null">
                 <form class="row g-3">
                     <div class="col-3">
                         <label for="minFreq" class="col-form-label">Min Frequency (Hz)</label>

@@ -407,9 +407,9 @@ func (fs *Files) parseFile(path string, s any) error {
 
 			// Find index of field name in line
 			lineLower := strings.ToLower(line)
-			j := strings.Index(lineLower, fieldNameLower)
+			j := strings.LastIndex(lineLower, fieldNameLower)
 			if j == -1 && fieldNameLowerNoParens != "" {
-				j = strings.Index(lineLower, fieldNameLowerNoParens)
+				j = strings.LastIndex(lineLower, fieldNameLowerNoParens)
 			}
 
 			// Field name not found in line, continue
@@ -536,7 +536,7 @@ func (fs *Files) parseFile(path string, s any) error {
 			// Get path to file for reading, if not an absolute path, prepend
 			// directory of current file
 			subpath := filepath.Clean(p.Value)
-			if filepath.IsLocal(subpath) {
+			if !filepath.IsAbs(subpath) {
 				subpath = filepath.Join(dir, subpath)
 			}
 
@@ -565,6 +565,9 @@ func (fs *Files) parseFile(path string, s any) error {
 					if err := fs.parseFile(match, ss); err != nil {
 						return fmt.Errorf("error parsing '%s': %w", subpath, err)
 					}
+
+					// Update path map to indicate that file has been read
+					fs.PathMap[match] = filepath.Base(match)
 				}
 
 			} else {
@@ -582,13 +585,13 @@ func (fs *Files) parseFile(path string, s any) error {
 				if err := fs.parseFile(subpath, ss); err != nil {
 					return fmt.Errorf("error parsing '%s': %w", subpath, err)
 				}
+
+				// Update path map to indicate that file has been read
+				fs.PathMap[subpath] = filepath.Base(subpath)
 			}
 
 			// Change path to name of file
 			p.Value = filepath.Base(subpath)
-
-			// Update path map to indicate that file has been read
-			fs.PathMap[subpath] = p.Value
 		}
 
 		// If field is a path
@@ -605,7 +608,7 @@ func (fs *Files) parseFile(path string, s any) error {
 				// Get path to file for reading, if not an absolute path, prepend
 				// directory of current file
 				subpath := filepath.Clean(p.Value[i])
-				if filepath.IsLocal(subpath) {
+				if !filepath.IsAbs(subpath) {
 					subpath = filepath.Join(dir, subpath)
 				}
 

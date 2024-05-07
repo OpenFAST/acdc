@@ -39,7 +39,7 @@ function setDefaults() {
     files.Main[0].Twr_Kdmp.Value = 100
     files.Main[0].Bld_Kdmp.Value = 100
     files.Main[0].NLinTimes.Value = 1
-    files.Main[0].Gravity.Value = 0
+    // files.Main[0].Gravity.Value = 0
     files.Main[0].SttsTime.Value = files.Main[0].TMax.Value / 100
     files.Main[0].OutFmt.Value = "ES16.9E2"
     files.Main[0].WrVTK.Value = 3
@@ -82,8 +82,8 @@ function setDefaults() {
                 <li class="list-group-item" v-if="project.model.ImportedPaths.length > 0">
                     <div class="fw-bold mb-2">Imported Files</div>
                     <div class="row">
-                        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6" v-for="path in project.model.ImportedPaths">{{
-                    path }}
+                        <div class="col-3 col-md-6" v-for="path in project.model.ImportedPaths">{{
+                    path.split(/[\\/]/).slice(-1)[0] }}
                         </div>
                     </div>
                 </li>
@@ -103,6 +103,8 @@ function setDefaults() {
                 <li class="list-group-item">
                     <div class="fw-bold">Main</div>
                     <div>
+                        <ModelProp :field="project.model.Files.Main[0].TMax" />
+                        <ModelProp :field="project.model.Files.Main[0].DT" />
                         <ModelProp :field="project.model.Files.Main[0].Linearize" />
                         <ModelProp :field="project.model.Files.Main[0].CalcSteady" />
                         <ModelProp :field="project.model.Files.Main[0].TrimTol" />

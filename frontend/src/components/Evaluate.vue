@@ -11,12 +11,12 @@ const data = reactive({
 })
 
 onMounted(() => {
-    project.fetchEvaluate()
     project.fetchAnalysis()
+    project.fetchEvaluate()
 })
 
 function startEvaluate() {
-    project.startEvaluate(project.evalCaseID)
+    project.startEvaluate(project.currentCaseID)
 }
 
 function getLog(status: main.EvalStatus) {
@@ -36,13 +36,13 @@ function closeLog() {
 
 <template>
     <main>
-        <div class="card mb-3">
+        <div class="card mb-3" v-if="project.evaluate != null">
             <div class="card-header">
-                OpenFAST
+                OpenFAST Executable
             </div>
             <div class="card-body">
                 <div class="row">
-                    <label for="executable" class="col-2 col-form-label">Executable</label>
+                    <label for="executable" class="col-2 col-form-label">Path</label>
                     <div class="col-10">
                         <div class="input-group">
                             <input type="text" :value="project.evaluate.ExecPath" class="form-control" id="executable"
@@ -63,32 +63,20 @@ function closeLog() {
             </div>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-3" v-if="project.analysis != null && project.evaluate != null">
             <div class="card-header">Evaluate Case</div>
             <div class="card-body">
-                <div class="row mb-3">
-                    <label for="selectedCase" class="col-sm-2 col-form-label">Select Case</label>
-                    <div class="col-sm-10">
-                        <select class="form-select" id="selectedCase" v-model="project.evalCaseID">
-                            <option :value="c.ID" v-for="c in project.analysis.Cases">{{ c.ID }} - {{ c.Name }}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label for="numCPUs" class="col-sm-2 col-form-label"># of CPUs</label>
-                    <div class="col-sm-10">
-                        <select class="form-select" id="numCPUs" v-model="project.evaluate.NumCPUs"
-                            @change="project.updateEvaluate()">
-                            <option :value="n" v-for="n in [1, 2, 4, 6, 8, 12, 16, 24]">{{ n }}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-2"></div>
-                    <div class="col-10">
-                        <button class="btn btn-success me-3" @click="startEvaluate">Start</button>
-                        <button class="btn btn-danger" @click="project.cancelEvaluate()">Cancel</button>
-                    </div>
+                <div class="hstack gap-3">
+                    <label for="currentCaseID" class="col-form-label">Case</label>
+                    <select class="form-select w-25" id="currentCaseID" v-model="project.currentCaseID">
+                        <option :value="c.ID" v-for="c in project.analysis.Cases">{{ c.ID }} - {{ c.Name }}</option>
+                    </select>
+                    <label class="ms-3 col-form-label" for="numCPUs">CPUs:</label>
+                    <input type="range" class="form-range w-25" min="1" :max="project.evaluate.MaxCPUs" id="numCPUs"
+                        v-model.number="project.evaluate.NumCPUs" @change="project.updateEvaluate()">
+                    <label class="col-form-label">{{ project.evaluate.NumCPUs }}</label>
+                    <button class="btn btn-success ms-auto" @click="startEvaluate">Start</button>
+                    <button class="btn btn-danger" @click="project.cancelEvaluate()">Cancel</button>
                 </div>
 
             </div>

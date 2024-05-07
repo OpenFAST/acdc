@@ -44,6 +44,8 @@ export function SelectExec():Promise<main.Evaluate>;
 
 export function UpdateAnalysis(arg1:main.Analysis):Promise<main.Analysis>;
 
+export function UpdateDiagram(arg1:diagram.Diagram):Promise<void>;
+
 export function UpdateEvaluate(arg1:main.Evaluate):Promise<main.Evaluate>;
 
 export function UpdateModel(arg1:main.Model):Promise<main.Model>;

@@ -9,23 +9,15 @@ import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, PointElement, Ca
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
 
 const project = useProjectStore()
-const selectedCaseID = ref(1)
 
 onMounted(() => {
     project.fetchAnalysis()
 })
 
-function addCase() {
-    project.addAnalysisCase().then((c) => {
-        selectedCaseID.value = c.ID
-    })
-}
-
-function removeCase(i: number) {
-    if (project.analysis.Cases.length > 1) {
-        project.removeAnalysisCase(selectedCaseID.value)
-        selectedCaseID.value = 1
-    }
+function removeCase() {
+    if (project.analysis == null || project.currentCaseID == null) return
+    project.removeAnalysisCase(project.currentCaseID)
+    project.currentCaseID = 0
 }
 
 </script>
@@ -36,24 +28,25 @@ function removeCase(i: number) {
             <div class="card-header">Case</div>
             <div class="card-body">
                 <div class="row">
-                    <label for="selectedCaseID" class="col-sm-2 col-form-label">Select</label>
+                    <label for="currentCaseID" class="col-sm-2 col-form-label">Select</label>
                     <div class="col-sm-6">
-                        <select class="form-select" id="selectedCaseID" v-model="selectedCaseID">
+                        <select class="form-select" id="currentCaseID" v-model="project.currentCaseID"
+                            v-if="project.analysis != null">
                             <option v-for="c in project.analysis.Cases" :value="c.ID">{{ c.ID }} - {{ c.Name }}</option>
                         </select>
                     </div>
                     <div class="col-2 d-grid">
-                        <button class="btn btn-primary" @click="addCase">Add</button>
+                        <button class="btn btn-primary" @click="project.addAnalysisCase()">Add</button>
                     </div>
                     <div class="col-2 d-grid">
-                        <button class="btn btn-danger" @click="removeCase(selectedCaseID)"
-                            :disabled="(project.analysis.Cases == null) || (project.analysis.Cases.length < 2)">Remove</button>
+                        <button class="btn btn-danger" @click="removeCase()"
+                            :disabled="(project.analysis == null) || (project.analysis.Cases.length < 2)">Remove</button>
                     </div>
                 </div>
             </div>
             <hr class="my-0" />
-            <div class="card-body" v-if="project.analysis.Cases != null">
-                <Case :Case="project.analysis.Cases[selectedCaseID - 1]" />
+            <div class="card-body" v-if="project.analysis != null">
+                <Case :Case="project.analysis.Cases[project.currentCaseID - 1]" />
             </div>
         </div>
     </main>

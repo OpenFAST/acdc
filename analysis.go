@@ -34,6 +34,7 @@ type Case struct {
 	ID              int         `json:"ID"`
 	Name            string      `json:"Name"`
 	IncludeAero     bool        `json:"IncludeAero"`
+	UseController   bool        `json:"UseController"`
 	RotorSpeedRange Range       `json:"RotorSpeedRange"`
 	WindSpeedRange  Range       `json:"WindSpeedRange"`
 	CutIn           float32     `json:"CutIn"`

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useProjectStore } from '../project';
+import { LOADED, LOADING, useProjectStore } from '../project';
 import { reactive, onMounted } from 'vue'
 
 const project = useProjectStore()
@@ -16,20 +16,20 @@ onMounted(() => { })
                     <li class="nav-item">
                         <router-link class="nav-link" to="/">Project</router-link>
                     </li>
-                    <li class="nav-item" v-if="project.loaded">
-                        <router-link class="nav-link" to="/turbine">Turbine</router-link>
+                    <li class="nav-item" v-if="project.status.project == LOADED">
+                        <router-link class="nav-link" to="/model">Model</router-link>
                     </li>
-                    <li class="nav-item" v-if="project.loaded">
+                    <li class="nav-item" v-if="project.status.project == LOADED">
                         <router-link class="nav-link" to="/analysis">Analysis</router-link>
                     </li>
-                    <li class="nav-item" v-if="project.loaded">
+                    <li class="nav-item" v-if="project.status.project == LOADED">
                         <router-link class="nav-link" to="/evaluate">Evaluate</router-link>
                     </li>
-                    <li class="nav-item" v-if="project.loaded">
-                        <router-link class="nav-link" to="/Results">Results</router-link>
+                    <li class="nav-item" v-if="project.status.project == LOADED">
+                        <router-link class="nav-link" to="/results">Results</router-link>
                     </li>
                 </ul>
-                <span class="navbar-text me-2" v-if="project.saving">
+                <span class="navbar-text me-2" v-if="project.status.project == LOADING">
                     <div class="spinner-border spinner-border-sm text-light" role="status">
                         <span class="visually-hidden">Saving...</span>
                     </div>

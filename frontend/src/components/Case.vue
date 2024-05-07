@@ -114,64 +114,73 @@ const myChart = computed(() => {
                 <input class="form-control" id="caseName" v-model="Case.Name" @change="updateAnalysis" />
             </div>
         </div>
-        <div class="row mb-3">
-            <label for="includeAero" class="col-2 col-form-label pt-0">Effects</label>
+        <form class="row mb-3" @change="updateAnalysis">
+            <label for="includeAero" class="col-2 col-form-label pt-0">Options</label>
             <div class="col-10">
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" value="" id="aero-checkbox" v-model="Case.IncludeAero">
+                    <input class="form-check-input" type="checkbox" value="" id="aero-checkbox"
+                        v-model="Case.IncludeAero" :disabled="!project.model.HasAero">
                     <label class="form-check-label" for="aero-checkbox">
                         Aerodynamics
                     </label>
                 </div>
+                <div class="form-check form-check-inline ms-3">
+                    <input class="form-check-input" type="checkbox" value="" id="controller-checkbox"
+                        v-model="Case.UseController"
+                        :disabled="!Case.IncludeAero || (project.model != null && !project.model.HasAero)">
+                    <label class="form-check-label" for="controller-checkbox">
+                        Controller
+                    </label>
+                </div>
             </div>
-        </div>
-        <div class="row mb-3" v-if="Case.IncludeAero">
-            <label class="col-2 col-form-label">Regions (m/s)</label>
-            <div class="col-10">
-                <fieldset class="input-group" @change="updateAnalysis">
-                    <span class="input-group-text">Cut In</span>
-                    <input class="form-control" v-model.number="Case.CutIn" />
-                    <span class="input-group-text">Rated</span>
-                    <input class="form-control" v-model.number="Case.Rated" />
-                    <span class="input-group-text">Cut Out</span>
-                    <input class="form-control" v-model.number="Case.CutOut" />
-                </fieldset>
+        </form>
+        <form class="row row-cols-auto g-3 mb-3" v-if="Case.IncludeAero" @change="updateAnalysis">
+            <div class="col-2">
+                <label class="col-form-label">Wind Speed</label>
             </div>
-        </div>
-        <div class="row mb-3" v-if="Case.IncludeAero">
-            <label class="col-2 col-form-label">Wind Speed (m/s)</label>
-            <div class="col-10">
-                <fieldset class="input-group" @change="updateAnalysis">
-                    <span class="input-group-text">Min</span>
-                    <input class="form-control" v-model.number="Case.WindSpeedRange.Min" />
-                    <span class="input-group-text">Max</span>
-                    <input class="form-control" v-model.number="Case.WindSpeedRange.Max" />
-                    <span class="input-group-text">Number</span>
-                    <select class="form-select" id="StructureCurveSize" v-model="Case.WindSpeedRange.Num">
-                        <option :value="n" v-for="n in 30">{{ n }}</option>
-                    </select>
-                </fieldset>
+            <div class="col-2">
+                <label for="MinWS" class="col-form-label">Cut-In (m/s)</label>
+                <input type="text" class="form-control" id="MinWS" v-model.number="Case.WindSpeedRange.Min">
             </div>
-        </div>
-        <div class="row mb-3" v-else>
-            <label class="col-2 col-form-label">Rotor Speed (RPM)</label>
-            <div class="col-10">
-                <fieldset class="input-group" @change="updateAnalysis">
-                    <span class="input-group-text">Min</span>
-                    <input class="form-control" v-model.number="Case.RotorSpeedRange.Min" />
-                    <span class="input-group-text">Max</span>
-                    <input class="form-control" v-model.number="Case.RotorSpeedRange.Max" />
-                    <span class="input-group-text">Number</span>
-                    <select class="form-select" id="StructureCurveSize" v-model="Case.RotorSpeedRange.Num">
-                        <option :value="n" v-for="n in 30">{{ n }}</option>
-                    </select>
-                </fieldset>
+            <div class="col-2">
+                <label for="RatedWS" class="col-form-label">Rated (m/s)</label>
+                <input type="text" class="form-control" id="RatedWS" v-model.number="Case.Rated">
             </div>
-        </div>
+            <div class="col-2">
+                <label for="MaxWS" class="col-form-label">Cut-Out (m/s)</label>
+                <input type="text" class="form-control" id="MaxWS" v-model.number="Case.WindSpeedRange.Max">
+            </div>
+            <div class="col-2">
+                <label for="NumOPs" class="col-form-label"># of OPs</label>
+                <select class="form-select" id="NumOPs" v-model="Case.WindSpeedRange.Num">
+                    <option :value="n" v-for="n in 30">{{ n }}</option>
+                </select>
+            </div>
+        </form>
+        <form class="row row-cols-auto g-3 mb-3" v-else @change="updateAnalysis">
+            <div class="col-2">
+                <label class="col-form-label">Rotor Speed</label>
+            </div>
+            <div class="col-2">
+                <label for="MinRPM" class="col-form-label">Min (RPM)</label>
+                <input type="text" class="form-control" id="MinRPM" v-model.number="Case.RotorSpeedRange.Min">
+            </div>
+            <div class="col-2">
+                <label for="MaxRPM" class="col-form-label">Max (RPM)</label>
+                <input type="text" class="form-control" id="MaxRPM" v-model.number="Case.RotorSpeedRange.Max">
+            </div>
+            <div class="col-2">
+                <label for="NumOPs" class="col-form-label"># of OPs</label>
+                <select class="form-select" id="NumOPs" v-model="Case.RotorSpeedRange.Num">
+                    <option :value="n" v-for="n in 30">{{ n }}</option>
+                </select>
+            </div>
+        </form>
         <div class="row mb-3">
             <div class="col-2">
                 <label for="CurveTable" class="col-form-label">Curve</label>
-                <select class="form-select" id="StructureCurveSize" :value="Case.Curve.length" @change="changeCurveSize">
+                <select class="form-select" id="StructureCurveSize" :value="Case.Curve.length"
+                    @change="changeCurveSize">
                     <option :value="n + 1" v-for="n in 29">{{ n + 1 }} Points</option>
                 </select>
             </div>
@@ -192,8 +201,10 @@ const myChart = computed(() => {
                             <td v-if="Case.IncludeAero">
                                 <input v-model.number="row.WindSpeed" class="form-control" @change="updateAnalysis" />
                             </td>
-                            <td><input v-model.number="row.RotorSpeed" class="form-control" @change="updateAnalysis" /></td>
-                            <td><input v-model.number="row.BladePitch" class="form-control" @change="updateAnalysis" /></td>
+                            <td><input v-model.number="row.RotorSpeed" class="form-control" @change="updateAnalysis" />
+                            </td>
+                            <td><input v-model.number="row.BladePitch" class="form-control" @change="updateAnalysis" />
+                            </td>
                         </tr>
                     </tbody>
                 </table>

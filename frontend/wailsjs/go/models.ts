@@ -542,6 +542,7 @@ export namespace main {
 	    ID: number;
 	    Name: string;
 	    IncludeAero: boolean;
+	    UseController: boolean;
 	    RotorSpeedRange: Range;
 	    WindSpeedRange: Range;
 	    CutIn: number;
@@ -559,6 +560,7 @@ export namespace main {
 	        this.ID = source["ID"];
 	        this.Name = source["Name"];
 	        this.IncludeAero = source["IncludeAero"];
+	        this.UseController = source["UseController"];
 	        this.RotorSpeedRange = this.convertValues(source["RotorSpeedRange"], Range);
 	        this.WindSpeedRange = this.convertValues(source["WindSpeedRange"], Range);
 	        this.CutIn = source["CutIn"];
@@ -792,6 +794,7 @@ export namespace main {
 	    ExecVersion: string;
 	    ExecValid: boolean;
 	    NumCPUs: number;
+	    MaxCPUs: number;
 	    Status: EvalStatus;
 	
 	    static createFrom(source: any = {}) {
@@ -804,6 +807,7 @@ export namespace main {
 	        this.ExecVersion = source["ExecVersion"];
 	        this.ExecValid = source["ExecValid"];
 	        this.NumCPUs = source["NumCPUs"];
+	        this.MaxCPUs = source["MaxCPUs"];
 	        this.Status = this.convertValues(source["Status"], EvalStatus);
 	    }
 	

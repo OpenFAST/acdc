@@ -11,6 +11,7 @@ import { GetModeViz } from "../wailsjs/go/main/App"
 import { main, diagram as diag, viz } from "../wailsjs/go/models"
 import { EventsOn } from "../wailsjs/runtime/runtime"
 import { LogError } from '../wailsjs/runtime/runtime'
+import Project from './components/Project.vue'
 
 export const NOT_LOADED = 0;
 export const LOADING = 1;
@@ -29,35 +30,22 @@ class Loading {
     viz: number = 0;
 }
 
-
-
 export const useProjectStore = defineStore('project', () => {
 
-    const saving = ref(false)
-    const loaded = ref(false)
-    const config = reactive<main.Config>(new main.Config)
-    const info = reactive<main.Info>(new main.Info)
-    const model = reactive<main.Model>(new main.Model)
-    const analysis = reactive<main.Analysis>(new main.Analysis)
-    const evaluate = reactive<main.Evaluate>(new main.Evaluate)
-    const results = reactive<main.Results>(new main.Results)
+    const config = ref<main.Config | null>(null)
+    const info = ref<main.Info | null>(null)
     const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
-    const evalCaseID = ref(1)
     const diagram = reactive<diag.Diagram>(new diag.Diagram)
     const status = reactive<Loading>(new Loading)
     const modeViz = reactive<Array<viz.ModeData>>(new Array)
 
     // Load config when store is initialized
     LoadConfig().then(result => {
-        Object.assign(config, result)
+        config.value = result
     }).catch(err => {
         LogError(err)
         console.log(err)
     })
-
-    function $reset() {
-        loaded.value = false
-    }
 
     //--------------------------------------------------------------------------
     // Project
@@ -65,9 +53,9 @@ export const useProjectStore = defineStore('project', () => {
 
     function openDialog() {
         OpenProjectDialog().then(result => {
-            Object.assign(info, result)
-            updateRecentProjects(info.Path)
-            loaded.value = true
+            info.value = result
+            updateRecentProjects(info.value.Path)
+            status.project = LOADED
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -76,9 +64,9 @@ export const useProjectStore = defineStore('project', () => {
 
     function saveDialog() {
         SaveProjectDialog().then(result => {
-            Object.assign(info, result)
-            updateRecentProjects(info.Path)
-            loaded.value = true
+            info.value = result
+            updateRecentProjects(info.value.Path)
+            status.project = LOADED
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -87,9 +75,9 @@ export const useProjectStore = defineStore('project', () => {
 
     function open(path: string) {
         OpenProject(path).then(result => {
-            Object.assign(info, result)
-            updateRecentProjects(info.Path)
-            loaded.value = true
+            info.value = result
+            updateRecentProjects(info.value.Path)
+            status.project = LOADED
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -97,17 +85,21 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     function updateRecentProjects(path: string) {
+
+        if (config.value == null) return
+
         // If path in recent, remove it
-        const index = config.RecentProjects.indexOf(path)
-        if (index > -1) config.RecentProjects.splice(index, 1)
+        const index = config.value.RecentProjects.indexOf(path)
+        if (index > -1) config.value.RecentProjects.splice(index, 1)
 
         // Prepend new path
-        config.RecentProjects.unshift(path)
+        config.value.RecentProjects.unshift(path)
 
         // Limit to 5 items
-        config.RecentProjects = config.RecentProjects.slice(0, 5)
+        config.value.RecentProjects = config.value.RecentProjects.slice(0, 5)
+
         // Save config
-        SaveConfig(config).catch(err => {
+        SaveConfig(config.value).catch(err => {
             LogError(err)
             console.log(err)
         })
@@ -116,6 +108,8 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
     // Model
     //--------------------------------------------------------------------------
+
+    const model = reactive<main.Model>(new main.Model)
 
     function fetchModel() {
         return new Promise<main.Model>((resolve, reject) => {
@@ -152,11 +146,13 @@ export const useProjectStore = defineStore('project', () => {
     // Analysis
     //--------------------------------------------------------------------------
 
+    const analysis = ref<main.Analysis | null>(null)
+    const currentCaseID = ref<number>(1)
+
     function fetchAnalysis() {
         return new Promise<main.Analysis>((resolve, reject) => {
             FetchAnalysis().then(result => {
-                Object.assign(analysis, result)
-                resolve(analysis)
+                analysis.value = result
             }).catch(err => {
                 LogError(err)
                 console.log(err)
@@ -166,8 +162,9 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     function updateAnalysis() {
-        UpdateAnalysis(analysis).then(result => {
-            Object.assign(analysis, result)
+        if (analysis.value == null) return
+        UpdateAnalysis(analysis.value).then(result => {
+            analysis.value = result
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -177,8 +174,8 @@ export const useProjectStore = defineStore('project', () => {
     function addAnalysisCase() {
         return new Promise<main.Case>((resolve, reject) => {
             AddAnalysisCase().then(result => {
-                Object.assign(analysis, result)
-                resolve(result.Cases[result.Cases.length - 1])
+                analysis.value = result
+                currentCaseID.value = result.Cases.length - 1
             }).catch(err => {
                 LogError(err)
                 console.log(err)
@@ -200,22 +197,21 @@ export const useProjectStore = defineStore('project', () => {
     // Evaluate
     //--------------------------------------------------------------------------
 
+    const evaluate = ref<main.Evaluate | null>(null)
+
     function fetchEvaluate() {
-        return new Promise<main.Evaluate>((resolve, reject) => {
-            FetchEvaluate().then(result => {
-                Object.assign(evaluate, result)
-                resolve(evaluate)
-            }).catch(err => {
-                LogError(err)
-                console.log(err)
-                reject(err)
-            })
+        FetchEvaluate().then(result => {
+            evaluate.value = result
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
         })
     }
 
     function updateEvaluate() {
-        UpdateEvaluate(evaluate).then(result => {
-            Object.assign(evaluate, result)
+        if (evaluate.value == null) return
+        UpdateEvaluate(evaluate.value).then(result => {
+            evaluate.value = result
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -224,7 +220,7 @@ export const useProjectStore = defineStore('project', () => {
 
     function selectExec() {
         SelectExec().then(result => {
-            Object.assign(evaluate, result)
+            evaluate.value = result
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -237,6 +233,7 @@ export const useProjectStore = defineStore('project', () => {
     })
 
     function startEvaluate(caseID: number) {
+        results
         EvaluateCase(caseID).then(result => {
             Object.assign(evalStatus, result)
         }).catch(err => {
@@ -256,6 +253,8 @@ export const useProjectStore = defineStore('project', () => {
     // Results
     //--------------------------------------------------------------------------
 
+    const results = ref<main.Results | null>(null)
+
     function fetchResults() {
         FetchResults().then(result => {
             Object.assign(results, result)
@@ -268,18 +267,14 @@ export const useProjectStore = defineStore('project', () => {
 
     function openCaseDirDialog() {
         status.results = LOADING
-        return new Promise<main.Results>((resolve, reject) => {
-            OpenCaseDirDialog().then(result => {
-                Object.assign(results, result)
-                status.diagram = NOT_LOADED
-                status.results = LOADED
-                resolve(results)
-            }).catch(err => {
-                LogError(err)
-                console.log(err)
-                status.results = NOT_LOADED
-                reject(err)
-            })
+        OpenCaseDirDialog().then(result => {
+            results.value = result
+            status.diagram = NOT_LOADED
+            status.results = LOADED
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+            status.results = NOT_LOADED
         })
     }
 
@@ -288,18 +283,15 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
 
     function generateDiagram(doCluster: boolean) {
+        if (results.value == null) return
         status.diagram = LOADING
-        return new Promise<diag.Diagram>((resolve, reject) => {
-            GenerateDiagram(results.MinFreq, results.MaxFreq, doCluster).then(result => {
-                Object.assign(diagram, result)
-                status.diagram = LOADED
-                resolve(diagram)
-            }).catch(err => {
-                LogError(err)
-                console.log(err)
-                status.diagram = NOT_LOADED
-                reject(err)
-            })
+        GenerateDiagram(results.value.MinFreq, results.value.MaxFreq, doCluster).then(result => {
+            Object.assign(diagram, result)
+            status.diagram = LOADED
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+            status.diagram = NOT_LOADED
         })
     }
 
@@ -339,9 +331,6 @@ export const useProjectStore = defineStore('project', () => {
 
     return {
         status: status,
-        loaded,
-        saving,
-        $reset,
         // Project
         config,
         info,
@@ -355,6 +344,7 @@ export const useProjectStore = defineStore('project', () => {
         updateModel,
         // Analysis
         analysis,
+        currentCaseID,
         fetchAnalysis,
         updateAnalysis,
         addAnalysisCase,
@@ -367,7 +357,6 @@ export const useProjectStore = defineStore('project', () => {
         startEvaluate,
         cancelEvaluate,
         selectExec,
-        evalCaseID,
         // Results
         results,
         fetchResults,

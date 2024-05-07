@@ -9,8 +9,8 @@ export default createRouter({
             component: () => import('./components/Project.vue'),
         },
         {
-            path: '/turbine',
-            component: () => import('./components/Turbine.vue'),
+            path: '/model',
+            component: () => import('./components/Model.vue'),
         },
         {
             path: '/analysis',

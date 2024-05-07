@@ -82,6 +82,10 @@ export function UpdateAnalysis(arg1) {
   return window['go']['main']['App']['UpdateAnalysis'](arg1);
 }
 
+export function UpdateDiagram(arg1) {
+  return window['go']['main']['App']['UpdateDiagram'](arg1);
+}
+
 export function UpdateEvaluate(arg1) {
   return window['go']['main']['App']['UpdateEvaluate'](arg1);
 }

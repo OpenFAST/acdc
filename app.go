@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -167,31 +166,15 @@ func (a *App) ImportModelDialog() (*Model, error) {
 		},
 	})
 	if err != nil {
-		// No file was selected
+		// No file was selected, return current model
 		return a.Project.Model, nil
 	}
 
 	// Parse model files
-	files, err := ParseFiles(path)
+	a.Project.Model, err = ParseModelFiles(path)
 	if err != nil {
-		return nil, fmt.Errorf("error importing OpenFAST model '%s': %w", path, err)
-	}
-
-	// Get imported paths
-	paths := []string{}
-	for p := range files.PathMap {
-		p, _ := filepath.Rel(filepath.Dir(path), p)
-		paths = append(paths, p)
-	}
-	sort.Strings(paths)
-
-	// Initialize models structure
-	a.Project.Model = &Model{
-		HasAero: ((len(files.AeroDyn)+len(files.AeroDyn14)) > 0 &&
-			len(files.InflowWind) > 0),
-		Files:         files,
-		ImportedPaths: paths,
-		Notes:         []string{},
+		runtime.LogErrorf(a.ctx, "Error parsing model files: %s", err)
+		return nil, err
 	}
 
 	// Save project
@@ -299,9 +282,17 @@ func (a *App) RemoveAnalysisCase(ID int) (*Analysis, error) {
 
 func (a *App) FetchEvaluate() (*Evaluate, error) {
 
-	// If no Eval in project, create it
+	newEvaluate := NewEvaluate()
+
+	// If no Eval in project
 	if a.Project.Evaluate == nil {
-		a.Project.Evaluate = NewEvaluate()
+
+		// Set project value from new evaluate
+		a.Project.Evaluate = newEvaluate
+	} else {
+
+		// Get max CPUs from new evaluate
+		a.Project.Evaluate.MaxCPUs = newEvaluate.MaxCPUs
 	}
 
 	// Save project
@@ -312,7 +303,7 @@ func (a *App) FetchEvaluate() (*Evaluate, error) {
 	return a.Project.Evaluate, nil
 }
 
-// UpdateEval runs Case.Calculate and saves evaluation data
+// UpdateEvaluate runs Case.Calculate and saves evaluation data
 func (a *App) UpdateEvaluate(ev *Evaluate) (*Evaluate, error) {
 
 	// Update analysis in the project
@@ -440,7 +431,7 @@ func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
 		g.Go(func() error {
 			<-semChan
 			defer func() { semChan <- struct{}{} }()
-			return RunEvaluation(ctx2, a.Project.Model, c, &op, caseDir,
+			return EvaluateOP(ctx2, a.Project.Model, c, &op, caseDir,
 				a.Project.Evaluate.ExecPath)
 		})
 	}
@@ -580,6 +571,20 @@ func (a *App) GenerateDiagram(minFreqHz float64, maxFreqHz float64, doCluster bo
 	}
 
 	return a.Project.Diagram, nil
+}
+
+// UpdateDiagram saves the diagram to file
+func (a *App) UpdateDiagram(diag *diagram.Diagram) error {
+
+	// Update analysis in the project
+	a.Project.Diagram = diag
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //------------------------------------------------------------------------------

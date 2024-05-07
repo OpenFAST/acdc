@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"strconv"
 	"strings"
 	"unicode"
@@ -20,12 +21,14 @@ type Evaluate struct {
 	ExecVersion string     `json:"ExecVersion"`
 	ExecValid   bool       `json:"ExecValid"`
 	NumCPUs     int        `json:"NumCPUs"`
+	MaxCPUs     int        `json:"MaxCPUs"`
 	Status      EvalStatus `json:"Status"`
 }
 
 func NewEvaluate() *Evaluate {
 	return &Evaluate{
 		NumCPUs: 1,
+		MaxCPUs: goruntime.NumCPU(),
 	}
 }
 
@@ -45,7 +48,7 @@ type EvalLog struct {
 
 var EvalCancel context.CancelCauseFunc = func(_ error) {}
 
-func RunEvaluation(ctx context.Context, model *Model, c *Case, op *Condition, caseDir, execPath string) error {
+func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseDir, execPath string) error {
 
 	//--------------------------------------------------------------------------
 	// Prepare input files
@@ -117,25 +120,25 @@ func RunEvaluation(ctx context.Context, model *Model, c *Case, op *Condition, ca
 			return fmt.Errorf("no InflowWind files were imported")
 		}
 
-		files.ElastoDyn[0].BlPitch1.Value = op.BladePitch
-		files.ElastoDyn[0].BlPitch2.Value = op.BladePitch
-		files.ElastoDyn[0].BlPitch3.Value = op.BladePitch
+		// If controller is enabled
+		if c.UseController {
 
-		files.ElastoDyn[0].RotSpeed.Value = op.RotorSpeed
+			// If ServoDyn files exist set CompServo = 1, otherwise return error
+			if len(files.ServoDyn) > 0 {
+				files.Main[0].CompServo.Value = 1
+			} else {
+				return fmt.Errorf("no ServoDyn files were imported")
+			}
 
-		files.ElastoDyn[0].GenDOF.Value = false
+		} else {
 
-		// Disable ServoDyn and remove files
-		files.Main[0].CompServo.Value = 0
-		files.ServoDyn = []ServoDyn{}
+			// Disable ServoDyn and remove files
+			files.Main[0].CompServo.Value = 0
+			files.ServoDyn = []ServoDyn{}
 
-		// if len(files.ServoDyn) > 0 {
-		// 	files.ServoDyn[0].WindType.Value = 1
-		// 	files.ServoDyn[0].HWindSpeed.Value = op.WindSpeed
-		// 	files.ServoDyn[0].PLExp.Value = 0
-		// } else {
-		// 	return fmt.Errorf("no ServoDyn files were imported")
-		// }
+			// Disable generator DOF
+			files.ElastoDyn[0].GenDOF.Value = false
+		}
 
 	} else {
 
