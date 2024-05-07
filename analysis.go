@@ -37,9 +37,8 @@ type Case struct {
 	UseController   bool        `json:"UseController"`
 	RotorSpeedRange Range       `json:"RotorSpeedRange"`
 	WindSpeedRange  Range       `json:"WindSpeedRange"`
-	CutIn           float32     `json:"CutIn"`
-	Rated           float32     `json:"Rated"`
-	CutOut          float32     `json:"CutOut"`
+	RatedWindSpeed  float64     `json:"RatedWindSpeed"`
+	RatedRotorSpeed float64     `json:"RatedRotorSpeed"`
 	Curve           []Condition `json:"Curve"`
 	OperatingPoints []Condition `json:"OperatingPoints"`
 }
@@ -133,6 +132,9 @@ func (c *Case) Calculate() error {
 			op.RotorSpeed = rsSpline.Predict(windSpeed)
 			op.BladePitch = bpSpline.Predict(windSpeed)
 		}
+
+		// Calculated rated rotor speed from rated wind speed and curve
+		c.RatedRotorSpeed = rsSpline.Predict(c.RatedWindSpeed)
 
 	} else {
 

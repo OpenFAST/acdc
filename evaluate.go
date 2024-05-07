@@ -129,10 +129,10 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 			files.ElastoDyn[0].GenDOF.Value = true
 
 			// Set trim mode based on below or above rated wind speed
-			if op.WindSpeed < float64(c.Rated) {
+			if op.WindSpeed < float64(c.RatedWindSpeed) {
 				files.Main[0].TrimCase.Value = 2
 				files.Main[0].TrimGain.Value = 100
-				// files.ServoDyn[0].VS_RtGnSp.Value =  // Rated rotor speed
+				files.ServoDyn[0].VS_RtGnSp.Value = c.RatedRotorSpeed
 			} else {
 				files.Main[0].TrimCase.Value = 3
 				files.Main[0].TrimGain.Value = 0.00001
@@ -144,6 +144,8 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 				// Set ServoDyn parameters
 				files.ServoDyn[0].PCMode.Value = 0
 				files.ServoDyn[0].VSContrl.Value = 1
+				files.ServoDyn[0].HSSBrMode.Value = 0
+				files.ServoDyn[0].YCMode.Value = 0
 
 			} else {
 				return fmt.Errorf("no ServoDyn files were imported")

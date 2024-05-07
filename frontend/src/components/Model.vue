@@ -59,8 +59,6 @@ function setDefaults() {
 
     // Set ServoDyn file linearization defaults
     if (files.ServoDyn.length > 0) {
-        files.ServoDyn[0].PCMode.Value = 0
-        files.ServoDyn[0].VSContrl.Value = 1
         files.ServoDyn[0].HSSBrMode.Value = 0
         files.ServoDyn[0].YCMode.Value = 0
     }
@@ -135,10 +133,19 @@ function setDefaults() {
                 <li class="list-group-item" v-if="project.model.Files.ServoDyn.length > 0">
                     <div class="fw-bold">ServoDyn</div>
                     <div>
-                        <ModelProp :field="project.model.Files.ServoDyn[0].PCMode" />
-                        <ModelProp :field="project.model.Files.ServoDyn[0].VSContrl" />
-                        <ModelProp :field="project.model.Files.ServoDyn[0].HSSBrMode" />
-                        <ModelProp :field="project.model.Files.ServoDyn[0].YCMode" />
+                        <ModelProp :field="project.model.Files.ServoDyn[0].VS_Rgn2K" />
+                        <ModelProp :field="project.model.Files.ServoDyn[0].VS_RtGnSp" />
+                        <ModelProp :field="project.model.Files.ServoDyn[0].VS_RtTq" />
+                        <div :class="{
+                    'text-success': (project.model.Files.ServoDyn[0].VS_Rgn2K.Value *
+                        project.model.Files.ServoDyn[0].VS_RtGnSp.Value *
+                        project.model.Files.ServoDyn[0].VS_RtGnSp.Value < project.model.Files.ServoDyn[0].VS_RtTq.Value)
+                }">
+                            Check: {{
+                    project.model.Files.ServoDyn[0].VS_Rgn2K.Value *
+                    project.model.Files.ServoDyn[0].VS_RtGnSp.Value *
+                    project.model.Files.ServoDyn[0].VS_RtGnSp.Value
+                }} &lt; {{ project.model.Files.ServoDyn[0].VS_RtTq.Value }}</div>
                     </div>
                 </li>
             </ul>

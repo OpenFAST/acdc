@@ -549,9 +549,8 @@ export namespace main {
 	    UseController: boolean;
 	    RotorSpeedRange: Range;
 	    WindSpeedRange: Range;
-	    CutIn: number;
-	    Rated: number;
-	    CutOut: number;
+	    RatedWindSpeed: number;
+	    RatedRotorSpeed: number;
 	    Curve: Condition[];
 	    OperatingPoints: Condition[];
 	
@@ -567,9 +566,8 @@ export namespace main {
 	        this.UseController = source["UseController"];
 	        this.RotorSpeedRange = this.convertValues(source["RotorSpeedRange"], Range);
 	        this.WindSpeedRange = this.convertValues(source["WindSpeedRange"], Range);
-	        this.CutIn = source["CutIn"];
-	        this.Rated = source["Rated"];
-	        this.CutOut = source["CutOut"];
+	        this.RatedWindSpeed = source["RatedWindSpeed"];
+	        this.RatedRotorSpeed = source["RatedRotorSpeed"];
 	        this.Curve = this.convertValues(source["Curve"], Condition);
 	        this.OperatingPoints = this.convertValues(source["OperatingPoints"], Condition);
 	    }

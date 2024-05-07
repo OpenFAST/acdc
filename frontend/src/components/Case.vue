@@ -144,7 +144,7 @@ const myChart = computed(() => {
             </div>
             <div class="col-2">
                 <label for="RatedWS" class="col-form-label">Rated (m/s)</label>
-                <input type="text" class="form-control" id="RatedWS" v-model.number="Case.Rated">
+                <input type="text" class="form-control" id="RatedWS" v-model.number="Case.RatedWindSpeed">
             </div>
             <div class="col-2">
                 <label for="MaxWS" class="col-form-label">Cut-Out (m/s)</label>
