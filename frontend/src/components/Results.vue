@@ -209,7 +209,7 @@ const charts = computed(() => {
                         <select class="form-select" v-model="selectedOP">
                             <option :value="null">None</option>
                             <option v-for="op in project.results.OPs" :value="op">
-                                {{ op.ID + 1 }} -
+                                {{ op.ID }} -
                                 {{ project.results.HasWind ? `${op.WindSpeed.toPrecision(3)} m/s` :
                     `${op.RotSpeed.toPrecision(3)} RPM` }}
                             </option>

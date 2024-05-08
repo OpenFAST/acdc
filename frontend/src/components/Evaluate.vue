@@ -6,7 +6,7 @@ import { GetEvaluateLog } from "../../wailsjs/go/main/App"
 
 const project = useProjectStore()
 const data = reactive({
-    logID: 0,
+    logID: -1,
     logContents: "",
 })
 
@@ -29,7 +29,7 @@ function getLog(status: main.EvalStatus) {
 }
 
 function closeLog() {
-    data.logID = 0
+    data.logID = -1
 }
 
 </script>
@@ -115,7 +115,7 @@ function closeLog() {
                 </table>
             </div>
         </div>
-        <div class="offcanvas offcanvas-bottom" :class="{ show: data.logID > 0 }" tabindex="-1" style="height: 50vh">
+        <div class="offcanvas offcanvas-bottom" :class="{ show: data.logID >= 0 }" tabindex="-1" style="height: 50vh">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title">Operating Point {{ data.logID }} Evaluation Log</h5>
                 <button class="btn-close" @click="closeLog"></button>

@@ -298,9 +298,9 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 		return modes[i].NaturalFreqRaw < modes[j].NaturalFreqRaw
 	})
 
-	// Set mode identifiers (starting at 1)
+	// Set mode identifiers (starting at 0)
 	for i := range modes {
-		modes[i].ID = i + 1
+		modes[i].ID = i
 	}
 
 	return &EigenResults{Modes: modes, EigenVectors: eigenVectors}, nil
