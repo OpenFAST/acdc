@@ -77,6 +77,18 @@ function getModeViz() {
     project.getModeViz(selectedPoint.value, vizScale.value)
 }
 
+function setCurrentVizID(id: number) {
+    project.currentVizID = id
+    const lineID = project.modeViz[id].LineID
+    if (project.diagram == null || lineID >= project.diagram.Lines.length) return
+    const line = project.diagram.Lines[project.modeViz[id].LineID]
+    const opID = project.modeViz[id].OPID
+    const point = line.Points.find(p => p.OpPtID == opID)
+    console.log(point)
+    if (point === undefined) return
+    selectedPoint.value = point
+}
+
 const charts = computed(() => {
     let objs = new Array<Graph>;
     if (project.diagram == null) return objs
@@ -489,7 +501,7 @@ const charts = computed(() => {
                     <div class="col-2">
                         <div class="list-group">
                             <a class="list-group-item list-group-item-action" v-for="(mv, i) in project.modeViz"
-                                :class="{ active: (i == project.currentVizID) }" @click="project.currentVizID = i">
+                                :class="{ active: (i == project.currentVizID) }" @click="setCurrentVizID(i)">
                                 {{ mv.LineID }} - {{ project.diagram.Lines[mv.LineID].Label }}, OP {{ mv.OPID }}
                             </a>
                         </div>
