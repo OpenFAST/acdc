@@ -64,13 +64,31 @@ let renderer: THREE.WebGLRenderer;
 
 const views = [
     {
+        // Top View
+        left: 0,
+        bottom: 0.705,
+        width: 0.4,
+        height: 0.30,
+        background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
+        eye: [0, 0, 200],
+        up: [1, 0, 0],
+        updateCamera: function (camera: THREE.PerspectiveCamera) {
+            // Calculate distance along Z axis to fit model in frame horizontally
+            const fov = camera.fov * (Math.PI / 180);
+            const fovh = 2 * Math.atan(Math.tan(fov / 2) * camera.aspect);
+            let distance = 1.05 * (frameSize.y / 2 / Math.tan(fovh / 2) + frameSize.z)
+            camera.position.fromArray([0, 0, distance]); // Looking along -Z (downward)
+            camera.lookAt(frameCenter);
+        },
+        camera: new THREE.PerspectiveCamera,
+    },
+    {
         // Front View
         left: 0,
         bottom: 0,
-        width: 0.495,
-        height: 1.0,
+        width: 0.4,
+        height: 0.70,
         background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
-        eye: [-175, 0, frameCenter.z],
         up: [0, 0, 1],
         updateCamera: function (camera: THREE.PerspectiveCamera) {
             // Calculate distance along -X axis to fit model in frame vertically
@@ -83,12 +101,11 @@ const views = [
     },
     {
         // Side View
-        left: 0.5,
+        left: 0.402,
         bottom: 0,
-        width: 0.245,
-        height: 1.0,
+        width: 0.3,
+        height: 0.70,
         background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
-        eye: [0, -175, frameCenter.z],
         up: [0, 0, 1],
         updateCamera: function (camera: THREE.PerspectiveCamera) {
             // Calculate distance along -Y axis to fit model in frame vertically
@@ -98,19 +115,20 @@ const views = [
         },
         camera: new THREE.PerspectiveCamera,
     },
+
     {
-        // Top View
-        left: 0.75,
+        // Isometric View
+        left: 0.704,
         bottom: 0,
-        width: 0.25,
+        width: 0.3,
         height: 1.0,
         background: new THREE.Color().setRGB(0.3, 0.3, 0.3, THREE.SRGBColorSpace),
-        eye: [0, 0, 200],
-        up: [0, 1, 0],
+        up: [0, 0, 1],
         updateCamera: function (camera: THREE.PerspectiveCamera) {
-            // Calculate distance along Z axis to fit model in frame vertically
-            let distance = 1.05 * (frameSize.y / 2 / Math.tan(camera.fov * Math.PI / 180 / 2) + frameSize.z)
-            camera.position.fromArray([0, 0, distance]); // Looking along -Z (downward)
+            // Calculate distance along Z axis to fit model in frame horizontally
+            let distanceFront = 0.8 * (frameSize.z / 2 / Math.tan(camera.fov * Math.PI / 180 / 2) + frameSize.x / 2)
+            let distanceSide = 0.8 * (frameSize.z / 2 / Math.tan(camera.fov * Math.PI / 180 / 2) + frameSize.y / 2)
+            camera.position.fromArray([-distanceFront, -distanceSide, frameCenter.z + 3 * frameSize.z]); // Looking along -Z (downward)
             camera.lookAt(frameCenter);
         },
         camera: new THREE.PerspectiveCamera,
@@ -172,8 +190,8 @@ onMounted(() => {
     for (let ii = 0; ii < views.length; ++ii) {
         const view = views[ii];
         const camera = new THREE.PerspectiveCamera(FOV, 2, 1, 10000);
-        camera.position.fromArray(view.eye);
         camera.up.fromArray(view.up);
+        view.updateCamera(camera)
         view.camera = camera;
     }
 
