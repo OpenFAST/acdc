@@ -11,6 +11,7 @@ ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScal
 const project = useProjectStore()
 
 onMounted(() => {
+    project.fetchModel()
     project.fetchAnalysis()
 })
 

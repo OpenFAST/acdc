@@ -13,7 +13,7 @@ onMounted(() => {
 
 const modelFileOptions = computed<File[]>(() => {
     const options: File[] = []
-    if (!project.model.Files) return options
+    if (project.model == null || project.model.Files == null) return options
     for (const files of Object.values(project.model.Files) as File[][]) {
         for (const file of files) {
             options.push({
@@ -28,6 +28,8 @@ const modelFileOptions = computed<File[]>(() => {
 
 function setDefaults() {
 
+    if (project.model == null) return
+
     // Get the files object
     let files = project.model.Files!
 
@@ -35,7 +37,6 @@ function setDefaults() {
     files.Main[0].Linearize.Value = true
     files.Main[0].CalcSteady.Value = true
     files.Main[0].TrimTol.Value = 0.001
-    files.Main[0].TrimGain.Value = 100
     files.Main[0].Twr_Kdmp.Value = 100
     files.Main[0].Bld_Kdmp.Value = 100
     files.Main[0].NLinTimes.Value = 1
@@ -72,11 +73,11 @@ function setDefaults() {
 <template>
     <main>
         <div class="card mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header hstack">
                 <span>OpenFAST Model Files</span>
-                <a class="btn btn-primary btn-sm" @click="project.importModelDialog">Import</a>
+                <a class="btn btn-primary btn-sm ms-auto" @click="project.importModelDialog">Import</a>
             </div>
-            <ul class="list-group list-group-flush" v-if="project.model.Files">
+            <ul class="list-group list-group-flush" v-if="project.model != null">
                 <li class="list-group-item" v-if="project.model.ImportedPaths.length > 0">
                     <div class="fw-bold mb-2">Imported Files</div>
                     <div class="row">
@@ -92,10 +93,10 @@ function setDefaults() {
             </ul>
         </div>
 
-        <div class="card mb-3" v-if="modelFileOptions.length > 0">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card mb-3" v-if="project.model != null">
+            <div class="card-header hstack">
                 <span>Linearization Quick Setup</span>
-                <a class="btn btn-primary btn-sm" @click="setDefaults">Defaults</a>
+                <a class="btn btn-primary btn-sm ms-auto" @click="setDefaults">Defaults</a>
             </div>
             <ul class="list-group list-group-flush" v-if="project.model.Files">
                 <li class="list-group-item">
@@ -106,7 +107,6 @@ function setDefaults() {
                         <ModelProp :field="project.model.Files.Main[0].Linearize" />
                         <ModelProp :field="project.model.Files.Main[0].CalcSteady" />
                         <ModelProp :field="project.model.Files.Main[0].TrimTol" />
-                        <ModelProp :field="project.model.Files.Main[0].TrimGain" />
                         <ModelProp :field="project.model.Files.Main[0].Twr_Kdmp" />
                         <ModelProp :field="project.model.Files.Main[0].Bld_Kdmp" />
                         <ModelProp :field="project.model.Files.Main[0].NLinTimes" />
@@ -136,16 +136,6 @@ function setDefaults() {
                         <ModelProp :field="project.model.Files.ServoDyn[0].VS_Rgn2K" />
                         <ModelProp :field="project.model.Files.ServoDyn[0].VS_RtGnSp" />
                         <ModelProp :field="project.model.Files.ServoDyn[0].VS_RtTq" />
-                        <div :class="{
-                    'text-success': (project.model.Files.ServoDyn[0].VS_Rgn2K.Value *
-                        project.model.Files.ServoDyn[0].VS_RtGnSp.Value *
-                        project.model.Files.ServoDyn[0].VS_RtGnSp.Value < project.model.Files.ServoDyn[0].VS_RtTq.Value)
-                }">
-                            Check: {{
-                    project.model.Files.ServoDyn[0].VS_Rgn2K.Value *
-                    project.model.Files.ServoDyn[0].VS_RtGnSp.Value *
-                    project.model.Files.ServoDyn[0].VS_RtGnSp.Value
-                }} &lt; {{ project.model.Files.ServoDyn[0].VS_RtTq.Value }}</div>
                     </div>
                 </li>
             </ul>
