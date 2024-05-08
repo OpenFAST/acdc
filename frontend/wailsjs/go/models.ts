@@ -1493,6 +1493,7 @@ export namespace viz {
 	    }
 	}
 	export class ModeData {
+	    LineID: number;
 	    OPID: number;
 	    ModeID: number;
 	    Frames: Frame[];
@@ -1503,6 +1504,7 @@ export namespace viz {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.LineID = source["LineID"];
 	        this.OPID = source["OPID"];
 	        this.ModeID = source["ModeID"];
 	        this.Frames = this.convertValues(source["Frames"], Frame);

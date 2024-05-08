@@ -17,6 +17,7 @@ onMounted(() => {
 
 const selectedOP = ref<main.OperatingPoint>()
 const selectedLine = ref<diagram.Line | null>(null)
+const swapLine = ref<diagram.Line | null>(null)
 const selectedPoint = ref<diagram.Point | null>(null)
 const vizScale = ref(50)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
@@ -49,12 +50,18 @@ function toggleLineVisibility() {
     project.updateDiagram()
 }
 
-function swapModeLine(e: {
-    originalEvent: Event;
-    value: diagram.Line;
-}) {
-
-
+function swapModeLine() {
+    if (selectedLine.value == null || selectedPoint.value == null || swapLine.value == null) return
+    const swapOP = selectedPoint.value.OpPtID
+    const matchesOP = (p: diagram.Point) => p.OpPtID == swapOP;
+    let iSel = selectedLine.value.Points.findIndex(matchesOP)
+    let iSwap = swapLine.value.Points.findIndex(matchesOP)
+    let ptsSel = selectedLine.value.Points.splice(iSel)
+    let ptsSwap = swapLine.value.Points.splice(iSwap)
+    selectedLine.value.Points.push(...ptsSwap)
+    swapLine.value.Points.push(...ptsSel)
+    for (const p of selectedLine.value.Points) { p.Line = selectedLine.value.ID }
+    for (const p of swapLine.value.Points) { p.Line = swapLine.value.ID }
     project.updateDiagram()
 }
 
@@ -65,8 +72,9 @@ function exportDiagramDataJSON() {
     })
 }
 
-function getModeViz(opID: number, modeID: number) {
-    project.getModeViz(opID, modeID, vizScale.value)
+function getModeViz() {
+    if (selectedPoint.value == null) return
+    project.getModeViz(selectedPoint.value, vizScale.value)
 }
 
 const charts = computed(() => {
@@ -268,8 +276,8 @@ const charts = computed(() => {
                             <option :value="false">Disable</option>
                         </select>
                     </div>
-                    <div class="col-4 col-md-3 col-xl-2">
-                        <label for="filterStructural" class="col-form-label">Filter Nonstructural Modes</label>
+                    <div class="col-4 col-md-3 col-xl-3">
+                        <label for="filterStructural" class="col-form-label">Filter Non-structural Modes</label>
                         <select class="form-select" v-model="filterStructural">
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
@@ -341,8 +349,8 @@ const charts = computed(() => {
             </div>
         </div>
 
-        <div class="row row-cols-2 mb-3">
-            <div class="col">
+        <div class="row row-cols-1 row-cols-xl-2 mb-3 g-3">
+            <div class="col-12 col-xl-5">
                 <div class="card h-100" v-if="selectedLine != null">
                     <div class="card-header hstack">
                         <span>Line</span>
@@ -352,17 +360,12 @@ const charts = computed(() => {
                     </div>
                     <div class="card-body">
                         <form class="row g-3">
-                            <div class="col-12 col-md-6 col-xl-4">
-                                <label for="lineNumber" class="col-form-label">Number</label>
-                                <input type="text" class="form-control-plaintext" id="lineNumber"
-                                    :value="selectedLine.ID" @change="project.updateDiagram()">
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-4">
                                 <label for="lineLabel" class="col-form-label">Label</label>
                                 <input type="text" class="form-control" id="lineLabel" v-model="selectedLine.Label"
                                     @change="project.updateDiagram()">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-4">
                                 <label for="lineColor" class="col-form-label">Color</Label>
                                 <input type="color" class="form-control form-control-color w-100" id="lineColor"
                                     v-model="selectedLine.Color" @change="project.updateDiagram()">
@@ -375,7 +378,7 @@ const charts = computed(() => {
                                 </select>
                             </div> -->
                             <div class="col-12" v-if="!selectedLine.Hidden">
-                                <label for="linePoints" class="col-form-label">Points</Label>
+                                <label for="linePoints" class="col-form-label">Select Point</Label>
                                 <select class="form-select" id="linePoints" v-model="selectedPoint">
                                     <option v-for="point in selectedLine.Points" :value="point">OP: {{ point.OpPtID }},
                                         Rotor Speed: {{ point.RotSpeed.toFixed(2) }}, Wind Speed: {{
@@ -389,53 +392,52 @@ const charts = computed(() => {
                 </div>
             </div>
 
-            <div class="col">
+            <div class="col-12 col-xl-7">
                 <div class="card h-100" v-if="selectedPoint != null">
                     <div class="card-header hstack">
                         <span>Mode</span>
-                        <a class="btn btn-primary ms-auto"
-                            @click="getModeViz(selectedPoint.OpPtID, selectedPoint.ModeID)">
+                        <a class="btn btn-primary ms-auto" @click="getModeViz()">
                             Visualize
                         </a>
                     </div>
                     <div class="card-body">
                         <form class="row row-cols-auto g-3">
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-3">
                                 <label for="modeOP" class="col-form-label">Operating Point</label>
                                 <input type="text" readonly class="form-control-plaintext" id="modeOP"
                                     :value="selectedPoint.OpPtID">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-3">
                                 <label for="modeID" class="col-form-label">Mode ID</Label>
                                 <input type="text" class="form-control-plaintext" id="modeID"
                                     :value="selectedPoint.ModeID">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-3">
                                 <label for="modeRotSpeed" class="col-form-label">Rotor Speed (RPM)</Label>
                                 <input type="text" class="form-control-plaintext" id="modeRotSpeed"
                                     :value="selectedPoint.RotSpeed.toFixed(3)">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-3">
                                 <label for="modeWindSpeed" class="col-form-label">Wind Speed (m/s)</Label>
                                 <input type="text" class="form-control-plaintext" id="modeWindSpeed"
                                     :value="selectedPoint.WindSpeed.toFixed(3)">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
-                                <label for="modeOP" class="col-form-label">Natural Frequency (Hz)</label>
+                            <div class="col-3">
+                                <label for="modeOP" class="col-form-label">Natural Freq. (Hz)</label>
                                 <input type="text" class="form-control-plaintext" id="modeOP"
                                     :value="selectedPoint.NaturalFreqHz.toFixed(3)">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
-                                <label for="modeID" class="col-form-label">Damped Frequency (Hz)</Label>
+                            <div class="col-3">
+                                <label for="modeID" class="col-form-label">Damped Freq. (Hz)</Label>
                                 <input type="text" class="form-control-plaintext" id="modeID"
                                     :value="selectedPoint.DampedFreqHz.toFixed(3)">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-3">
                                 <label for="modeRotSpeed" class="col-form-label">Damping Ratio (%)</Label>
                                 <input type="text" class="form-control-plaintext" id="modeRotSpeed"
                                     :value="selectedPoint.DampingRatio.toFixed(3)">
                             </div>
-                            <div class="col-12 col-md-6 col-xl-4">
+                            <div class="col-3">
                                 <label for="vizScale" class="col-form-label">Visualization Scale</Label>
                                 <select class="form-select" v-model.number="vizScale">
                                     <option value="1">1</option>
@@ -453,13 +455,23 @@ const charts = computed(() => {
                                     <option value="2000">2000</option>
                                 </select>
                             </div>
+                            <div class="col-12 hstack" v-if="project.diagram != null">
+                                <label for="vizScale" class="col-form-label">Select line to swap mode</Label>
+                                <select class="form-select ms-3 w-auto" v-model="swapLine">
+                                    <option :value="line" v-for="line in project.diagram.Lines">{{ line.ID }} - {{
+                    line.Label }}</option>
+                                </select>
+                                <button class="btn btn-primary ms-3" @click="swapModeLine()"
+                                    :disabled="swapLine == null">Swap</button>
+                            </div>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card mb-3" v-if="selectedPoint != null && project.modeViz.length > 0">
+        <div class="card mb-3"
+            v-if="selectedPoint != null && project.modeViz.length > 0 && project.currentVizID >= 0 && project.diagram != null">
             <div class="card-header hstack">
                 <span>Mode Visualization</span>
                 <a class="btn btn-primary ms-auto" @click="project.clearModeViz">
@@ -468,17 +480,17 @@ const charts = computed(() => {
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-9">
-                        <div style="width:100%; height: 500px">
-                            <ModeViz :ModeData="project.modeViz[project.modeViz.length - 1]">
+                    <div class="col-10">
+                        <div style="width:100%; height: 75vh">
+                            <ModeViz :ModeData="project.modeViz[project.currentVizID]">
                             </ModeViz>
                         </div>
                     </div>
-                    <div class="col-3">
+                    <div class="col-2">
                         <div class="list-group">
-                            <a class="list-group-item list-group-item-action" v-for="mv in project.modeViz"
-                                :class="{ active: (selectedPoint.OpPtID == mv.OPID) && (selectedPoint.ModeID == mv.ModeID) }">
-                                OP: {{ mv.OPID }}, Mode: {{ mv.ModeID }}
+                            <a class="list-group-item list-group-item-action" v-for="(mv, i) in project.modeViz"
+                                :class="{ active: (i == project.currentVizID) }" @click="project.currentVizID = i">
+                                {{ mv.LineID }} - {{ project.diagram.Lines[mv.LineID].Label }}, OP {{ mv.OPID }}
                             </a>
                         </div>
                     </div>

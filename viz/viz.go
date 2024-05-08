@@ -35,6 +35,7 @@ type Frame struct {
 }
 
 type ModeData struct {
+	LineID int     `json:"LineID"`
 	OPID   int     `json:"OPID"`
 	ModeID int     `json:"ModeID"`
 	Frames []Frame `json:"Frames"`

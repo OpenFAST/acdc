@@ -42,6 +42,7 @@ export const useProjectStore = defineStore('project', () => {
     const currentCaseID = ref<number>(1)
     const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
     const modeViz = reactive<Array<viz.ModeData>>(new Array)
+    const currentVizID = ref<number>(-1)
 
     function $reset() {
         info.value = null
@@ -314,16 +315,18 @@ export const useProjectStore = defineStore('project', () => {
     // Visualization
     //--------------------------------------------------------------------------
 
-    function getModeViz(opID: number, modeID: number, scale: number) {
+    function getModeViz(point: diag.Point, scale: number) {
         status.viz = LOADING
         return new Promise<viz.ModeData>((resolve, reject) => {
-            GetModeViz(opID, modeID, scale).then(result => {
-                console.log(result)
-                const found = modeViz.find((md) => result.OPID == md.OPID && result.ModeID == md.ModeID)
-                if (found !== undefined) {
-                    Object.assign(found, result)
+            GetModeViz(point.OpPtID, point.ModeID, scale).then(result => {
+                result.LineID = point.Line
+                const i = modeViz.findIndex((md) => result.OPID == md.OPID && result.ModeID == md.ModeID)
+                if (i !== -1) {
+                    Object.assign(modeViz[i], result)
+                    currentVizID.value = i
                 } else {
                     modeViz.push(result);
+                    currentVizID.value = modeViz.length - 1
                 }
                 status.viz = LOADED
                 resolve(result)
@@ -337,6 +340,7 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     function clearModeViz() {
+        currentVizID.value = -1
         modeViz.splice(0);
     }
 
@@ -385,6 +389,7 @@ export const useProjectStore = defineStore('project', () => {
         // Visualization
         getModeViz,
         clearModeViz,
+        currentVizID,
         modeViz,
     }
 })
