@@ -16,6 +16,7 @@ onMounted(() => {
 })
 
 function startEvaluate() {
+    project.clearEvalStatus()
     project.startEvaluate(project.currentCaseID)
 }
 

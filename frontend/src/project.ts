@@ -373,6 +373,7 @@ export const useProjectStore = defineStore('project', () => {
         startEvaluate,
         cancelEvaluate,
         selectExec,
+        clearEvalStatus,
         // Results
         results,
         fetchResults,
