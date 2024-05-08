@@ -51,6 +51,7 @@ function setDefaults() {
         files.AeroDyn[0].TwrPotent.Value = 0
         files.AeroDyn[0].TwrShadow.Value = 0
         files.AeroDyn[0].FrozenWake.Value = true
+        files.AeroDyn[0].SkewMod.Value = 0
     }
 
     // Save changes to model
