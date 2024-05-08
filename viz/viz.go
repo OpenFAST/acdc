@@ -52,12 +52,10 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 	}
 
 	// Collect mode data
-	modeStr := make([]string, len(modes))
 	natFreq := make([]float64, len(modes))
 	dampFreq := make([]float64, len(modes))
 	dampRatio := make([]float64, len(modes))
 	for i, m := range modes {
-		modeStr[i] = strconv.Itoa(m.ID + 1)
 		natFreq[i] = m.NaturalFreqHz
 		dampFreq[i] = m.DampedFreqHz
 		dampRatio[i] = m.DampingRatio
