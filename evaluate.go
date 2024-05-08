@@ -60,38 +60,39 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 		return err
 	}
 
-	// Get number of linearization steps, set LinTimes
-	if len(files.Main) > 0 {
-
-		// The file writing code assumes that NLinTimes is governed by the
-		// length of LinTimes which is only true if CalcSteady==false.
-		// If CalcSteady is true, the size of LinTimes must be changed
-		// to match NLinTimes
-		if files.Main[0].CalcSteady.Value {
-			files.Main[0].LinTimes.Value = make([]float64, files.Main[0].NLinTimes.Value)
-		}
-
-		// Write checkpoint files for later generation of mode shapes
-		files.Main[0].WrVTK.Value = 3
-
-		// Write lines
-		files.Main[0].VTK_type.Value = 2
-
-	} else {
+	// Check that main and ElastoDyn files exist, return error if not
+	if len(files.Main) == 0 {
 		return fmt.Errorf("no Main files were imported")
 	}
-
-	// If ElastoDyn files present modify for operating point conditions
-	if len(files.ElastoDyn) > 0 {
-		files.ElastoDyn[0].BlPitch1.Value = op.BladePitch
-		files.ElastoDyn[0].BlPitch2.Value = op.BladePitch
-		files.ElastoDyn[0].BlPitch3.Value = op.BladePitch
-		files.ElastoDyn[0].RotSpeed.Value = op.RotorSpeed
-	} else {
+	if len(files.ElastoDyn) == 0 {
 		return fmt.Errorf("no ElastoDyn files were imported")
 	}
 
-	// If BeamDyn files are present, set RotateStates to true
+	// Set status update time so a full simulation will generate 50 status messages
+	// which are used for the progress bars on the Evaluate tab
+	files.Main[0].SttsTime.Value = files.Main[0].TMax.Value / 50
+
+	// The file writing code assumes that NLinTimes is governed by the
+	// length of LinTimes which is only true if CalcSteady==false.
+	// If CalcSteady is true, the size of LinTimes must be changed
+	// to match NLinTimes
+	if files.Main[0].CalcSteady.Value {
+		files.Main[0].LinTimes.Value = make([]float64, files.Main[0].NLinTimes.Value)
+	}
+
+	// Write checkpoint files for later generation of mode shapes
+	files.Main[0].WrVTK.Value = 3
+
+	// Write lines
+	files.Main[0].VTK_type.Value = 2
+
+	// Modify ElastoDyn file for operating point conditions
+	files.ElastoDyn[0].BlPitch1.Value = op.BladePitch
+	files.ElastoDyn[0].BlPitch2.Value = op.BladePitch
+	files.ElastoDyn[0].BlPitch3.Value = op.BladePitch
+	files.ElastoDyn[0].RotSpeed.Value = op.RotorSpeed
+
+	// Set RotateStates to true for all BeamDyn files
 	for i := range files.BeamDyn {
 		files.BeamDyn[i].RotStates.Value = true
 	}
@@ -112,13 +113,12 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 		}
 
 		// Set flag to use InflowWind or return error
-		if len(files.InflowWind) > 0 {
-			files.InflowWind[0].WindType.Value = 1
-			files.InflowWind[0].HWindSpeed.Value = op.WindSpeed
-			files.InflowWind[0].PLExp.Value = 0
-		} else {
+		if len(files.InflowWind) == 0 {
 			return fmt.Errorf("no InflowWind files were imported")
 		}
+		files.InflowWind[0].WindType.Value = 1
+		files.InflowWind[0].HWindSpeed.Value = op.WindSpeed
+		files.InflowWind[0].PLExp.Value = 0
 
 		// If controller is enabled
 		if c.UseController {

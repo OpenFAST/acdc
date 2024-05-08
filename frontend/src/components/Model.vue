@@ -40,14 +40,9 @@ function setDefaults() {
     files.Main[0].Twr_Kdmp.Value = 100
     files.Main[0].Bld_Kdmp.Value = 100
     files.Main[0].NLinTimes.Value = 1
-    // files.Main[0].Gravity.Value = 0
-    files.Main[0].SttsTime.Value = files.Main[0].TMax.Value / 100
-    files.Main[0].OutFmt.Value = "ES16.9E2"
-    files.Main[0].WrVTK.Value = 3
-    files.Main[0].VTK_type.Value = 2
+    files.Main[0].OutFmt.Value = "ES16.9E3"
 
     // Set ElastoDyn file linearization defaults
-    // files.ElastoDyn[0].ShftTilt.Value = 0
     files.ElastoDyn[0].YawDOF.Value = false
 
     // Set AeroDyn file linearization defaults
@@ -56,12 +51,6 @@ function setDefaults() {
         files.AeroDyn[0].TwrPotent.Value = 0
         files.AeroDyn[0].TwrShadow.Value = 0
         files.AeroDyn[0].FrozenWake.Value = true
-    }
-
-    // Set ServoDyn file linearization defaults
-    if (files.ServoDyn.length > 0) {
-        files.ServoDyn[0].HSSBrMode.Value = 0
-        files.ServoDyn[0].YCMode.Value = 0
     }
 
     // Save changes to model
