@@ -119,7 +119,7 @@ const myChart = computed(() => {
             <div class="col-10">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="checkbox" value="" id="aero-checkbox"
-                        v-model="Case.IncludeAero" :disabled="!project.model.HasAero">
+                        v-model="Case.IncludeAero" :disabled="project.model == null || !project.model.HasAero">
                     <label class="form-check-label" for="aero-checkbox">
                         Aerodynamics
                     </label>
@@ -132,6 +132,19 @@ const myChart = computed(() => {
                         Controller
                     </label>
                 </div>
+            </div>
+        </form>
+        <form class="row row-cols-auto g-3 mb-3" v-if="Case.UseController" @change="updateAnalysis">
+            <div class="col-2">
+                <label class="col-form-label">Trim Gain</label>
+            </div>
+            <div class="col-2">
+                <label for="TrimGainBR" class="col-form-label">Below Rated</label>
+                <input type="text" class="form-control" id="TrimGainBR" v-model.number="Case.TrimGain[0]">
+            </div>
+            <div class="col-2">
+                <label for="TrimGainAR" class="col-form-label">Above Rated</label>
+                <input type="text" class="form-control" id="TrimGainAR" v-model.number="Case.TrimGain[1]">
             </div>
         </form>
         <form class="row row-cols-auto g-3 mb-3" v-if="Case.IncludeAero" @change="updateAnalysis">

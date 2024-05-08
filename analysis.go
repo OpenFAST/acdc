@@ -39,6 +39,7 @@ type Case struct {
 	WindSpeedRange  Range       `json:"WindSpeedRange"`
 	RatedWindSpeed  float64     `json:"RatedWindSpeed"`
 	RatedRotorSpeed float64     `json:"RatedRotorSpeed"`
+	TrimGain        [2]float64  `json:"TrimGain"`
 	Curve           []Condition `json:"Curve"`
 	OperatingPoints []Condition `json:"OperatingPoints"`
 }
@@ -48,11 +49,13 @@ func NewCase() Case {
 		ID:              1,
 		Name:            "Base",
 		IncludeAero:     false,
-		RotorSpeedRange: Range{Min: 1, Max: 10, Num: 5},
-		WindSpeedRange:  Range{Min: 1, Max: 10, Num: 5},
+		RotorSpeedRange: Range{Min: 1, Max: 20, Num: 5},
+		WindSpeedRange:  Range{Min: 1, Max: 20, Num: 5},
+		RatedWindSpeed:  10,
+		TrimGain:        [2]float64{100, 0.00001},
 		Curve: []Condition{
 			{WindSpeed: 1, RotorSpeed: 1, BladePitch: 0},
-			{WindSpeed: 20, RotorSpeed: 10, BladePitch: 90},
+			{WindSpeed: 20, RotorSpeed: 10, BladePitch: 0},
 		},
 		OperatingPoints: []Condition{},
 	}

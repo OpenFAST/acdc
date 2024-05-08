@@ -551,6 +551,7 @@ export namespace main {
 	    WindSpeedRange: Range;
 	    RatedWindSpeed: number;
 	    RatedRotorSpeed: number;
+	    TrimGain: number[];
 	    Curve: Condition[];
 	    OperatingPoints: Condition[];
 	
@@ -568,6 +569,7 @@ export namespace main {
 	        this.WindSpeedRange = this.convertValues(source["WindSpeedRange"], Range);
 	        this.RatedWindSpeed = source["RatedWindSpeed"];
 	        this.RatedRotorSpeed = source["RatedRotorSpeed"];
+	        this.TrimGain = source["TrimGain"];
 	        this.Curve = this.convertValues(source["Curve"], Condition);
 	        this.OperatingPoints = this.convertValues(source["OperatingPoints"], Condition);
 	    }
