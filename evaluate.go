@@ -123,32 +123,32 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 		// If controller is enabled
 		if c.UseController {
 
+			// If no ServoDyn file, return error
+			if len(files.ServoDyn) == 0 {
+				return fmt.Errorf("no ServoDyn files were imported")
+			}
+
+			// Set CompServo to 1
 			files.Main[0].CompServo.Value = 1
 
 			// Enable generator DOF
 			files.ElastoDyn[0].GenDOF.Value = true
 
+			// Set ServoDyn parameters
+			files.ServoDyn[0].PCMode.Value = 0
+			files.ServoDyn[0].VSContrl.Value = 1
+			files.ServoDyn[0].HSSBrMode.Value = 0
+			files.ServoDyn[0].YCMode.Value = 0
+
 			// Set trim mode based on below or above rated wind speed
 			if op.WindSpeed < float64(c.RatedWindSpeed) {
 				files.Main[0].TrimCase.Value = 2
-				files.Main[0].TrimGain.Value = 100
+				files.Main[0].TrimGain.Value = c.TrimGain[0]
 				files.ServoDyn[0].VS_RtGnSp.Value = c.RatedRotorSpeed
 			} else {
 				files.Main[0].TrimCase.Value = 3
-				files.Main[0].TrimGain.Value = 0.00001
-			}
-
-			// If ServoDyn files exist set CompServo = 1, otherwise return error
-			if len(files.ServoDyn) > 0 {
-
-				// Set ServoDyn parameters
-				files.ServoDyn[0].PCMode.Value = 0
-				files.ServoDyn[0].VSContrl.Value = 1
-				files.ServoDyn[0].HSSBrMode.Value = 0
-				files.ServoDyn[0].YCMode.Value = 0
-
-			} else {
-				return fmt.Errorf("no ServoDyn files were imported")
+				files.Main[0].TrimGain.Value = c.TrimGain[1]
+				files.ServoDyn[0].VS_RtGnSp.Value = 1e-3
 			}
 
 		} else {
