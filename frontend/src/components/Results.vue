@@ -2,9 +2,10 @@
 import { ref, onMounted, computed, reactive } from 'vue'
 import { useProjectStore, LOADED, LOADING, NOT_LOADED } from '../project';
 import { Scatter } from 'vue-chartjs'
-import { Chart, ChartData, ChartOptions, ChartEvent, ActiveElement, ScriptableContext } from 'chart.js'
+import { Chart, ChartData, ChartOptions, ChartEvent, ActiveElement } from 'chart.js'
 import { ChartComponentRef } from "vue-chartjs"
 import { main, diagram, viz } from "../../wailsjs/go/models"
+import { ExportDiagramDataJSON } from "../../wailsjs/go/main/App"
 import chroma from 'chroma-js'
 import ModeViz from "./ModeViz.vue"
 
@@ -52,9 +53,16 @@ function swapModeLine(e: {
     originalEvent: Event;
     value: diagram.Line;
 }) {
-    e.value
+
 
     project.updateDiagram()
+}
+
+function exportDiagramDataJSON() {
+    if (project.diagram == null) return
+    ExportDiagramDataJSON(project.diagram).catch(err => {
+        console.log(err)
+    })
 }
 
 function getModeViz(opID: number, modeID: number) {
@@ -151,7 +159,7 @@ const charts = computed(() => {
                             // Exclude selected point from tooltip
                             return e.dataset.label != "selectedPoint"
                         }
-                    }
+                    },
                 },
                 scales: {
                     x: {
@@ -240,8 +248,8 @@ const charts = computed(() => {
         <div class="card mb-3" v-if="project.results != null">
             <div class="card-header hstack">
                 <span>Campbell Diagram</span>
-                <a class="btn btn-primary ms-auto"
-                    @click="project.generateDiagram(project.results.MinFreq, project.results.MaxFreq, doCluster, filterStructural)">Generate</a>
+                <button class="btn btn-primary ms-auto" v-if="project.diagram != null"
+                    @click="exportDiagramDataJSON()">Export Data (.json)</button>
             </div>
             <div class="card-body" v-if="project.results != null">
                 <form class="row row-cols-auto g-3">
@@ -254,18 +262,25 @@ const charts = computed(() => {
                         <input type="text" class="form-control" id="maxFreq" v-model.number="project.results.MaxFreq">
                     </div>
                     <div class="col-4 col-md-3 col-xl-2">
-                        <label for="doCluster" class="col-form-label ms-auto">Spectral Clustering</label>
+                        <label for="doCluster" class="col-form-label">Spectral Clustering</label>
                         <select class="form-select" v-model="doCluster">
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
                         </select>
                     </div>
                     <div class="col-4 col-md-3 col-xl-2">
-                        <label for="filterStructural" class="col-form-label ms-auto">Filter Nonstructural Modes</label>
+                        <label for="filterStructural" class="col-form-label">Filter Nonstructural Modes</label>
                         <select class="form-select" v-model="filterStructural">
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
                         </select>
+                    </div>
+                    <div class="col-4 col-md-3 col-xl-2">
+                        <label class="col-form-label">&nbsp;</label>
+                        <div>
+                            <a class="btn btn-primary"
+                                @click="project.generateDiagram(project.results.MinFreq, project.results.MaxFreq, doCluster, filterStructural)">Generate</a>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -321,6 +336,7 @@ const charts = computed(() => {
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

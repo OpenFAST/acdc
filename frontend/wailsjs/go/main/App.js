@@ -14,6 +14,10 @@ export function EvaluateCase(arg1) {
   return window['go']['main']['App']['EvaluateCase'](arg1);
 }
 
+export function ExportDiagramDataJSON(arg1) {
+  return window['go']['main']['App']['ExportDiagramDataJSON'](arg1);
+}
+
 export function FetchAnalysis() {
   return window['go']['main']['App']['FetchAnalysis']();
 }

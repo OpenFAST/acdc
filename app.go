@@ -5,6 +5,7 @@ import (
 	"acdc/viz"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -628,4 +629,35 @@ func (a *App) GetModeViz(opID int, modeID int, scale float32) (*viz.ModeData, er
 	modeData.ModeID = modeID
 
 	return modeData, nil
+}
+
+//------------------------------------------------------------------------------
+// Export Data
+//------------------------------------------------------------------------------
+
+func (a *App) ExportDiagramDataJSON(diag diagram.Diagram) error {
+
+	// Open dialog so user can select the file
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:                "Save Diagram Data As",
+		DefaultFilename:      "campbell_diagram.json",
+		CanCreateDirectories: true,
+	})
+	if err != nil {
+		return nil
+	}
+
+	// Create path
+	if err := os.MkdirAll(filepath.Dir(path), 0777); err != nil {
+		return fmt.Errorf("error creating project directory '%s': %w", path, err)
+	}
+
+	// Convert config into JSON
+	bs, err := json.MarshalIndent(diag, "", "\t")
+	if err != nil {
+		return fmt.Errorf("error marshalling data: %w", err)
+	}
+
+	// Write file and return error
+	return os.WriteFile(path, bs, 0777)
 }
