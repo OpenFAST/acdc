@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/labstack/gommon/log"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -15,12 +16,14 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+var version = "0.2.0-" + versioninfo.Short()
+
 func main() {
 
 	showVersion := flag.Bool("version", false, "display version information")
 	flag.Parse()
 	if *showVersion {
-		fmt.Println("v0.1.0-alpha")
+		fmt.Println(version)
 		return
 	}
 

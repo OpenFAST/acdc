@@ -1280,6 +1280,7 @@ export namespace main {
 	export class Info {
 	    Date: string;
 	    Path: string;
+	    Version: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Info(source);
@@ -1289,6 +1290,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Date = source["Date"];
 	        this.Path = source["Path"];
+	        this.Version = source["Version"];
 	    }
 	}
 	
