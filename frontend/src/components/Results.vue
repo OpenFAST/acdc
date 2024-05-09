@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { ref, onMounted, computed, reactive } from 'vue'
-import { useProjectStore, LOADED, LOADING, NOT_LOADED } from '../project';
+import { ref, onMounted, computed } from 'vue'
+import { useProjectStore, LOADING } from '../project';
 import { Scatter } from 'vue-chartjs'
 import { Chart, ChartData, ChartOptions, ChartEvent, ActiveElement } from 'chart.js'
 import { ChartComponentRef } from "vue-chartjs"
@@ -19,13 +19,15 @@ const selectedOP = ref<main.OperatingPoint>()
 const selectedLine = ref<diagram.Line | null>(null)
 const swapLine = ref<diagram.Line | null>(null)
 const selectedPoint = ref<diagram.Point | null>(null)
-const vizScale = ref(50)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const doCluster = ref(false)
 const filterStructural = ref(false)
+const showNodePaths = ref(true)
 const xAxisWS = ref(true)
 const rotorSpeedMods = [1, 3, 6, 9, 12, 15]
+const vizScale = ref(20)
+const vizScaleOptions = [1, 2, 5, 10, 20, 50, 75, 100, 150, 200, 300, 400, 500, 1000, 2000]
 
 interface Graph {
     options: ChartOptions<'scatter'>
@@ -86,6 +88,7 @@ function setCurrentVizID(id: number) {
     const point = line.Points.find(p => p.OpPtID == opID)
     console.log(point)
     if (point === undefined) return
+    selectedLine.value = line
     selectedPoint.value = point
 }
 
@@ -273,29 +276,29 @@ const charts = computed(() => {
             </div>
             <div class="card-body" v-if="project.results != null">
                 <form class="row row-cols-auto g-3">
-                    <div class="col-4 col-md-3 col-xl-2">
-                        <label for="minFreq" class="col-form-label">Min Frequency (Hz)</label>
+                    <div class="col-4 col-md-2 col-lg-2">
+                        <label for="minFreq" class="col-form-label">Min Freq. (Hz)</label>
                         <input type="text" class="form-control" id="minFreq" v-model.number="project.results.MinFreq">
                     </div>
-                    <div class="col-4 col-md-3 col-xl-2">
-                        <label for="maxFreq" class="col-form-label">Max Frequency (Hz)</label>
+                    <div class="col-4 col-md-2 col-lg-2">
+                        <label for="maxFreq" class="col-form-label">Max Freq. (Hz)</label>
                         <input type="text" class="form-control" id="maxFreq" v-model.number="project.results.MaxFreq">
                     </div>
-                    <div class="col-4 col-md-3 col-xl-2">
+                    <div class="col-4 col-md-3 col-lg-2">
                         <label for="doCluster" class="col-form-label">Spectral Clustering</label>
                         <select class="form-select" v-model="doCluster">
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
                         </select>
                     </div>
-                    <div class="col-4 col-md-3 col-xl-3">
+                    <div class="col-4 col-md-3 col-lg-3">
                         <label for="filterStructural" class="col-form-label">Filter Non-structural Modes</label>
                         <select class="form-select" v-model="filterStructural">
                             <option :value="true" selected>Enable</option>
                             <option :value="false">Disable</option>
                         </select>
                     </div>
-                    <div class="col-4 col-md-3 col-xl-2">
+                    <div class="col-4 col-md-2 col-lg-2">
                         <label class="col-form-label">&nbsp;</label>
                         <div>
                             <a class="btn btn-primary"
@@ -452,19 +455,7 @@ const charts = computed(() => {
                             <div class="col-3">
                                 <label for="vizScale" class="col-form-label">Visualization Scale</Label>
                                 <select class="form-select" v-model.number="vizScale">
-                                    <option value="1">1</option>
-                                    <option value="10">10</option>
-                                    <option value="20">20</option>
-                                    <option value="50">50</option>
-                                    <option value="75">75</option>
-                                    <option value="100">100</option>
-                                    <option value="150">150</option>
-                                    <option value="200">200</option>
-                                    <option value="300">300</option>
-                                    <option value="400">400</option>
-                                    <option value="500">500</option>
-                                    <option value="1000">1000</option>
-                                    <option value="2000">2000</option>
+                                    <option :value="v" v-for="v in vizScaleOptions">{{ v }}</option>
                                 </select>
                             </div>
                             <div class="col-12 hstack" v-if="project.diagram != null">
@@ -486,19 +477,22 @@ const charts = computed(() => {
             v-if="selectedPoint != null && project.modeViz.length > 0 && project.currentVizID >= 0 && project.diagram != null">
             <div class="card-header hstack">
                 <span>Mode Visualization</span>
-                <a class="btn btn-primary ms-auto" @click="project.clearModeViz">
-                    Clear
-                </a>
+
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-10">
                         <div style="width:100%; height: 75vh">
-                            <ModeViz :ModeData="project.modeViz[project.currentVizID]">
+                            <ModeViz :ModeData="project.modeViz[project.currentVizID]" :showNodePaths="showNodePaths">
                             </ModeViz>
                         </div>
                     </div>
                     <div class="col-2">
+                        <div class="d-grid gap-2 mb-5">
+                            <button class="btn btn-primary" @click="project.clearModeViz">Clear Visualizations</button>
+                            <button class="btn btn-primary" @click="showNodePaths = !showNodePaths">{{
+                    showNodePaths ? 'Hide' : 'Show' }} Node Paths</button>
+                        </div>
                         <div class="list-group">
                             <a class="list-group-item list-group-item-action" v-for="(mv, i) in project.modeViz"
                                 :class="{ active: (i == project.currentVizID) }" @click="setCurrentVizID(i)">

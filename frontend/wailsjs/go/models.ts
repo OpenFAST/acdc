@@ -1151,6 +1151,7 @@ export namespace main {
 	    LinOutMod: Bool;
 	    WrVTK: Integer;
 	    VTK_type: Integer;
+	    VTK_fps: Integer;
 	
 	    static createFrom(source: any = {}) {
 	        return new Main(source);
@@ -1201,6 +1202,7 @@ export namespace main {
 	        this.LinOutMod = this.convertValues(source["LinOutMod"], Bool);
 	        this.WrVTK = this.convertValues(source["WrVTK"], Integer);
 	        this.VTK_type = this.convertValues(source["VTK_type"], Integer);
+	        this.VTK_fps = this.convertValues(source["VTK_fps"], Integer);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
