@@ -200,6 +200,7 @@ export const useProjectStore = defineStore('project', () => {
     function removeAnalysisCase(id: number) {
         RemoveAnalysisCase(id).then(result => {
             analysis.value = result
+            currentCaseID.value = 1
         }).catch(err => {
             LogError(err)
             console.log(err)
