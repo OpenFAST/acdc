@@ -3,7 +3,7 @@ import { ref, reactive } from 'vue'
 import { GenerateDiagram, LoadConfig, SaveConfig, UpdateDiagram } from "../wailsjs/go/main/App"
 import { OpenProjectDialog, SaveProjectDialog, OpenProject } from '../wailsjs/go/main/App'
 import { FetchModel, UpdateModel, ImportModelDialog } from "../wailsjs/go/main/App"
-import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase } from "../wailsjs/go/main/App"
+import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase, ImportAnalysisCaseCurve } from "../wailsjs/go/main/App"
 import { FetchEvaluate, UpdateEvaluate, SelectExec, EvaluateCase, CancelEvaluate } from "../wailsjs/go/main/App"
 import { FetchResults, OpenCaseDirDialog } from "../wailsjs/go/main/App"
 import { GetModeViz } from "../wailsjs/go/main/App"
@@ -190,7 +190,7 @@ export const useProjectStore = defineStore('project', () => {
     function addAnalysisCase() {
         AddAnalysisCase().then(result => {
             analysis.value = result
-            currentCaseID.value = result.Cases.length - 1
+            currentCaseID.value = result.Cases.length
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -199,7 +199,16 @@ export const useProjectStore = defineStore('project', () => {
 
     function removeAnalysisCase(id: number) {
         RemoveAnalysisCase(id).then(result => {
-            Object.assign(analysis, result)
+            analysis.value = result
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
+
+    function importAnalysisCaseCurve(id: number) {
+        ImportAnalysisCaseCurve(id).then(result => {
+            analysis.value = result
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -375,6 +384,7 @@ export const useProjectStore = defineStore('project', () => {
         updateAnalysis,
         addAnalysisCase,
         removeAnalysisCase,
+        importAnalysisCaseCurve,
         // Evaluate
         evaluate,
         evalStatus,

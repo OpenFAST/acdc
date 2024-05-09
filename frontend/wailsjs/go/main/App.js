@@ -46,6 +46,10 @@ export function GetModeViz(arg1, arg2, arg3) {
   return window['go']['main']['App']['GetModeViz'](arg1, arg2, arg3);
 }
 
+export function ImportAnalysisCaseCurve(arg1) {
+  return window['go']['main']['App']['ImportAnalysisCaseCurve'](arg1);
+}
+
 export function ImportModelDialog() {
   return window['go']['main']['App']['ImportModelDialog']();
 }

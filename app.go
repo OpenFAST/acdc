@@ -5,12 +5,14 @@ import (
 	"acdc/viz"
 	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -248,7 +250,7 @@ func (a *App) AddAnalysisCase() (*Analysis, error) {
 	return a.Project.Analysis, nil
 }
 
-func (a *App) RemoveAnalysisCase(ID int) (*Analysis, error) {
+func (a *App) RemoveAnalysisCase(caseID int) (*Analysis, error) {
 
 	// If no analysis in project, create it
 	if a.Project.Analysis == nil {
@@ -258,11 +260,93 @@ func (a *App) RemoveAnalysisCase(ID int) (*Analysis, error) {
 	// Filter out case that matches ID
 	tmp := []Case{}
 	for _, c := range a.Project.Analysis.Cases {
-		if c.ID != ID {
+		if c.ID != caseID {
 			tmp = append(tmp, c)
 		}
 	}
 	a.Project.Analysis.Cases = tmp
+
+	// Calculate analysis cases
+	if err := a.Project.Analysis.Calculate(); err != nil {
+		return nil, err
+	}
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Analysis, nil
+}
+
+func (a *App) ImportAnalysisCaseCurve(caseID int) (*Analysis, error) {
+
+	// If no analysis in project, create it
+	if a.Project.Analysis == nil {
+		a.Project.Analysis = NewAnalysis()
+	}
+
+	// Allow use to select the file
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select curve data file",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "CSV (*.csv)", Pattern: "*.csv"},
+		},
+	})
+	if err != nil {
+		return a.Project.Analysis, nil
+	}
+
+	// Open file
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening '%s': %w", path, err)
+	}
+	defer f.Close()
+
+	// Create CSV reader and read data
+	cr := csv.NewReader(f)
+	cr.Comment = '#'
+	rows, err := cr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("error parsing '%s': %w", path, err)
+	}
+
+	// If no rows read, return error
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("data file '%s': is empty", path)
+	}
+
+	// Check that there are at least 3 columns
+	if n := len(rows[0]); n < 3 {
+		return nil, fmt.Errorf("data file '%s' has %d columns, 3 are required", path, n)
+	}
+
+	// Get pointer to the case or return error if invalid case ID
+	if caseID < 1 || caseID > len(a.Project.Analysis.Cases) {
+		return nil, fmt.Errorf("invalid case ID: %d", caseID)
+	}
+	c := &a.Project.Analysis.Cases[caseID-1]
+
+	// Initialize curve to length of rows
+	c.Curve = make([]Condition, len(rows))
+
+	// Loop through rows and populate curve
+	for i, row := range rows {
+
+		c.Curve[i].WindSpeed, err = strconv.ParseFloat(strings.TrimSpace(row[0]), 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing wind speed from '%s': %w", row[0], err)
+		}
+		c.Curve[i].RotorSpeed, err = strconv.ParseFloat(strings.TrimSpace(row[1]), 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing rotor speed from '%s': %w", row[1], err)
+		}
+		c.Curve[i].BladePitch, err = strconv.ParseFloat(strings.TrimSpace(row[2]), 64)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing blade pitch from '%s': %w", row[2], err)
+		}
+	}
 
 	// Calculate analysis cases
 	if err := a.Project.Analysis.Calculate(); err != nil {
