@@ -73,6 +73,9 @@ export const useProjectStore = defineStore('project', () => {
             $reset()
             info.value = result
             updateRecentProjects(info.value.Path)
+            fetchModel()
+            fetchAnalysis()
+            fetchEvaluate()
             status.project = LOADED
         }).catch(err => {
             LogError(err)
@@ -96,6 +99,9 @@ export const useProjectStore = defineStore('project', () => {
             $reset()
             info.value = result
             updateRecentProjects(info.value.Path)
+            fetchModel()
+            fetchAnalysis()
+            fetchEvaluate()
             status.project = LOADED
         }).catch(err => {
             LogError(err)
