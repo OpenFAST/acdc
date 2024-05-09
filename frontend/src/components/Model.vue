@@ -34,16 +34,20 @@ function setDefaults() {
     let files = project.model.Files!
 
     // Set main file linearization defaults
-    files.Main[0].Linearize.Value = true
-    files.Main[0].CalcSteady.Value = true
-    files.Main[0].TrimTol.Value = 0.001
-    files.Main[0].Twr_Kdmp.Value = 100
-    files.Main[0].Bld_Kdmp.Value = 100
-    files.Main[0].NLinTimes.Value = 1
-    files.Main[0].OutFmt.Value = "ES16.9E3"
+    if (files.Main.length > 0) {
+        files.Main[0].Linearize.Value = true
+        files.Main[0].CalcSteady.Value = true
+        files.Main[0].TrimTol.Value = 0.001
+        files.Main[0].Twr_Kdmp.Value = 100
+        files.Main[0].Bld_Kdmp.Value = 100
+        files.Main[0].NLinTimes.Value = 36
+        files.Main[0].OutFmt.Value = "ES18.9E3"
+    }
 
     // Set ElastoDyn file linearization defaults
-    files.ElastoDyn[0].YawDOF.Value = false
+    if (files.ElastoDyn.length > 0) {
+        files.ElastoDyn[0].YawDOF.Value = false
+    }
 
     // Set AeroDyn file linearization defaults
     if (files.AeroDyn.length > 0) {
@@ -71,8 +75,7 @@ function setDefaults() {
                 <li class="list-group-item" v-if="project.model.ImportedPaths.length > 0">
                     <div class="fw-bold mb-2">Imported Files</div>
                     <div class="row">
-                        <div class="col-3 col-md-6" v-for="path in project.model.ImportedPaths">{{
-                    path.split(/[\\/]/).slice(-1)[0] }}
+                        <div class="col-3 col-md-6" v-for="path in project.model.ImportedPaths">{{ path }}
                         </div>
                     </div>
                 </li>
@@ -94,13 +97,14 @@ function setDefaults() {
                     <div>
                         <ModelProp :field="project.model.Files.Main[0].TMax" />
                         <ModelProp :field="project.model.Files.Main[0].DT" />
+                        <ModelProp :field="project.model.Files.Main[0].Gravity" />
+                        <ModelProp :field="project.model.Files.Main[0].OutFmt" />
                         <ModelProp :field="project.model.Files.Main[0].Linearize" />
                         <ModelProp :field="project.model.Files.Main[0].CalcSteady" />
                         <ModelProp :field="project.model.Files.Main[0].TrimTol" />
                         <ModelProp :field="project.model.Files.Main[0].Twr_Kdmp" />
                         <ModelProp :field="project.model.Files.Main[0].Bld_Kdmp" />
                         <ModelProp :field="project.model.Files.Main[0].NLinTimes" />
-                        <ModelProp :field="project.model.Files.Main[0].Gravity" />
                     </div>
                 </li>
                 <li class="list-group-item">
