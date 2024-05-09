@@ -19,9 +19,8 @@ type Project struct {
 }
 
 type Info struct {
-	Date    string `json:"Date"`
-	Path    string `json:"Path"`
-	Version string `json:"Version"`
+	Date string `json:"Date"`
+	Path string `json:"Path"`
 }
 
 func NewProject() *Project {
@@ -47,7 +46,6 @@ func LoadProject(path string) (*Project, error) {
 
 	// Save project path
 	p.Info.Path = path
-	p.Info.Version = version
 
 	return p, nil
 }

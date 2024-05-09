@@ -665,6 +665,7 @@ export namespace main {
 	
 	export class Config {
 	    RecentProjects: string[];
+	    Version: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -673,6 +674,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.RecentProjects = source["RecentProjects"];
+	        this.Version = source["Version"];
 	    }
 	}
 	export class Real {
@@ -1280,7 +1282,6 @@ export namespace main {
 	export class Info {
 	    Date: string;
 	    Path: string;
-	    Version: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Info(source);
@@ -1290,7 +1291,6 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Date = source["Date"];
 	        this.Path = source["Path"];
-	        this.Version = source["Version"];
 	    }
 	}
 	

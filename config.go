@@ -11,11 +11,13 @@ import (
 
 type Config struct {
 	RecentProjects []string `json:"RecentProjects"`
+	Version        string   `json:"Version"`
 }
 
 func NewConfig() Config {
 	return Config{
 		RecentProjects: []string{},
+		Version:        version,
 	}
 }
 
@@ -29,6 +31,9 @@ func (app *App) LoadConfig() (Config, error) {
 
 	// Read Config File
 	bs, err := os.ReadFile(ConfigPath)
+
+	// Set version
+	c.Version = version
 
 	// If file doesn't exist, create it and return; otherwise, return error
 	if os.IsNotExist(err) {

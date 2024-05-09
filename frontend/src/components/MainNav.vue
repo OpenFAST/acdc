@@ -29,7 +29,7 @@ onMounted(() => { })
                         <router-link class="nav-link" to="/results">Results</router-link>
                     </li>
                 </ul>
-                <span class="navbar-text">{{ project.info?.Version }}</span>
+                <span class="navbar-text">{{ project.config?.Version }}</span>
             </div>
         </div>
     </nav>

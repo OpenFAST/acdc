@@ -26,6 +26,8 @@ export function GetEvaluateLog(arg1:string):Promise<string>;
 
 export function GetModeViz(arg1:number,arg2:number,arg3:number):Promise<viz.ModeData>;
 
+export function ImportAnalysisCaseCurve(arg1:number):Promise<main.Analysis>;
+
 export function ImportModelDialog():Promise<main.Model>;
 
 export function LoadConfig():Promise<main.Config>;
