@@ -33,6 +33,7 @@ let delta = 0
 const FOV = 10
 
 function createFrames(modeData: viz.ModeData) {
+    if (modeData.Frames == null) return
     scene.clear()
     frames = [] as THREE.Group[];
     const geometry = new THREE.BufferGeometry();
