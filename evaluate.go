@@ -80,11 +80,10 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 		files.Main[0].LinTimes.Value = make([]float64, files.Main[0].NLinTimes.Value)
 	}
 
-	// Write checkpoint files for later generation of mode shapes
-	files.Main[0].WrVTK.Value = 3
-
-	// Write lines
-	files.Main[0].VTK_type.Value = 2
+	// VTK Options
+	files.Main[0].WrVTK.Value = 3    // Write checkpoint files for mode shape generation
+	files.Main[0].VTK_type.Value = 2 // Write lines meshes to VTK files
+	files.Main[0].VTK_fps.Value = 24 // Generate 24 frames of mode animation
 
 	// Modify ElastoDyn file for operating point conditions
 	files.ElastoDyn[0].BlPitch1.Value = op.BladePitch

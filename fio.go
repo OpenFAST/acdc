@@ -193,6 +193,7 @@ type Main struct {
 	LinOutMod   Bool    `json:"LinOutMod"`
 	WrVTK       Integer `json:"WrVTK"`
 	VTK_type    Integer `json:"VTK_type"`
+	VTK_fps     Integer `json:"VTK_fps"`
 }
 
 func (m *Main) PostParse() error {
