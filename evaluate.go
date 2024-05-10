@@ -156,7 +156,9 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 
 	// Set status update time so a full simulation will generate 50 status messages
 	// which are used for the progress bars on the Evaluate tab
-	files.Main[0].SttsTime.Value = files.Main[0].TMax.Value / 50
+	if statusTime := files.Main[0].TMax.Value / 100; statusTime < files.Main[0].SttsTime.Value {
+		files.Main[0].SttsTime.Value = statusTime
+	}
 
 	// The file writing code assumes that NLinTimes is governed by the
 	// length of LinTimes which is only true if CalcSteady==false.
