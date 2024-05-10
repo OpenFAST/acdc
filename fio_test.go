@@ -18,7 +18,7 @@ func TestFiles(t *testing.T) {
 	}
 
 	// Create output directory to write files to
-	path := filepath.Join("testdata", "output")
+	path := filepath.Join("testdata", "output", "fio")
 	if err := os.MkdirAll(path, 0777); err != nil {
 		t.Fatal(err)
 	}
