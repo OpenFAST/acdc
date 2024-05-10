@@ -160,6 +160,9 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 		files.Main[0].SttsTime.Value = statusTime
 	}
 
+	// Use text output files to reduce memory usage
+	files.Main[0].OutFileFmt.Value = 1
+
 	// The file writing code assumes that NLinTimes is governed by the
 	// length of LinTimes which is only true if CalcSteady==false.
 	// If CalcSteady is true, the size of LinTimes must be changed

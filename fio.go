@@ -177,6 +177,7 @@ type Main struct {
 	MooringFile Path    `json:"MooringFile" ftype:"Misc"`
 	IceFile     Path    `json:"IceFile" ftype:"Misc"`
 	SttsTime    Real    `json:"SttsTime"`
+	OutFileFmt  Integer `json:"OutFileFmt"`
 	OutFmt      String  `json:"OutFmt"`
 	Linearize   Bool    `json:"Linearize"`
 	CalcSteady  Bool    `json:"CalcSteady"`

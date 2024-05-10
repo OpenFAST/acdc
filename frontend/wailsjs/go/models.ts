@@ -1082,6 +1082,7 @@ export namespace main {
 	    MooringFile: Path;
 	    IceFile: Path;
 	    SttsTime: Real;
+	    OutFileFmt: Integer;
 	    OutFmt: String;
 	    Linearize: Bool;
 	    CalcSteady: Bool;
@@ -1133,6 +1134,7 @@ export namespace main {
 	        this.MooringFile = this.convertValues(source["MooringFile"], Path);
 	        this.IceFile = this.convertValues(source["IceFile"], Path);
 	        this.SttsTime = this.convertValues(source["SttsTime"], Real);
+	        this.OutFileFmt = this.convertValues(source["OutFileFmt"], Integer);
 	        this.OutFmt = this.convertValues(source["OutFmt"], String);
 	        this.Linearize = this.convertValues(source["Linearize"], Bool);
 	        this.CalcSteady = this.convertValues(source["CalcSteady"], Bool);
