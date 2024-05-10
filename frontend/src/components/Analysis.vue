@@ -37,11 +37,11 @@ function removeCase() {
                         </select>
                     </div>
                     <div class="col-2 d-grid">
-                        <button class="btn btn-primary" @click="project.addAnalysisCase()">Add</button>
+                        <a class="btn btn-primary" @click="project.addAnalysisCase()">Add</a>
                     </div>
                     <div class="col-2 d-grid">
-                        <button class="btn btn-danger" @click="removeCase()"
-                            :disabled="(project.analysis == null) || (project.analysis.Cases.length < 2)">Remove</button>
+                        <a class="btn btn-danger" @click="removeCase()"
+                            :disabled="(project.analysis == null) || (project.analysis.Cases.length < 2)">Remove</a>
                     </div>
                 </div>
             </div>

@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import { GenerateDiagram, LoadConfig, SaveConfig, UpdateDiagram } from "../wailsjs/go/main/App"
+import { LoadConfig, SaveConfig } from "../wailsjs/go/main/App"
 import { OpenProjectDialog, SaveProjectDialog, OpenProject } from '../wailsjs/go/main/App'
 import { FetchModel, UpdateModel, ImportModelDialog } from "../wailsjs/go/main/App"
 import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase, ImportAnalysisCaseCurve } from "../wailsjs/go/main/App"
 import { FetchEvaluate, UpdateEvaluate, SelectExec, EvaluateCase, CancelEvaluate } from "../wailsjs/go/main/App"
-import { FetchResults, OpenCaseDirDialog } from "../wailsjs/go/main/App"
+import { FetchResults, SelectCaseLinDir, SelectCustomLinDir, ProcessLinDir } from "../wailsjs/go/main/App"
+import { GenerateDiagram, UpdateDiagram } from "../wailsjs/go/main/App"
 import { GetModeViz } from "../wailsjs/go/main/App"
 import { main, diagram as diag, viz } from "../wailsjs/go/models"
 import { EventsOn } from "../wailsjs/runtime/runtime"
@@ -43,6 +44,8 @@ export const useProjectStore = defineStore('project', () => {
     const evalStatus = reactive<Array<main.EvalStatus>>(new Array)
     const modeViz = reactive<Array<viz.ModeData>>(new Array)
     const currentVizID = ref<number>(-1)
+    const diagramOptions = ref<diag.Options>({ MinFreq: 0, MaxFreq: 10, Cluster: false, FilterStruct: false })
+    const linDir = ref<string>("")
 
     function $reset() {
         info.value = null
@@ -250,7 +253,6 @@ export const useProjectStore = defineStore('project', () => {
     }
 
     function startEvaluate(caseID: number) {
-        results
         EvaluateCase(caseID).then(result => {
             Object.assign(evalStatus, result)
         }).catch(err => {
@@ -279,10 +281,34 @@ export const useProjectStore = defineStore('project', () => {
     // Results
     //--------------------------------------------------------------------------
 
+    function selectCaseLinDir(caseID: number) {
+        SelectCaseLinDir(caseID).then(res => {
+            linDir.value = res.Dir
+            clearModeViz()
+            if (res.Results != null) results.value = res.Results
+            if (res.Diagram != null) diagram.value = res.Diagram
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
+
+    function selectCustomLinDir() {
+        SelectCustomLinDir().then(res => {
+            linDir.value = res.Dir
+            clearModeViz()
+            if (res.Results != null) results.value = res.Results
+            if (res.Diagram != null) diagram.value = res.Diagram
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
+
     function fetchResults() {
         if (results.value != null) return
         FetchResults().then(result => {
-            Object.assign(results, result)
+            results.value = result
             console.log(result)
         }).catch(err => {
             LogError(err)
@@ -290,11 +316,16 @@ export const useProjectStore = defineStore('project', () => {
         })
     }
 
-    function openCaseDirDialog() {
+    function processLinDir() {
+        if (linDir.value == "") return
         status.results = LOADING
-        OpenCaseDirDialog().then(result => {
+        ProcessLinDir(linDir.value).then(result => {
+            diagram.value = null
             results.value = result
-            status.diagram = NOT_LOADED
+            const maxRotSpeed = Math.max(...results.value.OPs.map(op => op.RotSpeed))
+            diagramOptions.value.MinFreq = 0
+            diagramOptions.value.MaxFreq = parseFloat((maxRotSpeed / 60.0 * 15.0).toFixed(2))
+            console.log(diagramOptions)
             status.results = LOADED
         }).catch(err => {
             LogError(err)
@@ -307,9 +338,10 @@ export const useProjectStore = defineStore('project', () => {
     // Diagram
     //--------------------------------------------------------------------------
 
-    function generateDiagram(minFreq: number, maxFreq: number, doCluster: boolean, filterStructural: boolean) {
+    function generateDiagram() {
         status.diagram = LOADING
-        GenerateDiagram(minFreq, maxFreq, doCluster, filterStructural).then(result => {
+        GenerateDiagram(diagramOptions.value).then(result => {
+            console.log(result)
             diagram.value = result
             status.diagram = LOADED
         }).catch(err => {
@@ -336,7 +368,7 @@ export const useProjectStore = defineStore('project', () => {
         return new Promise<viz.ModeData>((resolve, reject) => {
             GetModeViz(point.OpPtID, point.ModeID, scale).then(result => {
                 result.LineID = point.Line
-                const i = modeViz.findIndex((md) => result.OPID == md.OPID && result.ModeID == md.ModeID)
+                const i = modeViz.findIndex((md) => result.LineID == md.LineID && result.OPID == md.OPID)
                 if (i !== -1) {
                     Object.assign(modeViz[i], result)
                     currentVizID.value = i
@@ -396,11 +428,15 @@ export const useProjectStore = defineStore('project', () => {
         selectExec,
         clearEvalStatus,
         // Results
+        linDir,
+        selectCaseLinDir,
+        selectCustomLinDir,
         results,
         fetchResults,
-        openCaseDirDialog,
+        processLinDir,
         // Diagram
         diagram,
+        diagramOptions,
         generateDiagram,
         updateDiagram,
         // Visualization

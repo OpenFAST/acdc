@@ -196,8 +196,7 @@ const myChart = computed(() => {
                     @change="changeCurveSize">
                     <option :value="n + 1" v-for="n in 29">{{ n + 1 }} Points</option>
                 </select>
-                <button class="btn btn-primary mt-3 w-100"
-                    @click="project.importAnalysisCaseCurve(Case.ID)">Import</button>
+                <a class="btn btn-primary mt-3 w-100" @click="project.importAnalysisCaseCurve(Case.ID)">Import</a>
             </div>
             <div class="col-10">
                 <table class="table table-small table-borderless align-middle mb-0" id="CurveTable">

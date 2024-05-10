@@ -20,7 +20,7 @@ export function FetchModel():Promise<main.Model>;
 
 export function FetchResults():Promise<main.Results>;
 
-export function GenerateDiagram(arg1:number,arg2:number,arg3:boolean,arg4:boolean):Promise<diagram.Diagram>;
+export function GenerateDiagram(arg1:diagram.Options):Promise<diagram.Diagram>;
 
 export function GetEvaluateLog(arg1:string):Promise<string>;
 
@@ -32,17 +32,21 @@ export function ImportModelDialog():Promise<main.Model>;
 
 export function LoadConfig():Promise<main.Config>;
 
-export function OpenCaseDirDialog():Promise<main.Results>;
-
 export function OpenProject(arg1:string):Promise<main.Info>;
 
 export function OpenProjectDialog():Promise<main.Info>;
+
+export function ProcessLinDir(arg1:string):Promise<main.Results>;
 
 export function RemoveAnalysisCase(arg1:number):Promise<main.Analysis>;
 
 export function SaveConfig(arg1:main.Config):Promise<void>;
 
 export function SaveProjectDialog():Promise<main.Info>;
+
+export function SelectCaseLinDir(arg1:number):Promise<main.LinDirData>;
+
+export function SelectCustomLinDir():Promise<main.LinDirData>;
 
 export function SelectExec():Promise<main.Evaluate>;
 

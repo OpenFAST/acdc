@@ -48,8 +48,7 @@ function closeLog() {
                         <div class="input-group">
                             <input type="text" :value="project.evaluate.ExecPath" class="form-control" id="executable"
                                 aria-describedby="executableHelp" readonly>
-                            <button class="btn btn-outline-primary" type="button" id="executable"
-                                @click="project.selectExec">Browse</button>
+                            <a class="btn btn-outline-primary" id="executable" @click="project.selectExec">Browse</a>
                         </div>
                         <div id="executableHelp" class="form-text">Path to OpenFAST executable</div>
                     </div>
@@ -76,8 +75,8 @@ function closeLog() {
                     <input type="range" class="form-range w-25" min="1" :max="project.evaluate.MaxCPUs" id="numCPUs"
                         v-model.number="project.evaluate.NumCPUs" @change="project.updateEvaluate()">
                     <label class="col-form-label">{{ project.evaluate.NumCPUs }}</label>
-                    <button class="btn btn-success ms-auto" @click="startEvaluate">Start</button>
-                    <button class="btn btn-danger" @click="project.cancelEvaluate()">Cancel</button>
+                    <a class="btn btn-success ms-auto" @click="startEvaluate">Start</a>
+                    <a class="btn btn-danger" @click="project.cancelEvaluate()">Cancel</a>
                 </div>
 
             </div>
@@ -108,8 +107,8 @@ function closeLog() {
                                 </div>
                             </td>
                             <td class="text-end">
-                                <button class="btn btn-outline-primary btn-sm ms-3" @click="getLog(stat)"
-                                    :disabled="stat.LogPath == ''">Log</button>
+                                <a class="btn btn-outline-primary btn-sm ms-3" @click="getLog(stat)"
+                                    :disabled="stat.LogPath == ''">Log</a>
                             </td>
                         </tr>
                     </tbody>
@@ -119,7 +118,7 @@ function closeLog() {
         <div class="offcanvas offcanvas-bottom" :class="{ show: data.logID >= 0 }" tabindex="-1" style="height: 50vh">
             <div class="offcanvas-header">
                 <h5 class="offcanvas-title">Operating Point {{ data.logID }} Evaluation Log</h5>
-                <button class="btn-close" @click="closeLog"></button>
+                <a class="btn-close" @click="closeLog"></a>
             </div>
             <div class="offcanvas-body">
                 <pre><code>{{ data.logContents }}</code></pre>

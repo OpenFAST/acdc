@@ -456,23 +456,16 @@ func (a *App) SelectExec() (*Evaluate, error) {
 	return a.Project.Evaluate, nil
 }
 
-func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
+func (a *App) EvaluateCase(caseID int) ([]EvalStatus, error) {
 
-	// Get case
-	var c *Case
-	for _, cc := range a.Project.Analysis.Cases {
-		if cc.ID == ID {
-			c = &cc
-			break
-		}
-	}
-	if c == nil {
-		return nil, fmt.Errorf("Case ID %d not found", ID)
+	// Find case
+	c, err := a.Project.Case(caseID)
+	if err != nil {
+		return []EvalStatus{}, err
 	}
 
-	projectRootPath := strings.TrimSuffix(a.Project.Info.Path, filepath.Ext(a.Project.Info.Path))
-
-	return a.Project.Evaluate.Case(a.ctx, a.Project.Model, c, projectRootPath)
+	// Evaluate case
+	return a.Project.Evaluate.Case(a.ctx, a.Project.Model, c, a.Project.RootPath())
 }
 
 func (a *App) CancelEvaluate() {
@@ -491,6 +484,80 @@ func (a *App) GetEvaluateLog(path string) (string, error) {
 // Results
 //------------------------------------------------------------------------------
 
+type LinDirData struct {
+	Dir     string           `json:"Dir"`
+	Results *Results         `json:"Results"`
+	Diagram *diagram.Diagram `json:"Diagram"`
+}
+
+func (a *App) SelectCaseLinDir(caseID int) (LinDirData, error) {
+
+	// Find case
+	c, err := a.Project.Case(caseID)
+	if err != nil {
+		return LinDirData{}, err
+	}
+
+	// Build case directory
+	linDir := filepath.Join(a.Project.RootPath(), fmt.Sprintf("Case%02d", c.ID))
+
+	// Create linearization directory data structure
+	ld := LinDirData{Dir: linDir}
+
+	// Attempt to load results and diagram
+	if results, err := LoadResults(linDir); err == nil {
+		a.Project.Results = results
+		ld.Results = results.ForApp()
+	} else {
+		fmt.Println(err)
+	}
+	if diag, err := diagram.Load(filepath.Join(linDir, "diagram.json")); err == nil {
+		a.Project.Diagram = diag
+		ld.Diagram = diag
+	} else {
+		fmt.Println(err)
+	}
+
+	return ld, nil
+}
+
+func (a *App) SelectCustomLinDir() (LinDirData, error) {
+
+	// Get path to project, if it doesn't exist, set to empty string
+	projectDir := filepath.Dir(a.Project.Info.Path)
+	if _, err := os.Stat(projectDir); err != nil {
+		projectDir = ""
+	}
+
+	// Open dialog so user can select the case directory
+	linDir, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title:            "Open Case Directory",
+		DefaultDirectory: projectDir,
+	})
+	if err != nil && linDir != "" {
+		return LinDirData{}, err
+	}
+
+	// Create linearization directory data structure
+	ld := LinDirData{Dir: linDir}
+
+	// Attempt to load results and diagram
+	if results, err := LoadResults(linDir); err == nil {
+		a.Project.Results = results
+		ld.Results = results.ForApp()
+	} else {
+		fmt.Println(err)
+	}
+	if diag, err := diagram.Load(filepath.Join(linDir, "diagram.json")); err == nil {
+		a.Project.Diagram = diag
+		ld.Diagram = diag
+	} else {
+		fmt.Println(err)
+	}
+
+	return ld, nil
+}
+
 func (a *App) FetchResults() (*Results, error) {
 
 	// If no Results in project, create it
@@ -506,38 +573,24 @@ func (a *App) FetchResults() (*Results, error) {
 	return a.Project.Results.ForApp(), nil
 }
 
-func (a *App) OpenCaseDirDialog() (*Results, error) {
-
-	// Get path to project, if it doesn't exist, set to empty string
-	projectDir := filepath.Dir(a.Project.Info.Path)
-	if _, err := os.Stat(projectDir); err != nil {
-		projectDir = ""
-	}
-
-	// Open dialog so user can select the case directory
-	path, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title:            "Open Case Directory",
-		DefaultDirectory: projectDir,
-	})
-	if err != nil {
-		return a.Project.Results.ForApp(), nil
-	}
-
-	// No path was selected, return current results
-	if path == "" {
-		return a.Project.Results.ForApp(), nil
-	}
+func (a *App) ProcessLinDir(linDir string) (*Results, error) {
 
 	// Process case directory to get results
-	results, err := ProcessCaseDir(path)
+	results, err := ProcessCaseDir(linDir)
 	if err != nil {
 		return nil, err
 	}
 
+	// Add results to project
 	a.Project.Results = results
 
 	// Save project
 	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	// Save results
+	if err := results.Save(linDir); err != nil {
 		return nil, err
 	}
 
@@ -548,7 +601,7 @@ func (a *App) OpenCaseDirDialog() (*Results, error) {
 // Diagram
 //------------------------------------------------------------------------------
 
-func (a *App) GenerateDiagram(minFreqHz float64, maxFreqHz float64, doCluster bool, filterStructural bool) (*diagram.Diagram, error) {
+func (a *App) GenerateDiagram(opts diagram.Options) (*diagram.Diagram, error) {
 
 	// Check that results have been loaded
 	if a.Project.Results == nil {
@@ -556,7 +609,7 @@ func (a *App) GenerateDiagram(minFreqHz float64, maxFreqHz float64, doCluster bo
 	}
 
 	// Generate diagram with given options
-	diag, err := diagram.New(a.Project.Results.LinOPs, [2]float64{minFreqHz, maxFreqHz}, doCluster, filterStructural)
+	diag, err := diagram.New(a.Project.Results.LinOPs, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -608,7 +661,7 @@ func (a *App) GetModeViz(opID int, modeID int, scale float32) (*viz.ModeData, er
 	}
 
 	// If mode index is not valid, return error
-	if modeID < 0 || modeID >= len(a.Project.Results.LinOPs[opID].EigRes.Modes) {
+	if modeID < 0 || modeID >= len(a.Project.Results.LinOPs[opID].Modes) {
 		return nil, fmt.Errorf("invalid mode ID (%d) for operating point (%d)", modeID, opID)
 	}
 

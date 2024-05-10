@@ -20,22 +20,22 @@ import (
 )
 
 type Evaluate struct {
-	ExecPath    string                            `json:"ExecPath"`
-	ExecVersion string                            `json:"ExecVersion"`
-	ExecValid   bool                              `json:"ExecValid"`
-	MaxCPUs     int                               `json:"MaxCPUs"`
-	NumCPUs     int                               `json:"NumCPUs"`
-	FilesOnly   bool                              `json:"FilesOnly"`
-	SendStatus  func(context.Context, EvalStatus) `json:"-"`
+	ExecPath    string `json:"ExecPath"`
+	ExecVersion string `json:"ExecVersion"`
+	ExecValid   bool   `json:"ExecValid"`
+	MaxCPUs     int    `json:"MaxCPUs"`
+	NumCPUs     int    `json:"NumCPUs"`
+	FilesOnly   bool   `json:"FilesOnly"`
+}
+
+var SendEvalStatus = func(ctx context.Context, es EvalStatus) {
+	runtime.EventsEmit(ctx, "evalStatus", es)
 }
 
 func NewEvaluate() *Evaluate {
 	return &Evaluate{
 		NumCPUs: 1,
 		MaxCPUs: goruntime.NumCPU(),
-		SendStatus: func(ctx context.Context, es EvalStatus) {
-			runtime.EventsEmit(ctx, "evalStatus", es)
-		},
 	}
 }
 
@@ -332,7 +332,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 			if err != nil {
 				continue
 			}
-			eval.SendStatus(ctx, EvalStatus{
+			SendEvalStatus(ctx, EvalStatus{
 				ID:          statusID,
 				State:       "Simulation",
 				SimProgress: int(100 * currentTime / totalTime),
@@ -345,7 +345,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 			if err != nil {
 				continue
 			}
-			eval.SendStatus(ctx, EvalStatus{
+			SendEvalStatus(ctx, EvalStatus{
 				ID:          statusID,
 				State:       "Linearization",
 				SimProgress: 100,
@@ -373,7 +373,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 			status.State = "Canceled"
 			status.Error = cause.Error()
 		}
-		eval.SendStatus(ctx, status)
+		SendEvalStatus(ctx, status)
 		return err
 	}
 
@@ -381,7 +381,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 	// Send complete status
 	//--------------------------------------------------------------------------
 
-	eval.SendStatus(ctx, EvalStatus{
+	SendEvalStatus(ctx, EvalStatus{
 		ID:          statusID,
 		State:       "Complete",
 		SimProgress: 100,

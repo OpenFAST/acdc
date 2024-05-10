@@ -240,7 +240,7 @@ type EigenResults struct {
 	EigenVectors *mat.CDense `json:"EigenVectors"`
 }
 
-func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
+func (mbc MBC) EigenAnalysis() (Modes, error) {
 
 	// Calculate eigenvalues/eigenvectors analysis
 	eig := mat.Eigen{}
@@ -303,7 +303,7 @@ func (mbc MBC) EigenAnalysis() (*EigenResults, error) {
 		modes[i].ID = i
 	}
 
-	return &EigenResults{Modes: modes, EigenVectors: eigenVectors}, nil
+	return modes, nil
 }
 
 func eye(n int) *mat.Dense {

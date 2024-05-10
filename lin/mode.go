@@ -60,9 +60,10 @@ func ReadModesCSV(r io.Reader) (Modes, error) {
 
 	// Read all records
 	cr := csv.NewReader(r)
+	cr.FieldsPerRecord = -1
 	recs, err := cr.ReadAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading rows: %w", err)
 	}
 
 	// If no records return
@@ -74,13 +75,17 @@ func ReadModesCSV(r io.Reader) (Modes, error) {
 	recs = recs[1:]
 
 	// Loop through records and create modes
-	modes := make(Modes, len(recs))
+	modes := Modes{}
 	for _, rec := range recs {
 
 		evSize := 0
 		fmt.Sscan(rec[3], &evSize)
 		indSize := 0
 		fmt.Sscan(rec[4], &indSize)
+
+		if len(rec) < 11+evSize+indSize {
+			return nil, fmt.Errorf("insufficient columns in rec")
+		}
 
 		m := Mode{
 			EigenVector:  make([]complex128, evSize),
@@ -95,12 +100,13 @@ func ReadModesCSV(r io.Reader) (Modes, error) {
 		fmt.Sscan(rec[8], &m.DampedFreqHz)
 		fmt.Sscan(rec[9], &m.DampingRatio)
 		fmt.Sscan(rec[10], &m.EigenValue)
-		j := 11
-		for i := 0; i < evSize; i, j = i+1, j+1 {
-			fmt.Sscan(rec[j], &m.EigenVector[i])
+		rec = rec[11:]
+		for i, v := range rec[:evSize] {
+			fmt.Sscan(v, &m.EigenVector[i])
 		}
-		for i := 0; i < indSize; i, j = i+1, j+1 {
-			fmt.Sscan(rec[j], &m.EigenIndices[i])
+		rec = rec[evSize:]
+		for i, v := range rec[:indSize] {
+			fmt.Sscan(v, &m.EigenIndices[i])
 		}
 
 		modes = append(modes, m)

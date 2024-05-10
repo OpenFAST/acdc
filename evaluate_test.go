@@ -10,6 +10,8 @@ import (
 
 func TestEvaluate(t *testing.T) {
 
+	SendEvalStatus = func(ctx context.Context, es EvalStatus) {}
+
 	// Load example project
 	project, err := LoadProject("testdata/eval/NREL-5MW.json")
 	if err != nil {
@@ -45,10 +47,9 @@ func TestEvaluate(t *testing.T) {
 
 	// Create evaluate struct
 	eval := &Evaluate{
-		ExecPath:   execPath,
-		ExecValid:  true,
-		FilesOnly:  false,
-		SendStatus: func(ctx context.Context, es EvalStatus) {},
+		ExecPath:  execPath,
+		ExecValid: true,
+		FilesOnly: false,
 	}
 
 	// Wrap app context with cancel function

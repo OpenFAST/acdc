@@ -34,8 +34,8 @@ export function FetchResults() {
   return window['go']['main']['App']['FetchResults']();
 }
 
-export function GenerateDiagram(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['GenerateDiagram'](arg1, arg2, arg3, arg4);
+export function GenerateDiagram(arg1) {
+  return window['go']['main']['App']['GenerateDiagram'](arg1);
 }
 
 export function GetEvaluateLog(arg1) {
@@ -58,16 +58,16 @@ export function LoadConfig() {
   return window['go']['main']['App']['LoadConfig']();
 }
 
-export function OpenCaseDirDialog() {
-  return window['go']['main']['App']['OpenCaseDirDialog']();
-}
-
 export function OpenProject(arg1) {
   return window['go']['main']['App']['OpenProject'](arg1);
 }
 
 export function OpenProjectDialog() {
   return window['go']['main']['App']['OpenProjectDialog']();
+}
+
+export function ProcessLinDir(arg1) {
+  return window['go']['main']['App']['ProcessLinDir'](arg1);
 }
 
 export function RemoveAnalysisCase(arg1) {
@@ -80,6 +80,14 @@ export function SaveConfig(arg1) {
 
 export function SaveProjectDialog() {
   return window['go']['main']['App']['SaveProjectDialog']();
+}
+
+export function SelectCaseLinDir(arg1) {
+  return window['go']['main']['App']['SelectCaseLinDir'](arg1);
+}
+
+export function SelectCustomLinDir() {
+  return window['go']['main']['App']['SelectCustomLinDir']();
 }
 
 export function SelectExec() {

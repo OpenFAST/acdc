@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed } from 'vue'
-import { useProjectStore, LOADING } from '../project';
+import { useProjectStore, LOADING, LOADED } from '../project';
 import { Scatter } from 'vue-chartjs'
 import { Chart, ChartData, ChartOptions, ChartEvent, ActiveElement } from 'chart.js'
 import { ChartComponentRef } from "vue-chartjs"
@@ -12,22 +12,20 @@ import ModeViz from "./ModeViz.vue"
 const project = useProjectStore()
 
 onMounted(() => {
-    project.fetchResults()
+    project.fetchAnalysis()
 })
 
 const selectedOP = ref<main.OperatingPoint>()
 const selectedLine = ref<diagram.Line | null>(null)
-const swapLine = ref<diagram.Line | null>(null)
+const targetLine = ref<diagram.Line | null>(null)
 const selectedPoint = ref<diagram.Point | null>(null)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
-const doCluster = ref(false)
-const filterStructural = ref(false)
 const showNodePaths = ref(true)
 const xAxisWS = ref(true)
 const rotorSpeedMods = [1, 3, 6, 9, 12, 15]
 const vizScale = ref(20)
-const vizScaleOptions = [1, 2, 5, 10, 20, 50, 75, 100, 150, 200, 300, 400, 500, 1000, 2000]
+const vizScaleOptions = [0.5, 1, 2, 3, 5, 10, 20, 50, 75, 100, 150, 200, 300, 400, 500, 1000, 2000]
 
 interface Graph {
     options: ChartOptions<'scatter'>
@@ -53,17 +51,37 @@ function toggleLineVisibility() {
 }
 
 function swapModeLine() {
-    if (selectedLine.value == null || selectedPoint.value == null || swapLine.value == null) return
+
+    // If the selected line, selected point, or swap line is null, return
+    if (selectedLine.value == null || selectedPoint.value == null || targetLine.value == null) return
+
+    // Get the operating point to swap
     const swapOP = selectedPoint.value.OpPtID
-    const matchesOP = (p: diagram.Point) => p.OpPtID == swapOP;
-    let iSel = selectedLine.value.Points.findIndex(matchesOP)
-    let iSwap = swapLine.value.Points.findIndex(matchesOP)
-    let ptsSel = selectedLine.value.Points.splice(iSel)
-    let ptsSwap = swapLine.value.Points.splice(iSwap)
-    selectedLine.value.Points.push(...ptsSwap)
-    swapLine.value.Points.push(...ptsSel)
+
+    // Partition points from each line to keep and swap
+    const ptsSelKeep = selectedLine.value.Points.filter((p: diagram.Point) => p.OpPtID < swapOP)
+    const ptsSelSwap = selectedLine.value.Points.filter((p: diagram.Point) => p.OpPtID >= swapOP)
+    const ptsTarKeep = targetLine.value.Points.filter((p: diagram.Point) => p.OpPtID < swapOP)
+    const ptsTarSwap = targetLine.value.Points.filter((p: diagram.Point) => p.OpPtID >= swapOP)
+
+    // Concatenate points and assign to lines
+    selectedLine.value.Points = ptsSelKeep.concat(ptsTarSwap)
+    targetLine.value.Points = ptsTarKeep.concat(ptsSelSwap)
+
+    // Update the line number on the moved points
     for (const p of selectedLine.value.Points) { p.Line = selectedLine.value.ID }
-    for (const p of swapLine.value.Points) { p.Line = swapLine.value.ID }
+    for (const p of targetLine.value.Points) { p.Line = targetLine.value.ID }
+
+    // Change selected line to the swap line
+    selectedLine.value = targetLine.value
+
+    // Clear swap line selection
+    targetLine.value = null
+
+    // Clear visualizations because the lines may have changed
+    project.clearModeViz()
+
+    // Save changes to diagram
     project.updateDiagram()
 }
 
@@ -79,6 +97,20 @@ function getModeViz() {
     project.getModeViz(selectedPoint.value, vizScale.value)
 }
 
+function getLineViz() {
+    if (selectedLine.value == null) return
+    console.log(selectedLine.value)
+    project.clearModeViz()
+    console.log(selectedLine.value)
+    let vizPromises = new Array<Promise<viz.ModeData>>
+    for (const point of selectedLine.value.Points) {
+        vizPromises.push(project.getModeViz(point, vizScale.value))
+    }
+    Promise.all(vizPromises).then(() => {
+        project.modeViz.sort((a, b) => a.LineID != b.LineID ? a.LineID - b.LineID : a.OPID - b.OPID)
+    }).catch((err) => { console.log(err) })
+}
+
 function setCurrentVizID(id: number) {
     project.currentVizID = id
     const lineID = project.modeViz[id].LineID
@@ -86,7 +118,6 @@ function setCurrentVizID(id: number) {
     const line = project.diagram.Lines[project.modeViz[id].LineID]
     const opID = project.modeViz[id].OPID
     const point = line.Points.find(p => p.OpPtID == opID)
-    console.log(point)
     if (point === undefined) return
     selectedLine.value = line
     selectedPoint.value = point
@@ -215,34 +246,49 @@ const charts = computed(() => {
 
 <template>
     <main>
+
+
         <div class="card mb-3">
             <div class="card-header hstack">
-                <span>Linearization Data</span>
+                <span>Linearization Folder</span>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-auto g-3">
+                    <div class="col" v-for="c in project.analysis?.Cases">
+                        <a class="btn btn-outline-primary w-100" @click="project.selectCaseLinDir(c.ID)">Case {{ c.ID
+                            }}: {{ c.Name }} </a>
+                    </div>
+                    <div class="col">
+                        <a class="btn btn-outline-primary w-100" @click="project.selectCustomLinDir()">Custom </a>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    Selected folder: {{ project.linDir }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header hstack">
+                <span>Linearization Files</span>
                 <!-- <a class="btn btn-primary me-3" @click="openResults">Open Results</a> -->
-                <a class="btn btn-primary ms-auto" @click="project.openCaseDirDialog">Import</a>
+                <a class="btn btn-primary ms-auto" @click="project.processLinDir()">Process</a>
             </div>
 
             <div v-if="project.status.results == LOADING" class="spinner-border text-primary my-3 mx-auto"
                 role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <div class="card-body" v-if="project.results != null">
-                <div class="mb-3 row">
-                    <label for="case-dir" class="col-sm-2 col-form-label">Directory</label>
-                    <div class="col-sm-10">
-                        <input type="text" readonly class="form-control-plaintext" id="case-dir"
-                            :value="project.results.LinDir">
-                    </div>
-                </div>
+            <div class="card-body" v-if="project.results != null && project.status.results != LOADING">
                 <div class="row">
-                    <label for="inputPassword" class="col-sm-2 col-form-label">Operating Point</label>
-                    <div class="col-sm-10">
+                    <label for="inputPassword" class="col-sm-3 col-form-label">Operating Point Data</label>
+                    <div class="col-sm-9">
                         <select class="form-select" v-model="selectedOP">
                             <option :value="null">None</option>
                             <option v-for="op in project.results.OPs" :value="op">
                                 {{ op.ID }} -
                                 {{ project.results.HasWind ? `${op.WindSpeed.toPrecision(3)} m/s` :
-                    `${op.RotSpeed.toPrecision(3)} RPM` }}
+                        `${op.RotSpeed.toPrecision(3)} RPM` }}
                             </option>
                         </select>
                     </div>
@@ -271,39 +317,42 @@ const charts = computed(() => {
         <div class="card mb-3" v-if="project.results != null">
             <div class="card-header hstack">
                 <span>Campbell Diagram</span>
-                <button class="btn btn-primary ms-auto" v-if="project.diagram != null"
-                    @click="exportDiagramDataJSON()">Export Data (.json)</button>
+                <a class="btn btn-primary ms-auto" v-if="project.diagram != null"
+                    @click="exportDiagramDataJSON()">Export Data (.json)</a>
             </div>
-            <div class="card-body" v-if="project.results != null">
-                <form class="row row-cols-auto g-3">
-                    <div class="col-4 col-md-2 col-lg-2">
-                        <label for="minFreq" class="col-form-label">Min Freq. (Hz)</label>
-                        <input type="text" class="form-control" id="minFreq" v-model.number="project.results.MinFreq">
-                    </div>
-                    <div class="col-4 col-md-2 col-lg-2">
-                        <label for="maxFreq" class="col-form-label">Max Freq. (Hz)</label>
-                        <input type="text" class="form-control" id="maxFreq" v-model.number="project.results.MaxFreq">
-                    </div>
-                    <div class="col-4 col-md-3 col-lg-2">
-                        <label for="doCluster" class="col-form-label">Spectral Clustering</label>
-                        <select class="form-select" v-model="doCluster">
-                            <option :value="true" selected>Enable</option>
-                            <option :value="false">Disable</option>
-                        </select>
-                    </div>
-                    <div class="col-4 col-md-3 col-lg-3">
-                        <label for="filterStructural" class="col-form-label">Filter Non-structural Modes</label>
-                        <select class="form-select" v-model="filterStructural">
-                            <option :value="true" selected>Enable</option>
-                            <option :value="false">Disable</option>
-                        </select>
-                    </div>
-                    <div class="col-4 col-md-2 col-lg-2">
-                        <label class="col-form-label">&nbsp;</label>
-                        <div>
-                            <a class="btn btn-primary"
-                                @click="project.generateDiagram(project.results.MinFreq, project.results.MaxFreq, doCluster, filterStructural)">Generate</a>
+            <div class="card-body">
+                <form class="row row-cols-auto g-3 align-items-center">
+                    <div class="col">
+                        <div class="input-group">
+                            <span class="input-group-text">Freq. Min/Max (Hz)</span>
+                            <input type="text" class="form-control" id="minFreq"
+                                v-model.number="project.diagramOptions.MinFreq">
+                            <input type="text" class="form-control" id="maxFreq"
+                                v-model.number="project.diagramOptions.MaxFreq">
                         </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="doCluster"
+                                v-model="project.diagramOptions.Cluster">
+                            <label class="form-check-label" for="doCluster">
+                                Spectral Clustering
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="filterStructural"
+                                v-model="project.diagramOptions.FilterStruct">
+                            <label class="form-check-label" for="filterStructural">
+                                Filter Non-structural Modes
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <a class="btn btn-primary" @click="project.generateDiagram()">Generate</a>
+                        <span class="ms-2" v-if="project.diagram != null">Warning: replaces current diagram</span>
                     </div>
                 </form>
             </div>
@@ -331,7 +380,7 @@ const charts = computed(() => {
                     <div class="col-12">
                         <div class="row row-cols-auto g-2 mt-2">
                             <div class="col" v-for="(line, i) in project.diagram.Lines.filter((line) => !line.Hidden)">
-                                <a class="btn btn-outline-dark" role="button" @click="selectLine(line)">
+                                <a class="btn btn-outline-dark" @click="selectLine(line)">
                                     <div style="position: relative">
                                         <div style="display: block; height: 4px; width: 24px; position: absolute; top: 49%; left: 0"
                                             :style="{ 'background-color': line.Color }">
@@ -348,7 +397,7 @@ const charts = computed(() => {
                                 <label class="col-form-label">Hidden:</label>
                             </div>
                             <div class="col" v-for="(line, i) in project.diagram.Lines.filter((line) => line.Hidden)">
-                                <a class="btn btn-outline-dark" role="button" @click="selectLine(line)">
+                                <a class="btn btn-outline-dark" @click="selectLine(line)">
                                     <div style="position: relative">
                                         <div style="display: block; height: 4px; width: 24px; position: absolute; top: 49%; left: 0"
                                             :style="{ 'background-color': line.Color }">
@@ -385,22 +434,20 @@ const charts = computed(() => {
                                 <input type="color" class="form-control form-control-color w-100" id="lineColor"
                                     v-model="selectedLine.Color" @change="project.updateDiagram()">
                             </div>
-                            <!-- <div class="col-3">
-                                <label for="lineColor" class="col-form-label">Style</Label>
-                                <select class="form-control" id="lineStyle" v-model="selectedLine.Dash">
-                                    <option :value="null">-</option>
-                                    <option :value="[2, 3]">--</option>
-                                </select>
-                            </div> -->
                             <div class="col-12" v-if="!selectedLine.Hidden">
                                 <label for="linePoints" class="col-form-label">Select Point</Label>
                                 <select class="form-select" id="linePoints" v-model="selectedPoint">
                                     <option v-for="point in selectedLine.Points" :value="point">OP: {{ point.OpPtID }},
                                         Rotor Speed: {{ point.RotSpeed.toFixed(2) }}, Wind Speed: {{
-                    point.WindSpeed.toFixed(2) }}, Natural Frequency: {{
-                    point.NaturalFreqHz.toFixed(3) }}
+                        point.WindSpeed.toFixed(2) }}, Natural Frequency: {{
+                        point.NaturalFreqHz.toFixed(3) }}
                                     </option>
                                 </select>
+                            </div>
+                            <div class="col-12" v-if="!selectedLine.Hidden">
+                                <a class="btn btn-primary ms-auto" @click="getLineViz()">
+                                    Visualize Line Modes
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -458,14 +505,15 @@ const charts = computed(() => {
                                     <option :value="v" v-for="v in vizScaleOptions">{{ v }}</option>
                                 </select>
                             </div>
-                            <div class="col-12 hstack" v-if="project.diagram != null">
+                            <div class="col-12 hstack" v-if="project.diagram != null && selectedLine != null">
                                 <label for="vizScale" class="col-form-label">Select line to swap mode</Label>
-                                <select class="form-select ms-3 w-auto" v-model="swapLine">
-                                    <option :value="line" v-for="line in project.diagram.Lines">{{ line.ID }} - {{
-                    line.Label }}</option>
+                                <select class="form-select ms-3 w-auto" v-model="targetLine">
+                                    <option :value="line"
+                                        v-for="line in project.diagram.Lines.filter(l => l.ID != selectedLine?.ID && l.Points.find(p => p.OpPtID == selectedPoint?.OpPtID))">
+                                        {{ line.Label }}</option>
                                 </select>
-                                <button class="btn btn-primary ms-3" @click="swapModeLine()"
-                                    :disabled="swapLine == null">Swap</button>
+                                <a class="btn btn-primary ms-3" @click="swapModeLine()"
+                                    :disabled="targetLine == null">Swap</a>
                             </div>
                         </form>
                     </div>
@@ -488,15 +536,16 @@ const charts = computed(() => {
                         </div>
                     </div>
                     <div class="col-2">
-                        <div class="d-grid gap-2 mb-5">
-                            <button class="btn btn-primary" @click="project.clearModeViz">Clear Visualizations</button>
-                            <button class="btn btn-primary" @click="showNodePaths = !showNodePaths">{{
-                    showNodePaths ? 'Hide' : 'Show' }} Node Paths</button>
+                        <div class="d-grid gap-2 mb-3">
+                            <a class="btn btn-primary" @click="project.clearModeViz">Clear
+                                Visualizations</a>
+                            <a class="btn btn-primary" @click="showNodePaths = !showNodePaths">{{
+                        showNodePaths ? 'Hide' : 'Show' }} Node Paths</a>
                         </div>
                         <div class="list-group">
                             <a class="list-group-item list-group-item-action" v-for="(mv, i) in project.modeViz"
                                 :class="{ active: (i == project.currentVizID) }" @click="setCurrentVizID(i)">
-                                {{ mv.LineID }} - {{ project.diagram.Lines[mv.LineID].Label }}, OP {{ mv.OPID }}
+                                {{ project.diagram.Lines[mv.LineID].Label }}, OP {{ mv.OPID }}
                             </a>
                         </div>
                     </div>

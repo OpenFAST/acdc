@@ -15,11 +15,11 @@ type FileGroup struct {
 }
 
 type LinOP struct {
-	RootPath      string        `json:"Name"`
-	FilePaths     []string      `json:"-"`
-	HasAeroStates bool          `json:"HasAeroStates"`
-	MBC           *MBC          `json:"MBC"`
-	EigRes        *EigenResults `json:"EigRes"`
+	RootPath      string   `json:"Name"`
+	FilePaths     []string `json:"FilePaths"`
+	HasAeroStates bool     `json:"HasAeroStates"`
+	MBC           *MBC     `json:"-"`
+	Modes         Modes    `json:"-"`
 }
 
 // ProcessFiles takes a slice of linearization file paths, groups them by
@@ -73,7 +73,7 @@ func ProcessFiles(LinFilePaths []string) ([]LinOP, error) {
 		}
 
 		// Perform Eigenanalysis to get modes
-		eigRes, err := mbc.EigenAnalysis()
+		modes, err := mbc.EigenAnalysis()
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +90,7 @@ func ProcessFiles(LinFilePaths []string) ([]LinOP, error) {
 
 		// Write Eigen analysis mode results data to file
 		w := &bytes.Buffer{}
-		eigRes.Modes.ToCSV(w)
+		modes.ToCSV(w)
 		err = os.WriteFile(fg.Name+"_modes.csv", w.Bytes(), 0777)
 		if err != nil {
 			return nil, err
@@ -116,7 +116,7 @@ func ProcessFiles(LinFilePaths []string) ([]LinOP, error) {
 			FilePaths:     fg.Files,
 			HasAeroStates: hasAeroStates,
 			MBC:           mbc,
-			EigRes:        eigRes,
+			Modes:         modes,
 		})
 	}
 
@@ -133,8 +133,8 @@ func ProcessFiles(LinFilePaths []string) ([]LinOP, error) {
 
 	// Add operating point IDs to modes now that they've been sorted
 	for i := range results {
-		for j := range results[i].EigRes.Modes {
-			results[i].EigRes.Modes[j].OP = i
+		for j := range results[i].Modes {
+			results[i].Modes[j].OP = i
 		}
 	}
 

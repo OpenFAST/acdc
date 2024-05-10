@@ -2,8 +2,10 @@ package main
 
 import (
 	"acdc/lin"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"math"
+	"os"
 	"path/filepath"
 	"regexp"
 )
@@ -11,8 +13,6 @@ import (
 type Results struct {
 	LinDir  string           `json:"LinDir"`
 	HasWind bool             `json:"HasWind"`
-	MinFreq float32          `json:"MinFreq"`
-	MaxFreq float32          `json:"MaxFreq"`
 	OPs     []OperatingPoint `json:"OPs"`
 	LinOPs  []lin.LinOP      `json:"LinOPs"`
 }
@@ -75,14 +75,11 @@ func ProcessCaseDir(path string) (*Results, error) {
 		LinOPs: linResults,
 	}
 
-	// Initialize max rotor speed
-	maxRotSpeed := 0.0
-
 	// Extract data from linearization results
 	for i, lr := range linResults {
 		results.HasWind = lr.MBC.WindSpeed > 0 || results.HasWind
 		modes := []Mode{}
-		for j, m := range lr.EigRes.Modes {
+		for j, m := range lr.Modes {
 			modes = append(modes, Mode{
 				ID:            j,
 				OP:            i,
@@ -100,15 +97,92 @@ func ProcessCaseDir(path string) (*Results, error) {
 				Modes:     modes,
 			},
 		)
+	}
 
-		// If rotor speed is above maximum, save it
-		if lr.MBC.RotSpeed > maxRotSpeed {
-			maxRotSpeed = lr.MBC.RotSpeed
+	return results, nil
+}
+
+func (r *Results) Save(caseDir string) error {
+
+	// Write results data to file
+	bs, err := json.MarshalIndent(r, "", "\t")
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(caseDir, "results.json"), bs, 0777)
+	if err != nil {
+		return err
+	}
+
+	// Loop through linearization OPs
+	for _, linOP := range r.LinOPs {
+
+		linOP.RootPath = filepath.Join(caseDir, filepath.Base(linOP.RootPath))
+
+		// Write MBC data to file
+		bs, err := json.MarshalIndent(linOP.MBC, "", "\t")
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(linOP.RootPath+"_mbc.json", bs, 0777)
+		if err != nil {
+			return err
+		}
+
+		// Write Eigen analysis mode results data to file
+		w := &bytes.Buffer{}
+		linOP.Modes.ToCSV(w)
+		err = os.WriteFile(linOP.RootPath+"_modes.csv", w.Bytes(), 0777)
+		if err != nil {
+			return err
 		}
 	}
 
-	// Calculate the recommended max diagram frequency
-	results.MaxFreq = float32(math.Trunc(100*maxRotSpeed/60*15) / 100)
+	return nil
+}
 
-	return results, nil
+func LoadResults(linDir string) (*Results, error) {
+
+	// Create results structure
+	r := Results{}
+
+	// Load results
+	bs, err := os.ReadFile(filepath.Join(linDir, "results.json"))
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(bs, &r); err != nil {
+		return nil, err
+	}
+
+	// Loop through linearization OPs
+	for i := range r.LinOPs {
+
+		linOP := &r.LinOPs[i]
+
+		linOP.RootPath = filepath.Join(linDir, filepath.Base(linOP.RootPath))
+
+		// Load MBC data
+		bs, err := os.ReadFile(linOP.RootPath + "_mbc.json")
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(bs, &linOP.MBC)
+		if err != nil {
+			return nil, err
+		}
+
+		// Write Eigen analysis mode results data to file
+		modesFile := linOP.RootPath + "_modes.csv"
+		bs, err = os.ReadFile(modesFile)
+		if err != nil {
+			return nil, err
+		}
+		linOP.Modes, err = lin.ReadModesCSV(bytes.NewReader(bs))
+		if err != nil {
+			return nil, fmt.Errorf("error parsing '%s': %w", modesFile, err)
+		}
+	}
+
+	return &r, nil
 }

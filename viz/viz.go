@@ -49,7 +49,7 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 	// Get slice of modes from mode IDs
 	modes := []lin.Mode{}
 	for _, mID := range modeIDs {
-		modes = append(modes, op.EigRes.Modes[mID])
+		modes = append(modes, op.Modes[mID])
 	}
 
 	// Collect mode data

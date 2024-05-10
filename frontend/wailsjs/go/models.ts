@@ -52,7 +52,7 @@ export namespace diagram {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -88,7 +88,7 @@ export namespace diagram {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -103,69 +103,44 @@ export namespace diagram {
 		}
 	}
 	
+	export class Options {
+	    MinFreq: number;
+	    MaxFreq: number;
+	    Cluster: boolean;
+	    FilterStruct: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Options(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.MinFreq = source["MinFreq"];
+	        this.MaxFreq = source["MaxFreq"];
+	        this.Cluster = source["Cluster"];
+	        this.FilterStruct = source["FilterStruct"];
+	    }
+	}
 
 }
 
 export namespace lin {
 	
-	export class Mode {
-	    ID: number;
-	    OP: number;
-	    MaxMod: string;
-	    NaturalFreqRaw: number;
-	    NaturalFreqHz: number;
-	    DampedFreqRaw: number;
-	    DampedFreqHz: number;
-	    DampingRatio: number;
+	export class LinOP {
+	    Name: string;
+	    FilePaths: string[];
+	    HasAeroStates: boolean;
 	
 	    static createFrom(source: any = {}) {
-	        return new Mode(source);
+	        return new LinOP(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.OP = source["OP"];
-	        this.MaxMod = source["MaxMod"];
-	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
-	        this.NaturalFreqHz = source["NaturalFreqHz"];
-	        this.DampedFreqRaw = source["DampedFreqRaw"];
-	        this.DampedFreqHz = source["DampedFreqHz"];
-	        this.DampingRatio = source["DampingRatio"];
+	        this.Name = source["Name"];
+	        this.FilePaths = source["FilePaths"];
+	        this.HasAeroStates = source["HasAeroStates"];
 	    }
-	}
-	export class EigenResults {
-	    Modes: Mode[];
-	    // Go type: mat
-	    EigenVectors?: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new EigenResults(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Modes = this.convertValues(source["Modes"], Mode);
-	        this.EigenVectors = this.convertValues(source["EigenVectors"], null);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class OPOrder {
 	    Num: number;
@@ -227,7 +202,7 @@ export namespace lin {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -241,44 +216,32 @@ export namespace lin {
 		    return a;
 		}
 	}
-	export class LinOP {
-	    Name: string;
-	    HasAeroStates: boolean;
-	    MBC?: MBC;
-	    EigRes?: EigenResults;
+	export class Mode {
+	    ID: number;
+	    OP: number;
+	    MaxMod: string;
+	    NaturalFreqRaw: number;
+	    NaturalFreqHz: number;
+	    DampedFreqRaw: number;
+	    DampedFreqHz: number;
+	    DampingRatio: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new LinOP(source);
+	        return new Mode(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.HasAeroStates = source["HasAeroStates"];
-	        this.MBC = this.convertValues(source["MBC"], MBC);
-	        this.EigRes = this.convertValues(source["EigRes"], EigenResults);
+	        this.ID = source["ID"];
+	        this.OP = source["OP"];
+	        this.MaxMod = source["MaxMod"];
+	        this.NaturalFreqRaw = source["NaturalFreqRaw"];
+	        this.NaturalFreqHz = source["NaturalFreqHz"];
+	        this.DampedFreqRaw = source["DampedFreqRaw"];
+	        this.DampedFreqHz = source["DampedFreqHz"];
+	        this.DampingRatio = source["DampingRatio"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
-	
-	
 
 }
 
@@ -420,7 +383,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -458,7 +421,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -494,7 +457,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -578,7 +541,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -608,7 +571,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -646,7 +609,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -759,7 +722,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -799,9 +762,9 @@ export namespace main {
 	    ExecPath: string;
 	    ExecVersion: string;
 	    ExecValid: boolean;
-	    NumCPUs: number;
 	    MaxCPUs: number;
-	    Status: EvalStatus;
+	    NumCPUs: number;
+	    FilesOnly: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Evaluate(source);
@@ -812,28 +775,10 @@ export namespace main {
 	        this.ExecPath = source["ExecPath"];
 	        this.ExecVersion = source["ExecVersion"];
 	        this.ExecValid = source["ExecValid"];
-	        this.NumCPUs = source["NumCPUs"];
 	        this.MaxCPUs = source["MaxCPUs"];
-	        this.Status = this.convertValues(source["Status"], EvalStatus);
+	        this.NumCPUs = source["NumCPUs"];
+	        this.FilesOnly = source["FilesOnly"];
 	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
 	}
 	export class StControl {
 	    Name: string;
@@ -857,7 +802,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -909,7 +854,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -953,7 +898,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1019,7 +964,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1055,7 +1000,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1211,7 +1156,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1263,7 +1208,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1294,7 +1239,6 @@ export namespace main {
 	    }
 	}
 	
-	
 	export class Mode {
 	    ID: number;
 	    OP: number;
@@ -1315,43 +1259,6 @@ export namespace main {
 	        this.DampingRatio = source["DampingRatio"];
 	    }
 	}
-	export class Model {
-	    HasAero: boolean;
-	    ImportedPaths: string[];
-	    Files?: Files;
-	    Notes: string[];
-	
-	    static createFrom(source: any = {}) {
-	        return new Model(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.HasAero = source["HasAero"];
-	        this.ImportedPaths = source["ImportedPaths"];
-	        this.Files = this.convertValues(source["Files"], Files);
-	        this.Notes = source["Notes"];
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
 	export class OperatingPoint {
 	    ID: number;
 	    Files: string[];
@@ -1376,7 +1283,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1390,16 +1297,9 @@ export namespace main {
 		    return a;
 		}
 	}
-	
-	
-	
-	
-	
 	export class Results {
 	    LinDir: string;
 	    HasWind: boolean;
-	    MinFreq: number;
-	    MaxFreq: number;
 	    OPs: OperatingPoint[];
 	    LinOPs: lin.LinOP[];
 	
@@ -1411,8 +1311,6 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.LinDir = source["LinDir"];
 	        this.HasWind = source["HasWind"];
-	        this.MinFreq = source["MinFreq"];
-	        this.MaxFreq = source["MaxFreq"];
 	        this.OPs = this.convertValues(source["OPs"], OperatingPoint);
 	        this.LinOPs = this.convertValues(source["LinOPs"], lin.LinOP);
 	    }
@@ -1421,7 +1319,7 @@ export namespace main {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1435,6 +1333,86 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class LinDirData {
+	    Dir: string;
+	    Results?: Results;
+	    Diagram?: diagram.Diagram;
+	
+	    static createFrom(source: any = {}) {
+	        return new LinDirData(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Dir = source["Dir"];
+	        this.Results = this.convertValues(source["Results"], Results);
+	        this.Diagram = this.convertValues(source["Diagram"], diagram.Diagram);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	export class Model {
+	    HasAero: boolean;
+	    ImportedPaths: string[];
+	    Files?: Files;
+	    Notes: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Model(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.HasAero = source["HasAero"];
+	        this.ImportedPaths = source["ImportedPaths"];
+	        this.Files = this.convertValues(source["Files"], Files);
+	        this.Notes = source["Notes"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 
@@ -1470,7 +1448,7 @@ export namespace viz {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {
@@ -1518,7 +1496,7 @@ export namespace viz {
 		    if (!a) {
 		        return a;
 		    }
-		    if (a.slice) {
+		    if (a.slice && a.map) {
 		        return (a as any[]).map(elem => this.convertValues(elem, classs));
 		    } else if ("object" === typeof a) {
 		        if (asMap) {

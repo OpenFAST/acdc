@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -108,4 +109,24 @@ func (p *Project) Save() (*Project, error) {
 	}
 
 	return p, nil
+}
+
+func (p *Project) RootPath() string {
+	return strings.TrimSuffix(p.Info.Path, filepath.Ext(p.Info.Path))
+}
+
+func (p *Project) Case(caseID int) (*Case, error) {
+
+	if p.Analysis == nil {
+		return nil, fmt.Errorf("no analysis is project")
+	}
+
+	// Loop through cases and find matching ID
+	for i := range p.Analysis.Cases {
+		if p.Analysis.Cases[i].ID == caseID {
+			return &p.Analysis.Cases[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("Case ID %d not found", caseID)
 }

@@ -31,7 +31,10 @@ func TestDiagramNew(t *testing.T) {
 	}
 
 	// Generate diagram
-	diag, err := diagram.New(linOPs, [2]float64{0, 3.5}, false, false)
+	diag, err := diagram.New(linOPs, diagram.Options{
+		MinFreq: 0.0,
+		MaxFreq: 3.5,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
