@@ -8,19 +8,14 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"golang.org/x/sync/errgroup"
 )
-
-const ProjectFile = "project.json"
 
 // App struct
 type App struct {
@@ -463,9 +458,6 @@ func (a *App) SelectExec() (*Evaluate, error) {
 
 func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
 
-	// Clear results
-	a.Project.Results = nil
-
 	// Get case
 	var c *Case
 	for _, cc := range a.Project.Analysis.Cases {
@@ -478,87 +470,9 @@ func (a *App) EvaluateCase(ID int) ([]EvalStatus, error) {
 		return nil, fmt.Errorf("Case ID %d not found", ID)
 	}
 
-	// Call existing cancel func
-	EvalCancel(fmt.Errorf("new evaluation started"))
+	projectRootPath := strings.TrimSuffix(a.Project.Info.Path, filepath.Ext(a.Project.Info.Path))
 
-	// Create path to case directory
-	caseDir := filepath.Join(strings.TrimSuffix(a.Project.Info.Path, filepath.Ext(a.Project.Info.Path)), fmt.Sprintf("case%02d", c.ID))
-	if err := os.MkdirAll(caseDir, 0777); err != nil {
-		return nil, fmt.Errorf("error creating directory '%s': %w", caseDir, err)
-	}
-
-	// Remove existing output files
-	extsToRemove := map[string]struct{}{".lin": {}, ".stamp": {}, ".out": {}, ".vtp": {}}
-	filepath.WalkDir(caseDir, func(path string, d fs.DirEntry, err error) error {
-		if _, ok := extsToRemove[filepath.Ext(path)]; ok {
-			os.Remove(path)
-		}
-		return nil
-	})
-
-	// Wrap app context with cancel function
-	ctx, cancelFunc := context.WithCancelCause(a.ctx)
-
-	// Save cancel function so it can be called
-	EvalCancel = cancelFunc
-
-	// Wrap cancel context with error group so eval will stop on first error
-	g, ctx2 := errgroup.WithContext(ctx)
-
-	// Create eval status slice
-	statuses := []EvalStatus{}
-
-	// Launch evaluations throttled to number of CPUs specified
-	semChan := make(chan struct{}, a.Project.Evaluate.NumCPUs)
-	for _, op := range c.OperatingPoints {
-		op := op
-		statuses = append(statuses, EvalStatus{ID: op.ID, State: "Queued"})
-		g.Go(func() error {
-			<-semChan
-			defer func() { semChan <- struct{}{} }()
-			return EvaluateOP(ctx2, a.Project.Model, c, &op, caseDir,
-				a.Project.Evaluate.ExecPath)
-		})
-	}
-
-	// Wait for evaluations to complete. If error, print
-	go func() {
-
-		// Get error from group
-		err := g.Wait()
-		if err != nil {
-			runtime.LogErrorf(a.ctx, "error evaluating case: %s", err)
-		}
-
-		// Close semaphore channel
-		close(semChan)
-
-		// Drain channel
-		for {
-			if _, ok := <-semChan; !ok {
-				break
-			}
-		}
-
-		// Cancel the context for cleanup
-		cancelFunc(nil)
-
-		// If no error, write timestamp of evaluation completion
-		if err == nil {
-			os.WriteFile(filepath.Join(caseDir, "complete.stamp"),
-				[]byte(time.Now().Format(time.RFC3339)), 0777)
-		}
-	}()
-
-	// Start evaluations
-	go func() {
-		time.Sleep(time.Second)
-		for i := 0; i < a.Project.Evaluate.NumCPUs; i++ {
-			semChan <- struct{}{}
-		}
-	}()
-
-	return statuses, nil
+	return a.Project.Evaluate.Case(a.ctx, a.Project.Model, c, projectRootPath)
 }
 
 func (a *App) CancelEvaluate() {

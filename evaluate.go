@@ -5,30 +5,37 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	goruntime "runtime"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/sync/errgroup"
 )
 
 type Evaluate struct {
-	ExecPath    string     `json:"ExecPath"`
-	ExecVersion string     `json:"ExecVersion"`
-	ExecValid   bool       `json:"ExecValid"`
-	NumCPUs     int        `json:"NumCPUs"`
-	MaxCPUs     int        `json:"MaxCPUs"`
-	Status      EvalStatus `json:"Status"`
+	ExecPath    string                            `json:"ExecPath"`
+	ExecVersion string                            `json:"ExecVersion"`
+	ExecValid   bool                              `json:"ExecValid"`
+	MaxCPUs     int                               `json:"MaxCPUs"`
+	NumCPUs     int                               `json:"NumCPUs"`
+	FilesOnly   bool                              `json:"FilesOnly"`
+	SendStatus  func(context.Context, EvalStatus) `json:"-"`
 }
 
 func NewEvaluate() *Evaluate {
 	return &Evaluate{
 		NumCPUs: 1,
 		MaxCPUs: goruntime.NumCPU(),
+		SendStatus: func(ctx context.Context, es EvalStatus) {
+			runtime.EventsEmit(ctx, "evalStatus", es)
+		},
 	}
 }
 
@@ -41,14 +48,93 @@ type EvalStatus struct {
 	Error       string `json:"Error"`
 }
 
-type EvalLog struct {
-	ID   int    `json:"ID"`
-	Line string `json:"Line"`
-}
-
 var EvalCancel context.CancelCauseFunc = func(_ error) {}
 
-func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseDir, execPath string) error {
+func (eval *Evaluate) Case(appCtx context.Context, model *Model, c *Case, projectRootPath string) ([]EvalStatus, error) {
+
+	// Call existing cancel func
+	EvalCancel(fmt.Errorf("new evaluation started"))
+
+	// Create path to case directory
+	caseDir := filepath.Join(projectRootPath, fmt.Sprintf("Case%02d", c.ID))
+	if err := os.MkdirAll(caseDir, 0777); err != nil {
+		return nil, fmt.Errorf("error creating directory '%s': %w", caseDir, err)
+	}
+
+	// Remove existing output files
+	extsToRemove := map[string]struct{}{".lin": {}, ".stamp": {}, ".out": {}, ".vtp": {}}
+	filepath.WalkDir(caseDir, func(path string, d fs.DirEntry, err error) error {
+		if _, ok := extsToRemove[filepath.Ext(path)]; ok {
+			os.Remove(path)
+		}
+		return nil
+	})
+
+	// Wrap app context with cancel function
+	ctx, cancelFunc := context.WithCancelCause(appCtx)
+
+	// Save cancel function so it can be called
+	EvalCancel = cancelFunc
+
+	// Wrap cancel context with error group so eval will stop on first error
+	g, ctx2 := errgroup.WithContext(ctx)
+
+	// Create eval status slice
+	statuses := []EvalStatus{}
+
+	// Launch evaluations throttled to number of CPUs specified
+	semChan := make(chan struct{}, eval.NumCPUs)
+	for _, op := range c.OperatingPoints {
+		op := op
+		statuses = append(statuses, EvalStatus{ID: op.ID, State: "Queued"})
+		g.Go(func() error {
+			<-semChan
+			defer func() { semChan <- struct{}{} }()
+			return eval.OP(ctx2, model, c, &op, caseDir)
+		})
+	}
+
+	// Wait for evaluations to complete. If error, print
+	go func() {
+
+		// Get error from group
+		err := g.Wait()
+		if err != nil {
+			runtime.LogErrorf(appCtx, "error evaluating case: %s", err)
+		}
+
+		// Close semaphore channel
+		close(semChan)
+
+		// Drain channel
+		for {
+			if _, ok := <-semChan; !ok {
+				break
+			}
+		}
+
+		// Cancel the context for cleanup
+		cancelFunc(nil)
+
+		// If no error, write timestamp of evaluation completion
+		if err == nil {
+			os.WriteFile(filepath.Join(caseDir, "complete.stamp"),
+				[]byte(time.Now().Format(time.RFC3339)), 0777)
+		}
+	}()
+
+	// Start evaluations
+	go func() {
+		time.Sleep(time.Second)
+		for i := 0; i < eval.NumCPUs; i++ {
+			semChan <- struct{}{}
+		}
+	}()
+
+	return statuses, nil
+}
+
+func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Condition, caseDir string) error {
 
 	//--------------------------------------------------------------------------
 	// Prepare input files
@@ -195,6 +281,19 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 	mainPath := filepath.Join(caseDir, mainName)
 	logPath := rootPath + ".log"
 
+	// Create status ID from operating point and set in linearization flag to false
+	statusID := op.ID
+	inLinearization := false
+
+	// If flag set to only output the files (not run simulation), return
+	if eval.FilesOnly {
+		return nil
+	}
+
+	//--------------------------------------------------------------------------
+	// Run Linearization
+	//--------------------------------------------------------------------------
+
 	// Create log file
 	logFile, err := os.Create(logPath)
 	if err != nil {
@@ -202,16 +301,8 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 	}
 	defer logFile.Close()
 
-	// Create status ID from operating point and set in linearization flag to false
-	statusID := op.ID
-	inLinearization := false
-
-	//--------------------------------------------------------------------------
-	// Run Linearization
-	//--------------------------------------------------------------------------
-
 	// Create command, get output pipe, set stderr to stdout, start command
-	cmd := exec.CommandContext(ctx, execPath, mainPath)
+	cmd := exec.CommandContext(ctx, eval.ExecPath, mainPath)
 	outputReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
@@ -241,7 +332,7 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 			if err != nil {
 				continue
 			}
-			runtime.EventsEmit(ctx, "evalStatus", EvalStatus{
+			eval.SendStatus(ctx, EvalStatus{
 				ID:          statusID,
 				State:       "Simulation",
 				SimProgress: int(100 * currentTime / totalTime),
@@ -254,7 +345,7 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 			if err != nil {
 				continue
 			}
-			runtime.EventsEmit(ctx, "evalStatus", EvalStatus{
+			eval.SendStatus(ctx, EvalStatus{
 				ID:          statusID,
 				State:       "Linearization",
 				SimProgress: 100,
@@ -282,7 +373,7 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 			status.State = "Canceled"
 			status.Error = cause.Error()
 		}
-		runtime.EventsEmit(ctx, "evalStatus", status)
+		eval.SendStatus(ctx, status)
 		return err
 	}
 
@@ -290,7 +381,7 @@ func EvaluateOP(ctx context.Context, model *Model, c *Case, op *Condition, caseD
 	// Send complete status
 	//--------------------------------------------------------------------------
 
-	runtime.EventsEmit(ctx, "evalStatus", EvalStatus{
+	eval.SendStatus(ctx, EvalStatus{
 		ID:          statusID,
 		State:       "Complete",
 		SimProgress: 100,
