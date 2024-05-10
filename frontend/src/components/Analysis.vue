@@ -37,19 +37,13 @@ function duplicateCase() {
             <div class="card-body">
                 <div class="row">
                     <label for="currentCaseID" class="col-sm-2 col-form-label">Select</label>
-                    <div class="col-sm-4">
+                    <div class="col hstack gap-3">
                         <select class="form-select" id="currentCaseID" v-model="project.currentCaseID"
                             v-if="project.analysis != null">
                             <option v-for="c in project.analysis.Cases" :value="c.ID">{{ c.ID }} - {{ c.Name }}</option>
                         </select>
-                    </div>
-                    <div class="col d-grid">
                         <a class="btn btn-success" @click="project.addAnalysisCase()">Add</a>
-                    </div>
-                    <div class="col d-grid">
                         <a class="btn btn-primary" @click="duplicateCase()">Duplicate</a>
-                    </div>
-                    <div class="col d-grid">
                         <a class="btn btn-danger" @click="removeCase()"
                             :disabled="(project.analysis == null) || (project.analysis.Cases.length < 2)">Remove</a>
                     </div>
