@@ -32,9 +32,6 @@ func (app *App) LoadConfig() (Config, error) {
 	// Read Config File
 	bs, err := os.ReadFile(ConfigPath)
 
-	// Set version
-	c.Version = version
-
 	// If file doesn't exist, create it and return; otherwise, return error
 	if os.IsNotExist(err) {
 		if err := app.SaveConfig(c); err != nil {
@@ -49,6 +46,9 @@ func (app *App) LoadConfig() (Config, error) {
 	if err := json.Unmarshal(bs, &c); err != nil {
 		return c, fmt.Errorf("error parsing '%s': %w", ConfigPath, err)
 	}
+
+	// Set version
+	c.Version = version
 
 	return c, nil
 }
