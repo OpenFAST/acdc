@@ -54,7 +54,8 @@ export const useProjectStore = defineStore('project', () => {
         evaluate.value = null
         results.value = null
         diagram.value = null
-        currentCaseID.value = 1
+        currentCaseID.value = 1 // Reset current case ID for Analysis tab
+        linDir.value = ""   // Clear linearization directory for Results tab
         clearEvalStatus()
         clearModeViz()
     }
