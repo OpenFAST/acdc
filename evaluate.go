@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -156,7 +157,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 
 	// Set status update time so a full simulation will generate 50 status messages
 	// which are used for the progress bars on the Evaluate tab
-	if statusTime := files.Main[0].TMax.Value / 100; statusTime < files.Main[0].SttsTime.Value {
+	if statusTime := math.Ceil(files.Main[0].TMax.Value / 100); statusTime < files.Main[0].SttsTime.Value {
 		files.Main[0].SttsTime.Value = statusTime
 	}
 
@@ -261,6 +262,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 		files.Main[0].CompAero.Value = 0
 		files.AeroDyn = []AeroDyn{}
 		files.AeroDyn14 = []AeroDyn14{}
+		files.AirfoilInfo = []AirfoilInfo{}
 
 		// Disable ElastoDyn generator DOF
 		files.ElastoDyn[0].GenDOF.Value = false
