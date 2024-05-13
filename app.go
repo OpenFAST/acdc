@@ -245,6 +245,44 @@ func (a *App) AddAnalysisCase() (*Analysis, error) {
 	return a.Project.Analysis, nil
 }
 
+func (a *App) DuplicateAnalysisCase(caseID int) (*Analysis, error) {
+
+	// If no analysis in project, create it
+	if a.Project.Analysis == nil {
+		a.Project.Analysis = NewAnalysis()
+	}
+
+	// Find case to copy
+	srcCase, err := a.Project.Case(caseID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Copy case
+	dstCase, err := srcCase.Copy()
+	if err != nil {
+		return nil, err
+	}
+
+	// Add "copy" to destination case name
+	dstCase.Name += " Copy"
+
+	// Append case to analysis
+	a.Project.Analysis.Cases = append(a.Project.Analysis.Cases, dstCase)
+
+	// Calculate analysis cases
+	if err := a.Project.Analysis.Calculate(); err != nil {
+		return nil, err
+	}
+
+	// Save project
+	if _, err := a.Project.Save(); err != nil {
+		return nil, err
+	}
+
+	return a.Project.Analysis, nil
+}
+
 func (a *App) RemoveAnalysisCase(caseID int) (*Analysis, error) {
 
 	// If no analysis in project, create it

@@ -10,6 +10,10 @@ export function CancelEvaluate() {
   return window['go']['main']['App']['CancelEvaluate']();
 }
 
+export function DuplicateAnalysisCase(arg1) {
+  return window['go']['main']['App']['DuplicateAnalysisCase'](arg1);
+}
+
 export function EvaluateCase(arg1) {
   return window['go']['main']['App']['EvaluateCase'](arg1);
 }

@@ -8,6 +8,8 @@ export function AddAnalysisCase():Promise<main.Analysis>;
 
 export function CancelEvaluate():Promise<void>;
 
+export function DuplicateAnalysisCase(arg1:number):Promise<main.Analysis>;
+
 export function EvaluateCase(arg1:number):Promise<Array<main.EvalStatus>>;
 
 export function ExportDiagramDataJSON(arg1:diagram.Diagram):Promise<void>;

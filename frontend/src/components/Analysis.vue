@@ -15,19 +15,6 @@ onMounted(() => {
     project.fetchAnalysis()
 })
 
-function removeCase() {
-    if (project.analysis == null || project.currentCaseID == null) return
-    project.removeAnalysisCase(project.currentCaseID)
-    project.currentCaseID = 1
-}
-
-function duplicateCase() {
-    if (project.analysis == null) return
-    project.analysis.Cases.push(project.analysis.Cases[project.currentCaseID - 1])
-    project.currentCaseID = project.analysis.Cases.length
-    project.updateAnalysis()
-}
-
 </script>
 
 <template>
@@ -43,8 +30,8 @@ function duplicateCase() {
                             <option v-for="c in project.analysis.Cases" :value="c.ID">{{ c.ID }} - {{ c.Name }}</option>
                         </select>
                         <a class="btn btn-success" @click="project.addAnalysisCase()">Add</a>
-                        <a class="btn btn-primary" @click="duplicateCase()">Duplicate</a>
-                        <a class="btn btn-danger" @click="removeCase()"
+                        <a class="btn btn-primary" @click="project.duplicateAnalysisCase()">Copy</a>
+                        <a class="btn btn-danger" @click="project.removeAnalysisCase()"
                             :disabled="(project.analysis == null) || (project.analysis.Cases.length < 2)">Remove</a>
                     </div>
                 </div>

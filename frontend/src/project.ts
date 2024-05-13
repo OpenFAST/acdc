@@ -3,7 +3,7 @@ import { ref, reactive } from 'vue'
 import { LoadConfig, SaveConfig } from "../wailsjs/go/main/App"
 import { OpenProjectDialog, SaveProjectDialog, OpenProject } from '../wailsjs/go/main/App'
 import { FetchModel, UpdateModel, ImportModelDialog } from "../wailsjs/go/main/App"
-import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, RemoveAnalysisCase, ImportAnalysisCaseCurve } from "../wailsjs/go/main/App"
+import { FetchAnalysis, UpdateAnalysis, AddAnalysisCase, DuplicateAnalysisCase, RemoveAnalysisCase, ImportAnalysisCaseCurve } from "../wailsjs/go/main/App"
 import { FetchEvaluate, UpdateEvaluate, SelectExec, EvaluateCase, CancelEvaluate } from "../wailsjs/go/main/App"
 import { FetchResults, SelectCaseLinDir, SelectCustomLinDir, ProcessLinDir } from "../wailsjs/go/main/App"
 import { GenerateDiagram, UpdateDiagram } from "../wailsjs/go/main/App"
@@ -201,10 +201,20 @@ export const useProjectStore = defineStore('project', () => {
         })
     }
 
-    function removeAnalysisCase(id: number) {
-        RemoveAnalysisCase(id).then(result => {
+    function duplicateAnalysisCase() {
+        DuplicateAnalysisCase(currentCaseID.value).then(result => {
             analysis.value = result
-            currentCaseID.value = 1
+            currentCaseID.value = result.Cases.length
+        }).catch(err => {
+            LogError(err)
+            console.log(err)
+        })
+    }
+
+    function removeAnalysisCase() {
+        RemoveAnalysisCase(currentCaseID.value).then(result => {
+            analysis.value = result
+            if (currentCaseID.value > 1) currentCaseID.value = currentCaseID.value - 1
         }).catch(err => {
             LogError(err)
             console.log(err)
@@ -417,6 +427,7 @@ export const useProjectStore = defineStore('project', () => {
         fetchAnalysis,
         updateAnalysis,
         addAnalysisCase,
+        duplicateAnalysisCase,
         removeAnalysisCase,
         importAnalysisCaseCurve,
         // Evaluate

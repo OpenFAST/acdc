@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -61,6 +62,21 @@ func NewCase() Case {
 	}
 	c.Calculate()
 	return c
+}
+
+func (c *Case) Copy() (Case, error) {
+
+	nc := NewCase()
+	bs, err := json.Marshal(c)
+	if err != nil {
+		return nc, err
+	}
+
+	if err := json.Unmarshal(bs, &nc); err != nil {
+		return nc, err
+	}
+
+	return nc, nil
 }
 
 func (c *Case) Calculate() error {
