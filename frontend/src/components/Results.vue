@@ -268,10 +268,9 @@ const charts = computed(() => {
             </div>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-3" v-if="project.linDir">
             <div class="card-header hstack">
                 <span>Linearization Files</span>
-                <!-- <a class="btn btn-primary me-3" @click="openResults">Open Results</a> -->
                 <a class="btn btn-primary ms-auto" @click="project.processLinDir()">Process</a>
             </div>
 
