@@ -982,6 +982,10 @@ export namespace main {
 	    Name: string;
 	    Type: string;
 	    Lines: string[];
+	    WaveMod: Integer;
+	    WvDiffQTF: Bool;
+	    WvSumQTF: Bool;
+	    ExctnMod: Integer;
 	    PotFile: Path;
 	
 	    static createFrom(source: any = {}) {
@@ -993,7 +997,49 @@ export namespace main {
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
 	        this.Lines = source["Lines"];
+	        this.WaveMod = this.convertValues(source["WaveMod"], Integer);
+	        this.WvDiffQTF = this.convertValues(source["WvDiffQTF"], Bool);
+	        this.WvSumQTF = this.convertValues(source["WvSumQTF"], Bool);
+	        this.ExctnMod = this.convertValues(source["ExctnMod"], Integer);
 	        this.PotFile = this.convertValues(source["PotFile"], Path);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SubDyn {
+	    Name: string;
+	    Type: string;
+	    Lines: string[];
+	    CBMod: Bool;
+	    Nmodes: Integer;
+	
+	    static createFrom(source: any = {}) {
+	        return new SubDyn(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Lines = source["Lines"];
+	        this.CBMod = this.convertValues(source["CBMod"], Bool);
+	        this.Nmodes = this.convertValues(source["Nmodes"], Integer);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1176,6 +1222,7 @@ export namespace main {
 	    Main: Main[];
 	    ElastoDyn: ElastoDyn[];
 	    BeamDyn: BeamDyn[];
+	    SubDyn: SubDyn[];
 	    AeroDyn: AeroDyn[];
 	    AeroDyn14: AeroDyn14[];
 	    HydroDyn: HydroDyn[];
@@ -1195,6 +1242,7 @@ export namespace main {
 	        this.Main = this.convertValues(source["Main"], Main);
 	        this.ElastoDyn = this.convertValues(source["ElastoDyn"], ElastoDyn);
 	        this.BeamDyn = this.convertValues(source["BeamDyn"], BeamDyn);
+	        this.SubDyn = this.convertValues(source["SubDyn"], SubDyn);
 	        this.AeroDyn = this.convertValues(source["AeroDyn"], AeroDyn);
 	        this.AeroDyn14 = this.convertValues(source["AeroDyn14"], AeroDyn14);
 	        this.HydroDyn = this.convertValues(source["HydroDyn"], HydroDyn);
@@ -1407,6 +1455,7 @@ export namespace main {
 		    return a;
 		}
 	}
+	
 	
 	
 	

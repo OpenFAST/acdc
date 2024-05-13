@@ -58,6 +58,14 @@ function setDefaults() {
         files.AeroDyn[0].SkewMod.Value = 0
     }
 
+    // Set HydroDyn file linearization defaults
+    if (files.HydroDyn.length > 0) {
+        files.HydroDyn[0].WaveMod.Value = 0
+        files.HydroDyn[0].WvDiffQTF.Value = false
+        files.HydroDyn[0].WvSumQTF.Value = false
+        files.HydroDyn[0].ExctnMod.Value = 0
+    }
+
     // Save changes to model
     project.updateModel()
 }
