@@ -279,7 +279,9 @@ type ElastoDyn struct {
 
 type HydroDyn struct {
 	FileBase
-	PotFile Path `json:"PotFile" ftype:"Misc"`
+	WaveMod  Integer `json:"WaveMod"`
+	ExctnMod Integer `json:"ExctnMod"`
+	PotFile  Path    `json:"PotFile" ftype:"Misc"`
 }
 
 func (h *HydroDyn) PostParse() error {
