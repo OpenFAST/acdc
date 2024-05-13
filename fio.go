@@ -77,6 +77,7 @@ type Files struct {
 	Main        []Main            `json:"Main"`
 	ElastoDyn   []ElastoDyn       `json:"ElastoDyn"`
 	BeamDyn     []BeamDyn         `json:"BeamDyn"`
+	SubDyn      []SubDyn          `json:"SubDyn"`
 	AeroDyn     []AeroDyn         `json:"AeroDyn"`
 	AeroDyn14   []AeroDyn14       `json:"AeroDyn14"`
 	HydroDyn    []HydroDyn        `json:"HydroDyn"`
@@ -334,6 +335,12 @@ func (sd *ServoDyn) PostParse() error {
 type StControl struct {
 	FileBase
 	PrescribedForcesFile Path `json:"PrescribedForcesFile"`
+}
+
+type SubDyn struct {
+	FileBase
+	CBMod  Bool    `json:"CBMod"`
+	Nmodes Integer `json:"Nmodes"`
 }
 
 //------------------------------------------------------------------------------
