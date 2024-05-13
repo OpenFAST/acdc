@@ -14,7 +14,10 @@ type Model struct {
 }
 
 func NewModel() *Model {
-	return &Model{}
+	return &Model{
+		ImportedPaths: []string{},
+		Notes:         []string{},
+	}
 }
 
 func ParseModelFiles(path string) (*Model, error) {

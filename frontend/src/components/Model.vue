@@ -86,7 +86,7 @@ function setDefaults() {
             </ul>
         </div>
 
-        <div class="card mb-3" v-if="project.model != null">
+        <div class="card mb-3" v-if="project.model?.Files != null">
             <div class="card-header hstack">
                 <span>Linearization Quick Setup</span>
                 <a class="btn btn-primary btn-sm ms-auto" @click="setDefaults">Defaults</a>
