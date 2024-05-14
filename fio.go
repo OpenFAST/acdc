@@ -96,6 +96,7 @@ func NewFiles() *Files {
 		Main:        []Main{},
 		ElastoDyn:   []ElastoDyn{},
 		BeamDyn:     []BeamDyn{},
+		SubDyn:      []SubDyn{},
 		AeroDyn:     []AeroDyn{},
 		AeroDyn14:   []AeroDyn14{},
 		HydroDyn:    []HydroDyn{},

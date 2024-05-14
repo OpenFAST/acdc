@@ -15,6 +15,7 @@ const modelFileOptions = computed<File[]>(() => {
     const options: File[] = []
     if (project.model == null || project.model.Files == null) return options
     for (const files of Object.values(project.model.Files) as File[][]) {
+        if (files == null) continue
         for (const file of files) {
             options.push({
                 Name: file.Name,
@@ -28,10 +29,10 @@ const modelFileOptions = computed<File[]>(() => {
 
 function setDefaults() {
 
-    if (project.model == null) return
+    if (project.model == null || project.model.Files == null) return
 
     // Get the files object
-    let files = project.model.Files!
+    let files = project.model.Files
 
     // Set main file linearization defaults
     if (files.Main.length > 0) {
@@ -94,12 +95,12 @@ function setDefaults() {
             </ul>
         </div>
 
-        <div class="card mb-3" v-if="project.model?.Files != null">
+        <div class="card mb-3" v-if="project.model != null && project.model.Files != null">
             <div class="card-header hstack">
                 <span>Linearization Quick Setup</span>
                 <a class="btn btn-primary btn-sm ms-auto" @click="setDefaults">Defaults</a>
             </div>
-            <ul class="list-group list-group-flush" v-if="project.model.Files">
+            <ul class="list-group list-group-flush" v-if="project.model.Files != null">
                 <li class="list-group-item">
                     <div class="fw-bold">Main</div>
                     <div>
