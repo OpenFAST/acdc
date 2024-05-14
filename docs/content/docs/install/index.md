@@ -1,5 +1,5 @@
 ---
-title: 'Install ACDC'
+title: 'Install'
 date: 2024-05-14T19:27:37+10:00
 weight: 2
 ---
