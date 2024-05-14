@@ -2,6 +2,13 @@ build/bin
 node_modules
 frontend/dist
 
+# Documentation
+docs/public
+docs/resources/_gen/
+docs/.hugo_build.lock
+docs/assets/jsconfig.json
+docs/hugo_stats.json
+
 .DS_Store
 .vscode
 testdata/output
