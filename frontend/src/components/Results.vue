@@ -529,15 +529,14 @@ const charts = computed(() => {
             <div class="card-body">
                 <div class="row">
                     <div class="col-10">
-                        <div style="width:100%; height: 75vh">
+                        <div style="width:100%; height: 80vh">
                             <ModeViz :ModeData="project.modeViz[project.currentVizID]" :showNodePaths="showNodePaths">
                             </ModeViz>
                         </div>
                     </div>
                     <div class="col-2">
                         <div class="d-grid gap-2 mb-3">
-                            <a class="btn btn-primary" @click="project.clearModeViz">Clear
-                                Visualizations</a>
+                            <a class="btn btn-primary" @click="project.clearModeViz">Clear</a>
                             <a class="btn btn-primary" @click="showNodePaths = !showNodePaths">{{
                         showNodePaths ? 'Hide' : 'Show' }} Node Paths</a>
                         </div>
