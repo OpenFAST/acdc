@@ -11,6 +11,8 @@ The `Model` section of the ACDC application handles importing and modifying Open
 
 After a model is imported, the list of OpenFAST files that were read are presented, as shown below. Note: once the OpenFAST model is imported, the original files are not used and changes to those files will not affect the model in `ACDC`
 
+![imported files](imported-files.png)
 
+Below the list of imported files is the `Linearization Quick Setup` subsection which contains the main OpenFAST fields relevant to linearization, see the following figure. Clicking the `Defaults` button applies predefined linearization settings to the model to aid the user. Not all defaults are applicable to all models and the user should review these settings for their specific model.
 
-Below the list of imported files is the Linearization Quick Setup subsection which contains the main OpenFAST fields relevant to linearization, see Figure 5. Clicking the Defaults button applies predefined 
+![linearization settings](lin-settings.png)
