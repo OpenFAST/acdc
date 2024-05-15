@@ -259,7 +259,7 @@ const charts = computed(() => {
                             }}: {{ c.Name }} </a>
                     </div>
                     <div class="col">
-                        <a class="btn btn-outline-primary w-100" @click="project.selectCustomLinDir()">Custom </a>
+                        <a class="btn btn-outline-primary w-100" @click="project.selectCustomLinDir()">Browse</a>
                     </div>
                 </div>
                 <div class="mt-3">
