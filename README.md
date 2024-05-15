@@ -6,8 +6,19 @@ Additional information can be found in [Aeroelastic Modeling for Distributed Win
 
 ## Current State
 
-This software is currently under development and the results it produces, if it does produce results, should not be considered reliable.
+This software is currently under development, but is usable for some turbine models. 
 
-## Building
+## Documentation
 
-This project uses [WAILS](https://wails.io/) to build an package the application. To get started, please follow the [Installation Instructions](https://wails.io/docs/gettingstarted/installation).
+Document is being developed at [](https://openfast.github.io/acdc/docs/)
+
+## Installation
+
+Executables can be downloaded for Windows, MacOS, and Linux from the Releases page of this repository. Refer to [installation instructions](https://deslaughter.github.io/acdc-app/docs/install/) for detailed information. 
+
+## Issues
+
+Please open issues on Github if you encounter problems with the software. If possible, provide a minimal case and instructions to reproduce the failure.
+
+
+
