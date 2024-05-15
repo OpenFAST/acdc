@@ -10,7 +10,7 @@ This software is currently under development, but is usable for some turbine mod
 
 ## Documentation
 
-Document is being developed at [](https://openfast.github.io/acdc/docs/)
+Documentation is available on [Github Pages](https://openfast.github.io/acdc/docs/).
 
 ## Installation
 
