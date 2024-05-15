@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.4.0-alpha
+
+### Added
+
+- Documentation in Github Pages
+- Apache 2 License
+
+### Fixed
+
+- Model: "Model" tab doesn't work [#6](https://github.com/deslaughter/acdc-app/issues/6)
+
 ## v0.3.0-alpha
 
 ### Added
