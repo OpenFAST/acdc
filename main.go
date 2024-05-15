@@ -16,7 +16,7 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-var version = "0.3.0-" + versioninfo.Short()
+var version = "0.4.0-" + versioninfo.Short()
 
 func main() {
 
