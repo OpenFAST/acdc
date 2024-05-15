@@ -4,11 +4,13 @@ date: 2024-05-14T19:27:37+10:00
 weight: 2
 ---
 
-ACDC executables are released for Windows, MacOS, and Linux, which can be downloaded from the project's [Github Releases](https://github.com/openfast/acdc/releases). It may also be compiled from source using [WAILS](https://wails.io/) after following its [Installation Instructions](https://wails.io/docs/gettingstarted/installation). 
+`ACDC` executables are released for Windows, MacOS, and Linux, which can be downloaded from the project's [Github Releases](https://github.com/openfast/acdc/releases). It may also be compiled from source using [WAILS](https://wails.io/) after following its [Installation Instructions](https://wails.io/docs/gettingstarted/installation). 
 
 ### Install OpenFAST
 
-ACDC uses OpenFAST to run the turbine simulations and perform the linearization so a working installation of OpenFAST is needed. For detailed installation instructions, please refer to [https://openfast.readthedocs.io](https://openfast.readthedocs.io/en/main/source/install/index.html). Linearization works best when OpenFAST is compiled with the `DOUBLE_PRECISION=ON` option.
+`ACDC` uses OpenFAST to run the turbine simulations and perform the linearization so a working installation of OpenFAST is needed. For detailed installation instructions, please refer to [https://openfast.readthedocs.io](https://openfast.readthedocs.io/en/main/source/install/index.html). Linearization works best when OpenFAST is compiled with the `DOUBLE_PRECISION=ON` option.
+
+`ACDC` attempts to be independent of OpenFAST versions; however, the model files (OpenFAST input files) much match the version of OpenFAST selected in `ACDC`.
 
 ### Test OpenFAST Installation
 
