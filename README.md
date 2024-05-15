@@ -14,7 +14,7 @@ Document is being developed at [](https://openfast.github.io/acdc/docs/)
 
 ## Installation
 
-Executables can be downloaded for Windows, MacOS, and Linux from the Releases page of this repository. Refer to [installation instructions](https://deslaughter.github.io/acdc-app/docs/install/) for detailed information. 
+Executables can be downloaded for Windows, MacOS, and Linux from the Releases page of this repository. Refer to [installation instructions](https://openfast.github.io/acdc/docs/install/) for detailed information. 
 
 ## Issues
 

@@ -24,7 +24,7 @@ weight = 2
 
 [params]
 google_analytics_id = ""
-homepage_button_link = '/acdc-app/docs'
+homepage_button_link = '/acdc/docs'
 homepage_button_text = 'Read The Docs'
 homepage_intro = 'ACDC is a tool for generating Campbell Diagrams and exploring the dynamic properties of wind turbines modeled in OpenFAST.'
 homepage_image = 'images/cd_tn.png'
@@ -36,8 +36,8 @@ homepage_image = 'images/cd_tn.png'
 meta_description = "ACDC is an app for generating Campbell Diagrams with OpenFAST"
 meta_og_title = "ACDC: Automated Campbell Diagram Code"
 meta_og_type = "website"
-meta_og_url = "https://deslaughter.github.io/acdc-app"
-meta_og_image = "https://raw.githubusercontent.com/deslaughter/acdc-app/docs/static/images/cd_tn.png"
+meta_og_url = "https://openfast.github.io/acdc"
+meta_og_image = "https://raw.githubusercontent.com/openfast/acdc/docs/static/images/cd_tn.png"
 meta_og_description = "ACDC is an app for generating Campbell Diagrams with OpenFAST"
 # meta_twitter_card = "summary"
 # meta_twitter_site = "@zerostaticio"
