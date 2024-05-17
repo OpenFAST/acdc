@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- [Zenodo](https://zenodo.org/) badge in README.md
+
 ## v0.5.0-alpha
 
 ### Added

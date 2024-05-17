@@ -2,7 +2,7 @@
 
 This application provides a web-based graphical user interface to generating Campbell Diagrams and visualizing mode shapes for OpenFAST turbine models.
 
-Additional information can be found in [Aeroelastic Modeling for Distributed Wind Turbines](https://www.nrel.gov/docs/fy22osti/81724.pdf).
+[![DOI](https://zenodo.org/badge/801132306.svg)](https://zenodo.org/doi/10.5281/zenodo.11210221)
 
 ## Current State
 
