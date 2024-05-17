@@ -58,6 +58,30 @@ Running the command `openfast` in a terminal will produce output similar to the 
 
 ### Run ACDC
 
-Start `ACDC` by running the executable downloaded from Github. MacOS users may need to right-click on `ACDC.app` and select `Open` and then click `Open` on the dialog that is displayed because the application is not signed. `ACDC` will start and display the `Project` page as shown below (recent file paths have been removed):
+Start `ACDC` by running the executable downloaded from Github. `ACDC` will start and display the `Project` page as shown below (recent file paths have been removed):
 
 ![Project](project.png)
+
+### Troubleshooting
+
+#### macOS: developer cannot be verified
+
+On macOS, users who have downloaded the app will usually see the error below the first time it is opened.
+The error message states: 
+
+```
+"ACDC.app" cannot be opened because the developer cannot be verified.
+macOS cannot verify that this app is free from malware.
+```
+
+{{< figure src="unsigned-error.png" width="350" >}}
+
+This is due to the app distribution not being "signed" through Apple's developer certificate process.
+
+To resolve the issue, right-click on the `ACDC.app` icon and select `Open`.
+Then, click `Open` on the dialog that is displayed asking for verification to open an unsigned app.
+Alternatively, the [extended attribute](https://en.wikipedia.org/wiki/Extended_file_attributes#macOS) can be removed with the [xattr](https://ss64.com/mac/xattr.html) command line tool:
+
+```bash
+xattr -d com.apple.quarantine ACDC.app
+```
