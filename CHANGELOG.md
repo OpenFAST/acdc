@@ -2,12 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.0-alpha
+
+### Added
+
+- Added [About](https://OpenFAST.github.io/acdc/docs/about) page to documentation
+- Enabled [Zenodo](https://zenodo.org/) for repository to generate DOI for each release
+
 ## v0.4.0-alpha
 
 ### Added
 
 - Documentation in Github Pages
 - Apache 2 License
+
+### Changed
+
+- Moved repository to the [OpenFAST Organization](https://github.com/OpenFAST/acdc)
 
 ### Fixed
 
@@ -19,7 +30,7 @@ All notable changes to this project will be documented in this file.
 
 - New example project based on NREL 5MW land based turbine (`examples/NREL_5MW_Land`)
 - New example project based on NREL 5MW monopile turbine with HydroDyn and SubDyn (`examples/NREL_5MW_Monopile`)
-- Ability to load existing results and Campbell diagram when selecting linearization folder
+- Results: Ability to load existing results and Campbell diagram when selecting linearization folder
 - Analysis: Add Copy feature for Analysis cases [#3](https://github.com/deslaughter/acdc-app/issues/3)
 - Results: Add button to visualize all operating points in line
 
