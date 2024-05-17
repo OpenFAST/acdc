@@ -24,8 +24,10 @@ weight = 2
 
 [params]
 google_analytics_id = ""
-homepage_button_link = '/acdc/docs'
-homepage_button_text = 'Read The Docs'
+homepage_dl_button_link = 'https://github.com/openfast/acdc/releases'
+homepage_dl_button_text = 'Download'
+homepage_docs_button_link = '/acdc/docs'
+homepage_docs_button_text = 'Read The Docs'
 homepage_intro = 'ACDC is a tool for generating Campbell Diagrams and exploring the dynamic properties of wind turbines modeled in OpenFAST.'
 homepage_image = 'images/cd_tn.png'
 
