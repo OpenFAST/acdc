@@ -1,7 +1,7 @@
 ---
 title: 'Model'
 date: 2024-05-14T19:27:37+10:00
-weight: 4
+weight: 5
 ---
 
 The `Model` tab handles importing and modifying OpenFAST turbine models. The following figure shows the `Model` tab before a model has been imported. The `Import` button opens a dialog for the user to select the main `.fst` file of an OpenFAST model. The main file and all referenced files are read and stored in the `Project` file. Fields relevant to performing linearization are also extracted and made available for user modification inside `ACDC`.

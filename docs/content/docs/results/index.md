@@ -1,7 +1,7 @@
 ---
 title: 'Results'
 date: 2024-05-14T19:27:37+10:00
-weight: 8
+weight: 9
 ---
 
 The `Results` tab is used process OpenFAST linearization files to generate the Campbell Diagram and visualize the turbine mode shapes.
@@ -34,7 +34,7 @@ The Campbell Diagram is created by clicking the `Generate` button on the `Campbe
 
 - Minimum Frequency: modes with natural frequencies below this value will not appear in the diagram
 - Maximum Frequency: modes with natural frequencies above this value will not appear in the diagram
-- [Spectral Clustering]({{< ref "theory/#spectral-clustering" >}}): use  of each mode's Eigenvectors to reconfigure lines where the mode shape transitions between operating points (slow for large numbers of cross lines)
+- [Spectral Clustering]({{< ref "theory/index.md#spectral-clustering" >}}): use  of each mode's Eigenvectors to reconfigure lines where the mode shape transitions between operating points (slow for large numbers of cross lines)
 - Filter Non-structural Modes: use he location of the maximum value of the mode's eigenvector to determine the dominant state name; remove modes where that state is not in ElastoDyn, BeamDyn, or SubDyn
 
 ![](generate-diagram.png)

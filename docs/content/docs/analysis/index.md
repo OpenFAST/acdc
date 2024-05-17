@@ -1,7 +1,7 @@
 ---
 title: 'Analysis'
 date: 2024-05-14T19:27:37+10:00
-weight: 6
+weight: 7
 ---
 
 The `Analysis` tab is where the user defines the operating points for the analysis. Multiple sets of operating points, or `Cases`, can be defined for the same model. `Cases` may include aerodynamic effects and a controller may be used adjust the pitch and torque to achieve steady state. Depending on if the `Aerodynamics` and `Controller` options are selected, the interface will include additional inputs for wind speed, trim gain, and rated wind speed. The following figure shows the interface for a `Case` without aerodynamics.

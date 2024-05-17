@@ -1,7 +1,7 @@
 ---
 title: 'Evaluate'
 date: 2024-05-14T19:27:37+10:00
-weight: 7
+weight: 8
 ---
 
 The `Evaluate` tab runs a case to generate linearization files at each operating point. 
