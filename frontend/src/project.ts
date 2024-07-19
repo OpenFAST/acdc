@@ -31,6 +31,8 @@ class Loading {
 
 export const useProjectStore = defineStore('project', () => {
 
+    const errMsg = ref<any | null>(null)
+
     const status = reactive<Loading>(new Loading)
     const config = ref<main.Config | null>(null)
     const info = ref<main.Info | null>(null)
@@ -69,6 +71,7 @@ export const useProjectStore = defineStore('project', () => {
         config.value = result
     }).catch(err => {
         LogError(err)
+        errMsg.value = err
         console.log(err)
     })
 
@@ -83,6 +86,7 @@ export const useProjectStore = defineStore('project', () => {
             status.project = LOADED
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -94,6 +98,7 @@ export const useProjectStore = defineStore('project', () => {
             status.project = LOADED
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -109,6 +114,7 @@ export const useProjectStore = defineStore('project', () => {
             status.project = LOADED
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -130,6 +136,7 @@ export const useProjectStore = defineStore('project', () => {
         // Save config
         SaveConfig(config.value).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -144,6 +151,7 @@ export const useProjectStore = defineStore('project', () => {
             model.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -153,6 +161,7 @@ export const useProjectStore = defineStore('project', () => {
             model.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -163,6 +172,7 @@ export const useProjectStore = defineStore('project', () => {
             model.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -177,6 +187,7 @@ export const useProjectStore = defineStore('project', () => {
             analysis.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -187,6 +198,7 @@ export const useProjectStore = defineStore('project', () => {
             analysis.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -197,6 +209,7 @@ export const useProjectStore = defineStore('project', () => {
             currentCaseID.value = result.Cases.length
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -207,6 +220,7 @@ export const useProjectStore = defineStore('project', () => {
             currentCaseID.value = result.Cases.length
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -217,6 +231,7 @@ export const useProjectStore = defineStore('project', () => {
             if (currentCaseID.value > 1) currentCaseID.value = currentCaseID.value - 1
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -226,6 +241,7 @@ export const useProjectStore = defineStore('project', () => {
             analysis.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -240,6 +256,7 @@ export const useProjectStore = defineStore('project', () => {
             evaluate.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -250,6 +267,7 @@ export const useProjectStore = defineStore('project', () => {
             evaluate.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -259,6 +277,7 @@ export const useProjectStore = defineStore('project', () => {
             evaluate.value = result
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -268,6 +287,7 @@ export const useProjectStore = defineStore('project', () => {
             Object.assign(evalStatus, result)
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -275,6 +295,7 @@ export const useProjectStore = defineStore('project', () => {
     function cancelEvaluate() {
         CancelEvaluate().catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -300,6 +321,7 @@ export const useProjectStore = defineStore('project', () => {
             if (res.Diagram != null) diagram.value = res.Diagram
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -312,6 +334,7 @@ export const useProjectStore = defineStore('project', () => {
             if (res.Diagram != null) diagram.value = res.Diagram
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -323,6 +346,7 @@ export const useProjectStore = defineStore('project', () => {
             console.log(result)
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -340,6 +364,7 @@ export const useProjectStore = defineStore('project', () => {
             status.results = LOADED
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
             status.results = NOT_LOADED
         })
@@ -357,6 +382,7 @@ export const useProjectStore = defineStore('project', () => {
             status.diagram = LOADED
         }).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
             status.diagram = NOT_LOADED
         })
@@ -366,6 +392,7 @@ export const useProjectStore = defineStore('project', () => {
         if (diagram.value == null) return
         UpdateDiagram(diagram.value).catch(err => {
             LogError(err)
+            errMsg.value = err
             console.log(err)
         })
     }
@@ -408,6 +435,7 @@ export const useProjectStore = defineStore('project', () => {
     //--------------------------------------------------------------------------
 
     return {
+        errMsg,
         $reset,
         status: status,
         // Project
