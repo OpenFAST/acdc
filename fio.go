@@ -486,6 +486,17 @@ func (fs *Files) parseFile(path string, s any) error {
 				v.Value = values[0]
 			case *Integer:
 				v.Value, err = strconv.Atoi(values[0])
+				if err != nil {
+					var f float64
+					f, err = strconv.ParseFloat(values[0], 64)
+					if err == nil {
+						if float64(int(f)) == f {
+							v.Value = int(f)
+						} else {
+							err = fmt.Errorf("%s cannot be converted to an integer", values[0])
+						}
+					}
+				}
 			case *Real:
 				v.Value, err = strconv.ParseFloat(values[0], 64)
 			case *Reals:
