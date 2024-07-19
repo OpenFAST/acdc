@@ -9,7 +9,7 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/mkmik/argsort v1.1.0
 	github.com/parallelo-ai/kmeans v0.1.1
-	github.com/wailsapp/wails/v2 v2.8.2
+	github.com/wailsapp/wails/v2 v2.9.1
 	golang.org/x/sync v0.7.0
 	gonum.org/v1/gonum v0.15.0
 )
