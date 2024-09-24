@@ -10,6 +10,8 @@ The `Evaluate` tab runs a case to generate linearization files at each operating
 
 The first step in performing an evaluation is to select the OpenFAST executable by clicking the `Browse` button as shown in the following figure. This action opens a dialog box to select the path to the executable. The dialog will default to the path of `openfast` in the system's path, if one is found.
 
+To paste the OpenFAST executable path direclty from the finder on Mac, we recommend to use ⇧⌘G (Command+Shift+G).
+
 ![evaluate-openfast](evaluate-openfast.png)
 
 
