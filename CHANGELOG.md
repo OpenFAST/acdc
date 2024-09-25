@@ -6,7 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Modal dialog is displayed for errors.
 - [Zenodo](https://zenodo.org/) badge in README.md
+- Added contribute page on docs to cover future contribution on documentation in [PR](https://github.com/OpenFAST/acdc/pull/5) by @sora-ryu
+- Added shortcut command to paste executable path into box in [PR](https://github.com/OpenFAST/acdc/pull/5) by @sora-ryu
+
+### Changed
+
+- Updated to WAILS v2.9.2
+
+### Fixed
+
+- Found deprecated feature while using recent Hugo version (0.134.0), and addressed this issue by replacing .Site.IsServer into hugo.IsServer on related files. Fixed in [PR](https://github.com/OpenFAST/acdc/pull/5) by @sora-ryu
+- Update `view-template-compiler` and `vite` version in `package-lock.json` per CVE-2024-45812 and CVE-2024-45811
+- Fix bug in handling of tail fin file naming where prefix was incorrectly added.
+- Fix bug where editing file fields in `Model` tab caused file to become unselected and not updated after the first value was changed.
 
 ## v0.5.0-alpha
 
