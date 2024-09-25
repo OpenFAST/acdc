@@ -229,23 +229,23 @@ type AeroDyn struct {
 	ADBlFile1         Path    `json:"ADBlFile1" key:"ADBlFile(1)" ftype:"Misc"` // AeroDynBlade
 	ADBlFile2         Path    `json:"ADBlFile2" key:"ADBlFile(2)" ftype:"Misc"` // AeroDynBlade
 	ADBlFile3         Path    `json:"ADBlFile3" key:"ADBlFile(3)" ftype:"Misc"` // AeroDynBlade
-	TFinFile          Path    `json:"TFinFile"`
+	TFinFile          Path    `json:"TFinFile" ftype:"Misc"`
 }
 
 type AirfoilInfo struct {
 	FileBase
-	BL_File Path `json:"BL_File"`
+	BL_File Path `json:"BL_File" ftype:"Misc"`
 }
 
 type OLAF struct {
 	FileBase
-	PrescribedCircFile Path `json:"PrescribedCircFile"`
+	PrescribedCircFile Path `json:"PrescribedCircFile" ftype:"Misc"`
 }
 
 type AeroDyn14 struct {
 	FileBase
 	NumFoil Integer `json:"NumFoil"`
-	FoilNm  Paths   `json:"FoilNm" num:"NumFoil"`
+	FoilNm  Paths   `json:"FoilNm" num:"NumFoil" ftype:"Misc"`
 }
 
 type BeamDyn struct {
@@ -337,7 +337,7 @@ func (sd *ServoDyn) PostParse() error {
 
 type StControl struct {
 	FileBase
-	PrescribedForcesFile Path `json:"PrescribedForcesFile"`
+	PrescribedForcesFile Path `json:"PrescribedForcesFile" ftype:"Misc"`
 }
 
 type SubDyn struct {
@@ -555,7 +555,12 @@ func (fs *Files) parseFile(path string, s any) error {
 
 			// If file type not specified, get it from tag
 			if p.FileType == "" {
-				p.FileType = fieldType.Tag.Get("ftype")
+				fileType, ok := fieldType.Tag.Lookup("ftype")
+				if ok {
+					p.FileType = fileType
+				} else {
+					p.FileType = "Misc"
+				}
 			}
 
 			// Get path to file for reading, if not an absolute path, prepend
@@ -624,7 +629,12 @@ func (fs *Files) parseFile(path string, s any) error {
 
 			// If file type not specified, get from tag, skip if still unknown
 			if p.FileType == "" {
-				p.FileType = fieldType.Tag.Get("ftype")
+				fileType, ok := fieldType.Tag.Lookup("ftype")
+				if ok {
+					p.FileType = fileType
+				} else {
+					p.FileType = "Misc"
+				}
 			}
 
 			// Loop through path values
