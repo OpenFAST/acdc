@@ -18,7 +18,6 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Found deprecated feature while using recent Hugo version (0.134.0), and addressed this issue by replacing .Site.IsServer into hugo.IsServer on related files. Fixed in [PR](https://github.com/OpenFAST/acdc/pull/5) by @sora-ryu
-- Update `view-template-compiler` and `vite` version in `package-lock.json` per CVE-2024-45812 and CVE-2024-45811
 - Fix bug in handling of tail fin file naming where prefix was incorrectly added.
 - Fix bug where editing file fields in `Model` tab caused file to become unselected and not updated after the first value was changed.
 
