@@ -14,6 +14,7 @@ export interface FileOption {
 export interface File {
     Name: string
     Type: string
+    ID: number
     Lines: string[]
     Fields: Field[]
 }

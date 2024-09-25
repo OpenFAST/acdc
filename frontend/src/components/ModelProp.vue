@@ -16,12 +16,6 @@ function isPaths(field: Field): field is m.Paths { return field.Type === 'Paths'
 function isReal(field: Field): field is m.Real { return field.Type === 'Real' }
 function isReals(field: Field): field is m.Reals { return field.Type === 'Reals' }
 
-const err = ref(false)
-
-function updateValidate() {
-    project.updateModel()
-}
-
 </script>
 
 <template>

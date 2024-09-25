@@ -6,6 +6,7 @@ import { File, instanceOfField } from "../types"
 const project = useProjectStore()
 
 const selectedFile = ref<File>()
+const selectedFileID = ref<number>()
 
 onMounted(() => {
     project.fetchModel()
@@ -20,6 +21,7 @@ const modelFileOptions = computed<File[]>(() => {
             options.push({
                 Name: file.Name,
                 Type: file.Type,
+                ID: options.length,
                 Fields: Object.values(file).filter(instanceOfField),
             } as File)
         }
@@ -116,7 +118,7 @@ function setDefaults() {
                         <ModelProp :field="project.model.Files.Main[0].NLinTimes" />
                     </div>
                 </li>
-                <li class="list-group-item">
+                <li class="list-group-item" v-if="project.model.Files.ElastoDyn.length > 0">
                     <div class="fw-bold">ElastoDyn</div>
                     <div>
                         <ModelProp :field="project.model.Files.ElastoDyn[0].ShftTilt" />
@@ -150,18 +152,19 @@ function setDefaults() {
                 <div class="row">
                     <label for="fileSelect" class="col-sm-2 col-form-label">File</label>
                     <div class="col-sm-10">
-                        <select class="form-select" v-model="selectedFile">
-                            <option v-for="(item, i) in modelFileOptions" :value="item">
+                        <select class="form-select" v-model="selectedFileID">
+                            <option v-for="(item, i) in modelFileOptions" :value="item.ID">
                                 {{ item.Type }} - {{ item.Name }}
                             </option>
                         </select>
                     </div>
                 </div>
             </div>
-            <hr class="my-0" v-if="selectedFile" />
-            <div class="card-body" v-if="selectedFile">
-                <ModelProp :field="field" v-for="field in selectedFile.Fields" />
-                <div class="text-center" v-if="selectedFile.Fields.length == 0">No fields in file can be modified</div>
+            <hr class="my-0" v-if="selectedFileID" />
+            <div class="card-body" v-if="selectedFileID">
+                <ModelProp :field="field" v-for="field in modelFileOptions[selectedFileID].Fields" />
+                <div class="text-center" v-if="modelFileOptions[selectedFileID].Fields.length == 0">No fields in file
+                    can be modified</div>
             </div>
         </div>
     </main>
