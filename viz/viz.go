@@ -176,8 +176,18 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 	}
 	defer logFile.Close()
 
+	// Get the case directory
+	projectDir := filepath.Dir(filepath.Dir(vizFilePath))
+
+	// Get relative path from project directory to main file
+	relPath, err := filepath.Rel(projectDir, vizFilePath)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create command to generate vtk output and run it
-	cmd := exec.Command(execPath, "-VTKLin", vizFilePath)
+	cmd := exec.Command(execPath, "-VTKLin", relPath)
+	cmd.Dir = projectDir
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 	err = cmd.Run()

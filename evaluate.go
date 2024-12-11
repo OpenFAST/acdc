@@ -308,8 +308,18 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 	}
 	defer logFile.Close()
 
-	// Create command, get output pipe, set stderr to stdout, start command
-	cmd := exec.CommandContext(ctx, eval.ExecPath, mainPath)
+	// Get project directory
+	projectDir := filepath.Dir(caseDir)
+
+	// Get relative path from project directory to main file
+	relPath, err := filepath.Rel(projectDir, mainPath)
+	if err != nil {
+		return err
+	}
+
+	// Create command, get output pipe, set stderr to stdout and start command
+	cmd := exec.CommandContext(ctx, eval.ExecPath, relPath)
+	cmd.Dir = projectDir
 	outputReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
