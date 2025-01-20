@@ -217,12 +217,18 @@ func (m *Main) PostParse() error {
 
 type AeroDyn struct {
 	FileBase
-	WakeMod           Integer `json:"WakeMod"`
-	AFAeroMod         Integer `json:"AFAeroMod"`
+	// WakeMod           Integer `json:"WakeMod"`
+	// AFAeroMod         Integer `json:"AFAeroMod"`
+	Wake_Mod          Integer `json:"Wake_Mod"`		 // OpenFAST dev
+	UAMod             Integer `json:"UAMod"`
 	TwrPotent         Integer `json:"TwrPotent"`
 	TwrShadow         Integer `json:"TwrShadow"`
 	FrozenWake        Bool    `json:"FrozenWake"`
 	SkewMod           Integer `json:"SkewMod"`
+	Skew_Mod          Integer `json:"Skew_Mod"`		// OpenFAST dev
+	DBEMT_Mod         Integer `json:"DBEMT_Mod"`	// OpenFAST dev
+	Tau1_const        Real    `json:"tau1_const"`	// OpenFAST dev
+	UA_Mod            Integer `json:"UA_Mod"`		// OpenFAST dev
 	OLAFInputFileName Path    `json:"OLAFInputFileName" ftype:"OLAF"`
 	NumAFfiles        Integer `json:"NumAFfiles"`
 	AFNames           Paths   `json:"AFNames" num:"NumAFfiles" ftype:"AirfoilInfo"`
@@ -272,6 +278,7 @@ type ElastoDyn struct {
 	BlPitch3 Real    `json:"BlPitch3" key:"BlPitch(3)"`
 	RotSpeed Real    `json:"RotSpeed"`
 	NumBl    Integer `json:"NumBl"`
+	TipRad   Real    `json:"TipRad"`
 	ShftTilt Real    `json:"ShftTilt"`
 	BldFile1 Path    `json:"BldFile1" key:"BldFile(1)" ftype:"Misc"` // ElastoDynBlade
 	BldFile2 Path    `json:"BldFile2" key:"BldFile(2)" ftype:"Misc"` // ElastoDynBlade

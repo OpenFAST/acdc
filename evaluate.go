@@ -197,6 +197,13 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 		// Set flag to use AeroDyn or return error
 		if len(files.AeroDyn) > 0 {
 			files.Main[0].CompAero.Value = 2
+
+			if files.AeroDyn[0].DBEMT_Mod.Value >= 1 {
+				// a = 0.5*(1.-np.sqrt(1.-CT)), assume a = 0.3 or 0.33
+				// tau_1 = 1.1 / (1.-1.3*np.min([a, 0.5])) * R / U0
+				files.AeroDyn[0].Tau1_const.Value = (1.1 / (1 - 1.3 * 0.3) ) * (files.ElastoDyn[0].TipRad.Value / op.WindSpeed)
+			}
+
 		} else if len(files.AeroDyn14) > 0 {
 			files.Main[0].CompAero.Value = 1
 		} else {
@@ -309,7 +316,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 	defer logFile.Close()
 
 	// Get project directory
-	projectDir := filepath.Dir(caseDir)
+	projectDir := filepath.Dir(filepath.Dir(caseDir))
 
 	// Get relative path from project directory to main file
 	relPath, err := filepath.Rel(projectDir, mainPath)

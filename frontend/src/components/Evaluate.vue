@@ -75,6 +75,11 @@ function closeLog() {
                     <input type="range" class="form-range w-25" min="1" :max="project.evaluate.MaxCPUs" id="numCPUs"
                         v-model.number="project.evaluate.NumCPUs" @change="project.updateEvaluate()">
                     <label class="col-form-label">{{ project.evaluate.NumCPUs }}</label>
+                    <input class="form-check-input" type="checkbox" value="" id="fileOnly-checkbox"
+                        v-model="project.evaluate.FilesOnly"  @change="project.updateEvaluate()">
+                    <label class="form-check-label" for="fileOnly-checkbox">
+                        Files Only
+                    </label>
                     <a class="btn btn-success ms-auto" @click="startEvaluate">Start</a>
                     <a class="btn btn-danger" @click="project.cancelEvaluate()">Cancel</a>
                 </div>
