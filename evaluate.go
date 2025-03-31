@@ -242,11 +242,11 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 			if op.WindSpeed < float64(c.RatedWindSpeed) {
 				files.Main[0].TrimCase.Value = 2
 				files.Main[0].TrimGain.Value = c.TrimGain[0]
-				files.ServoDyn[0].VS_RtGnSp.Value = c.RatedRotorSpeed
+				// files.ServoDyn[0].VS_RtGnSp.Value = c.RatedRotorSpeed
 			} else {
 				files.Main[0].TrimCase.Value = 3
 				files.Main[0].TrimGain.Value = c.TrimGain[1]
-				files.ServoDyn[0].VS_RtGnSp.Value = 1e-3
+				// files.ServoDyn[0].VS_RtGnSp.Value = 1e-3
 			}
 
 		} else {
