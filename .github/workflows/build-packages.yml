@@ -17,12 +17,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      # - uses: dAppServer/wails-build-action@v2.2
-      #   with:
-      #     build-name: ${{ matrix.build.name }}
-      #     build-platform: ${{ matrix.build.platform }}
-      #     go-version: 1.21
-      #     package: false
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -30,7 +24,6 @@ jobs:
           go-version: 1.24.3
       - run: go version
         shell: bash
-      # Setup and configure NodeJS
       - name: Setup NodeJS
         uses: actions/setup-node@v4
         with:
@@ -40,7 +33,7 @@ jobs:
         shell: bash
       - name: Install Linux Wails deps
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
+        run: sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.1-dev gcc-aarch64-linux-gnu
         shell: bash
       - name: Install macOS Wails deps
         if: runner.os == 'macOS'
@@ -55,12 +48,12 @@ jobs:
       - name: Build Linux App
         if:  runner.os == 'Linux'
         working-directory: .
-        run: wails build -debug -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
+        run: wails build -platform ${{ matrix.build.platform }} -webview2 download -tags webkit2_41 -o ACDC
         shell: bash
       - name: Build Windows App
         if: runner.os == 'Windows'
         working-directory: .
-        run: wails build -debug -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
+        run: wails build -platform ${{ matrix.build.platform }} -webview2 download -o ACDC
         shell: bash
       - name: Build .app zip file
         if: runner.os == 'macOS'
