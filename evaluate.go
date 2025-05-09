@@ -183,11 +183,6 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 	files.ElastoDyn[0].BlPitch3.Value = op.BladePitch
 	files.ElastoDyn[0].RotSpeed.Value = op.RotorSpeed
 
-	// Set RotateStates to true for all BeamDyn files
-	for i := range files.BeamDyn {
-		files.BeamDyn[i].RotStates.Value = true
-	}
-
 	// If case includes aero and wind speed is nonzero
 	if c.IncludeAero && op.WindSpeed > 0 {
 
