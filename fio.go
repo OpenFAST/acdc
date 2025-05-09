@@ -196,7 +196,8 @@ type Main struct {
 	LinOutMod   Bool    `json:"LinOutMod"`
 	WrVTK       Integer `json:"WrVTK"`
 	VTK_type    Integer `json:"VTK_type"`
-	VTK_fps     Integer `json:"VTK_fps"`
+	VTK_fields  Bool    `json:"VTK_fields"`
+	VTK_fps     Real    `json:"VTK_fps"`
 }
 
 func (m *Main) PostParse() error {
@@ -217,18 +218,18 @@ func (m *Main) PostParse() error {
 
 type AeroDyn struct {
 	FileBase
-	// WakeMod           Integer `json:"WakeMod"`
-	// AFAeroMod         Integer `json:"AFAeroMod"`
-	Wake_Mod          Integer `json:"Wake_Mod"`		 // OpenFAST dev
-	UAMod             Integer `json:"UAMod"`
+	WakeMod           Integer `json:"WakeMod"`
+	AFAeroMod         Integer `json:"AFAeroMod"`
+	Wake_Mod          Integer `json:"Wake_Mod"`
 	TwrPotent         Integer `json:"TwrPotent"`
 	TwrShadow         Integer `json:"TwrShadow"`
 	FrozenWake        Bool    `json:"FrozenWake"`
 	SkewMod           Integer `json:"SkewMod"`
-	Skew_Mod          Integer `json:"Skew_Mod"`		// OpenFAST dev
-	DBEMT_Mod         Integer `json:"DBEMT_Mod"`	// OpenFAST dev
-	Tau1_const        Real    `json:"tau1_const"`	// OpenFAST dev
-	UA_Mod            Integer `json:"UA_Mod"`		// OpenFAST dev
+	Skew_Mod          Integer `json:"Skew_Mod"`
+	DBEMT_Mod         Integer `json:"DBEMT_Mod"`
+	Tau1_const        Real    `json:"tau1_const"`
+	UAMod             Integer `json:"UAMod"`
+	UA_Mod            Integer `json:"UA_Mod"`
 	OLAFInputFileName Path    `json:"OLAFInputFileName" ftype:"OLAF"`
 	NumAFfiles        Integer `json:"NumAFfiles"`
 	AFNames           Paths   `json:"AFNames" num:"NumAFfiles" ftype:"AirfoilInfo"`
