@@ -361,8 +361,9 @@ export namespace main {
 	    Name: string;
 	    Type: string;
 	    Lines: string[];
+	    WakeMod: Integer;
+	    AFAeroMod: Integer;
 	    Wake_Mod: Integer;
-	    UAMod: Integer;
 	    TwrPotent: Integer;
 	    TwrShadow: Integer;
 	    FrozenWake: Bool;
@@ -370,6 +371,7 @@ export namespace main {
 	    Skew_Mod: Integer;
 	    DBEMT_Mod: Integer;
 	    tau1_const: Real;
+	    UAMod: Integer;
 	    UA_Mod: Integer;
 	    OLAFInputFileName: Path;
 	    NumAFfiles: Integer;
@@ -388,8 +390,9 @@ export namespace main {
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
 	        this.Lines = source["Lines"];
+	        this.WakeMod = this.convertValues(source["WakeMod"], Integer);
+	        this.AFAeroMod = this.convertValues(source["AFAeroMod"], Integer);
 	        this.Wake_Mod = this.convertValues(source["Wake_Mod"], Integer);
-	        this.UAMod = this.convertValues(source["UAMod"], Integer);
 	        this.TwrPotent = this.convertValues(source["TwrPotent"], Integer);
 	        this.TwrShadow = this.convertValues(source["TwrShadow"], Integer);
 	        this.FrozenWake = this.convertValues(source["FrozenWake"], Bool);
@@ -397,6 +400,7 @@ export namespace main {
 	        this.Skew_Mod = this.convertValues(source["Skew_Mod"], Integer);
 	        this.DBEMT_Mod = this.convertValues(source["DBEMT_Mod"], Integer);
 	        this.tau1_const = this.convertValues(source["tau1_const"], Real);
+	        this.UAMod = this.convertValues(source["UAMod"], Integer);
 	        this.UA_Mod = this.convertValues(source["UA_Mod"], Integer);
 	        this.OLAFInputFileName = this.convertValues(source["OLAFInputFileName"], Path);
 	        this.NumAFfiles = this.convertValues(source["NumAFfiles"], Integer);
@@ -1155,7 +1159,8 @@ export namespace main {
 	    LinOutMod: Bool;
 	    WrVTK: Integer;
 	    VTK_type: Integer;
-	    VTK_fps: Integer;
+	    VTK_fields: Bool;
+	    VTK_fps: Real;
 	
 	    static createFrom(source: any = {}) {
 	        return new Main(source);
@@ -1207,7 +1212,8 @@ export namespace main {
 	        this.LinOutMod = this.convertValues(source["LinOutMod"], Bool);
 	        this.WrVTK = this.convertValues(source["WrVTK"], Integer);
 	        this.VTK_type = this.convertValues(source["VTK_type"], Integer);
-	        this.VTK_fps = this.convertValues(source["VTK_fps"], Integer);
+	        this.VTK_fields = this.convertValues(source["VTK_fields"], Bool);
+	        this.VTK_fps = this.convertValues(source["VTK_fps"], Real);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

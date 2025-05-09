@@ -197,7 +197,7 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 			if files.AeroDyn[0].DBEMT_Mod.Value >= 1 {
 				// a = 0.5*(1.-np.sqrt(1.-CT)), assume a = 0.3 or 0.33
 				// tau_1 = 1.1 / (1.-1.3*np.min([a, 0.5])) * R / U0
-				files.AeroDyn[0].Tau1_const.Value = (1.1 / (1 - 1.3 * 0.3) ) * (files.ElastoDyn[0].TipRad.Value / op.WindSpeed)
+				files.AeroDyn[0].Tau1_const.Value = (1.1 / (1 - 1.3*0.3)) * (files.ElastoDyn[0].TipRad.Value / op.WindSpeed)
 			}
 
 		} else if len(files.AeroDyn14) > 0 {
