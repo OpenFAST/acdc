@@ -173,9 +173,10 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 	}
 
 	// VTK Options
-	files.Main[0].WrVTK.Value = 3    // Write checkpoint files for mode shape generation
-	files.Main[0].VTK_type.Value = 2 // Write lines meshes to VTK files
-	files.Main[0].VTK_fps.Value = 24 // Generate 24 frames of mode animation
+	files.Main[0].WrVTK.Value = 3         // Write checkpoint files for mode shape generation
+	files.Main[0].VTK_type.Value = 2      // Write lines meshes to VTK files
+	files.Main[0].VTK_fields.Value = true // Write field data to VTK files (Orientation, velocity, etc.)
+	files.Main[0].VTK_fps.Value = 24      // Generate 24 frames of mode animation
 
 	// Modify ElastoDyn file for operating point conditions
 	files.ElastoDyn[0].BlPitch1.Value = op.BladePitch
