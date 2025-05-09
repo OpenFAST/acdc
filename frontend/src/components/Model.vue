@@ -54,7 +54,7 @@ function setDefaults() {
 
     // Set AeroDyn file linearization defaults
     if (files.AeroDyn.length > 0) {
-        files.AeroDyn[0].AFAeroMod.Value = 1
+        files.AeroDyn[0].UAMod.Value = 1
         files.AeroDyn[0].TwrPotent.Value = 0
         files.AeroDyn[0].TwrShadow.Value = 0
         files.AeroDyn[0].FrozenWake.Value = true
@@ -128,7 +128,7 @@ function setDefaults() {
                 <li class="list-group-item" v-if="project.model.Files.AeroDyn.length > 0">
                     <div class="fw-bold">AeroDyn</div>
                     <div>
-                        <ModelProp :field="project.model.Files.AeroDyn[0].AFAeroMod" />
+                        <ModelProp :field="project.model.Files.AeroDyn[0].UAMod" />
                         <ModelProp :field="project.model.Files.AeroDyn[0].TwrPotent" />
                         <ModelProp :field="project.model.Files.AeroDyn[0].TwrShadow" />
                         <ModelProp :field="project.model.Files.AeroDyn[0].FrozenWake" />

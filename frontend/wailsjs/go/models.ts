@@ -295,6 +295,26 @@ export namespace main {
 	        this.Root = source["Root"];
 	    }
 	}
+	export class Real {
+	    Name: string;
+	    Type: string;
+	    Desc: string;
+	    Line: number;
+	    Value: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Real(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Desc = source["Desc"];
+	        this.Line = source["Line"];
+	        this.Value = source["Value"];
+	    }
+	}
 	export class Bool {
 	    Name: string;
 	    Type: string;
@@ -341,12 +361,16 @@ export namespace main {
 	    Name: string;
 	    Type: string;
 	    Lines: string[];
-	    WakeMod: Integer;
-	    AFAeroMod: Integer;
+	    Wake_Mod: Integer;
+	    UAMod: Integer;
 	    TwrPotent: Integer;
 	    TwrShadow: Integer;
 	    FrozenWake: Bool;
 	    SkewMod: Integer;
+	    Skew_Mod: Integer;
+	    DBEMT_Mod: Integer;
+	    tau1_const: Real;
+	    UA_Mod: Integer;
 	    OLAFInputFileName: Path;
 	    NumAFfiles: Integer;
 	    AFNames: Paths;
@@ -364,12 +388,16 @@ export namespace main {
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
 	        this.Lines = source["Lines"];
-	        this.WakeMod = this.convertValues(source["WakeMod"], Integer);
-	        this.AFAeroMod = this.convertValues(source["AFAeroMod"], Integer);
+	        this.Wake_Mod = this.convertValues(source["Wake_Mod"], Integer);
+	        this.UAMod = this.convertValues(source["UAMod"], Integer);
 	        this.TwrPotent = this.convertValues(source["TwrPotent"], Integer);
 	        this.TwrShadow = this.convertValues(source["TwrShadow"], Integer);
 	        this.FrozenWake = this.convertValues(source["FrozenWake"], Bool);
 	        this.SkewMod = this.convertValues(source["SkewMod"], Integer);
+	        this.Skew_Mod = this.convertValues(source["Skew_Mod"], Integer);
+	        this.DBEMT_Mod = this.convertValues(source["DBEMT_Mod"], Integer);
+	        this.tau1_const = this.convertValues(source["tau1_const"], Real);
+	        this.UA_Mod = this.convertValues(source["UA_Mod"], Integer);
 	        this.OLAFInputFileName = this.convertValues(source["OLAFInputFileName"], Path);
 	        this.NumAFfiles = this.convertValues(source["NumAFfiles"], Integer);
 	        this.AFNames = this.convertValues(source["AFNames"], Paths);
@@ -640,26 +668,6 @@ export namespace main {
 	        this.Version = source["Version"];
 	    }
 	}
-	export class Real {
-	    Name: string;
-	    Type: string;
-	    Desc: string;
-	    Line: number;
-	    Value: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new Real(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.Type = source["Type"];
-	        this.Desc = source["Desc"];
-	        this.Line = source["Line"];
-	        this.Value = source["Value"];
-	    }
-	}
 	export class ElastoDyn {
 	    Name: string;
 	    Type: string;
@@ -680,6 +688,7 @@ export namespace main {
 	    BlPitch3: Real;
 	    RotSpeed: Real;
 	    NumBl: Integer;
+	    TipRad: Real;
 	    ShftTilt: Real;
 	    BldFile1: Path;
 	    BldFile2: Path;
@@ -711,6 +720,7 @@ export namespace main {
 	        this.BlPitch3 = this.convertValues(source["BlPitch3"], Real);
 	        this.RotSpeed = this.convertValues(source["RotSpeed"], Real);
 	        this.NumBl = this.convertValues(source["NumBl"], Integer);
+	        this.TipRad = this.convertValues(source["TipRad"], Real);
 	        this.ShftTilt = this.convertValues(source["ShftTilt"], Real);
 	        this.BldFile1 = this.convertValues(source["BldFile1"], Path);
 	        this.BldFile2 = this.convertValues(source["BldFile2"], Path);

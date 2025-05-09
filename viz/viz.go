@@ -177,7 +177,7 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 	defer logFile.Close()
 
 	// Get the case directory
-	projectDir := filepath.Dir(filepath.Dir(vizFilePath))
+	projectDir := filepath.Dir(filepath.Dir(filepath.Dir(vizFilePath)))
 
 	// Get relative path from project directory to main file
 	relPath, err := filepath.Rel(projectDir, vizFilePath)
