@@ -83,7 +83,7 @@ jobs:
         run: |
           Rename-Item -Path ".\build\bin\${{ matrix.build.name }}" -NewName "${{ matrix.build.name }}.exe"
           Compress-Archive -LiteralPath '.\build\bin\${{ matrix.build.name }}.exe' -DestinationPath ".\build\bin\${{ matrix.build.name }}.exe.zip"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.build.name }}-${{ runner.os }}
           path: 'build/bin/*.zip'
