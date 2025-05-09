@@ -48,25 +48,31 @@ function setDefaults() {
     }
 
     // Set ElastoDyn file linearization defaults
-    if (files.ElastoDyn.length > 0) {
-        files.ElastoDyn[0].YawDOF.Value = false
+    for (let ed of files.ElastoDyn) {
+        ed.YawDOF.Value = false
+    }
+
+    // BeamDyn file linearization defaults
+    for (let bd of files.BeamDyn) {
+        bd.RotStates.Value = true
     }
 
     // Set AeroDyn file linearization defaults
-    if (files.AeroDyn.length > 0) {
-        files.AeroDyn[0].UAMod.Value = 1
-        files.AeroDyn[0].TwrPotent.Value = 0
-        files.AeroDyn[0].TwrShadow.Value = 0
-        files.AeroDyn[0].FrozenWake.Value = true
-        files.AeroDyn[0].SkewMod.Value = 0
+    for (let ad of files.AeroDyn) {
+        ad.AFAeroMod.Value = 0
+        ad.UAMod.Value = 0
+        ad.TwrPotent.Value = 1
+        ad.TwrShadow.Value = 1
+        ad.FrozenWake.Value = false
+        ad.SkewMod.Value = 1
     }
 
     // Set HydroDyn file linearization defaults
-    if (files.HydroDyn.length > 0) {
-        files.HydroDyn[0].WaveMod.Value = 0
-        files.HydroDyn[0].WvDiffQTF.Value = false
-        files.HydroDyn[0].WvSumQTF.Value = false
-        files.HydroDyn[0].ExctnMod.Value = 0
+    for (let hd of files.HydroDyn) {
+        hd.WaveMod.Value = 0
+        hd.WvDiffQTF.Value = false
+        hd.WvSumQTF.Value = false
+        hd.ExctnMod.Value = 0
     }
 
     // Save changes to model
@@ -103,44 +109,67 @@ function setDefaults() {
                 <a class="btn btn-primary btn-sm ms-auto" @click="setDefaults">Defaults</a>
             </div>
             <ul class="list-group list-group-flush" v-if="project.model.Files != null">
-                <li class="list-group-item">
+                <li class="list-group-item" v-for="(main, i) in project.model.Files.Main">
                     <div class="fw-bold">Main</div>
                     <div>
-                        <ModelProp :field="project.model.Files.Main[0].TMax" />
-                        <ModelProp :field="project.model.Files.Main[0].DT" />
-                        <ModelProp :field="project.model.Files.Main[0].Gravity" />
-                        <ModelProp :field="project.model.Files.Main[0].OutFmt" />
-                        <ModelProp :field="project.model.Files.Main[0].Linearize" />
-                        <ModelProp :field="project.model.Files.Main[0].CalcSteady" />
-                        <ModelProp :field="project.model.Files.Main[0].TrimTol" />
-                        <ModelProp :field="project.model.Files.Main[0].Twr_Kdmp" />
-                        <ModelProp :field="project.model.Files.Main[0].Bld_Kdmp" />
-                        <ModelProp :field="project.model.Files.Main[0].NLinTimes" />
+                        <ModelProp :field="main.TMax" />
+                        <ModelProp :field="main.DT" />
+                        <ModelProp :field="main.Gravity" />
+                        <ModelProp :field="main.OutFmt" />
+                        <ModelProp :field="main.Linearize" />
+                        <ModelProp :field="main.CalcSteady" />
+                        <ModelProp :field="main.TrimTol" />
+                        <ModelProp :field="main.Twr_Kdmp" />
+                        <ModelProp :field="main.Bld_Kdmp" />
+                        <ModelProp :field="main.NLinTimes" />
                     </div>
                 </li>
-                <li class="list-group-item" v-if="project.model.Files.ElastoDyn.length > 0">
-                    <div class="fw-bold">ElastoDyn</div>
+                <li class="list-group-item" v-for="(ed, i) in project.model.Files.ElastoDyn">
+                    <div class="fw-bold">ElastoDyn {{ i + 1 }}</div>
                     <div>
-                        <ModelProp :field="project.model.Files.ElastoDyn[0].ShftTilt" />
-                        <ModelProp :field="project.model.Files.ElastoDyn[0].YawDOF" />
+                        <ModelProp :field="ed.ShftTilt" />
+                        <ModelProp :field="ed.DrTrDOF" />
+                        <ModelProp :field="ed.GenDOF" />
+                        <ModelProp :field="ed.YawDOF" />
+                        <ModelProp :field="ed.TwFADOF1" />
+                        <ModelProp :field="ed.TwFADOF2" />
+                        <ModelProp :field="ed.TwSSDOF1" />
+                        <ModelProp :field="ed.TwSSDOF2" />
+                        <ModelProp :field="ed.ShftTilt" />
                     </div>
                 </li>
-                <li class="list-group-item" v-if="project.model.Files.AeroDyn.length > 0">
-                    <div class="fw-bold">AeroDyn</div>
+                <li class="list-group-item" v-for="(bd, i) in project.model.Files.BeamDyn">
+                    <div class="fw-bold">BeamDyn {{ i + 1 }}</div>
                     <div>
-                        <ModelProp :field="project.model.Files.AeroDyn[0].UAMod" />
-                        <ModelProp :field="project.model.Files.AeroDyn[0].TwrPotent" />
-                        <ModelProp :field="project.model.Files.AeroDyn[0].TwrShadow" />
-                        <ModelProp :field="project.model.Files.AeroDyn[0].FrozenWake" />
-                        <ModelProp :field="project.model.Files.AeroDyn[0].SkewMod" />
+                        <ModelProp :field="bd.RotStates" />
                     </div>
                 </li>
-                <li class="list-group-item" v-if="project.model.Files.ServoDyn.length > 0">
-                    <div class="fw-bold">ServoDyn</div>
+                <li class="list-group-item" v-for="(ad, i) in project.model.Files.AeroDyn">
+                    <div class="fw-bold">AeroDyn {{ i + 1 }}</div>
                     <div>
-                        <ModelProp :field="project.model.Files.ServoDyn[0].VS_Rgn2K" />
-                        <ModelProp :field="project.model.Files.ServoDyn[0].VS_RtGnSp" />
-                        <ModelProp :field="project.model.Files.ServoDyn[0].VS_RtTq" />
+                        <ModelProp :field="ad.AFAeroMod" />
+                        <ModelProp :field="ad.UAMod" />
+                        <ModelProp :field="ad.TwrPotent" />
+                        <ModelProp :field="ad.TwrShadow" />
+                        <ModelProp :field="ad.FrozenWake" />
+                        <ModelProp :field="ad.SkewMod" />
+                    </div>
+                </li>
+                <li class="list-group-item" v-for="(hd, i) in project.model.Files.HydroDyn">
+                    <div class="fw-bold">HydroDyn {{ i + 1 }}</div>
+                    <div>
+                        <ModelProp :field="hd.WaveMod" />
+                        <ModelProp :field="hd.WvDiffQTF" />
+                        <ModelProp :field="hd.WvSumQTF" />
+                        <ModelProp :field="hd.ExctnMod" />
+                    </div>
+                </li>
+                <li class="list-group-item" v-for="(srvd, i) in project.model.Files.ServoDyn">
+                    <div class="fw-bold">ServoDyn {{ i + 1 }}</div>
+                    <div>
+                        <ModelProp :field="srvd.VS_Rgn2K" />
+                        <ModelProp :field="srvd.VS_RtGnSp" />
+                        <ModelProp :field="srvd.VS_RtTq" />
                     </div>
                 </li>
             </ul>
