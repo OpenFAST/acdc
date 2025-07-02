@@ -417,7 +417,15 @@ export const useProjectStore = defineStore('project', () => {
                 status.viz = LOADED
                 resolve(result)
             }).catch(err => {
+                const i = modeViz.findIndex((md) => point.OpPtID == md.OPID)
+                if (i !== -1) {
+                    modeViz.splice(i, 1);
+                    if (currentVizID.value == i) {
+                        currentVizID.value = -1; // Reset currentVizID if it was the one removed
+                    }
+                }
                 LogError(err)
+                errMsg.value = err
                 console.log(err)
                 status.viz = NOT_LOADED
                 reject(err)
