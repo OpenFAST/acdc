@@ -2,6 +2,7 @@ package viz
 
 import (
 	"encoding/xml"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -26,7 +27,7 @@ type Piece struct {
 	NumberOfPolys  int `xml:",attr"`
 	Points         Points
 	Lines          Lines
-	Polys          Polys
+	PointData      PointData
 }
 
 type Points struct {
@@ -37,7 +38,7 @@ type Lines struct {
 	DataArray []DataArray `xml:"DataArray"`
 }
 
-type Polys struct {
+type PointData struct {
 	DataArray []DataArray `xml:"DataArray"`
 }
 
@@ -59,6 +60,8 @@ func (da *DataArray) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 	if err := d.DecodeElement((*Tmp)(da), &start); err != nil {
 		return err
 	}
+
+	fmt.Println("decode element: ", d)
 
 	// Split the raw values into a slice of strings (space-separated values)
 	valueStrings := strings.Fields(da.RawValues)
@@ -115,6 +118,18 @@ func LoadVTK(path string) (*VTKFile, error) {
 
 	if err = xml.Unmarshal(bs, vf); err != nil {
 		return nil, err
+	}
+
+	fmt.Println("vf:", vf.PolyData)
+	fmt.Println(vf.PolyData.Piece.NumberOfLines, "lines")
+	fmt.Println(vf.PolyData.Piece.Points.DataArray)
+	fmt.Println(vf.PolyData.Piece.PointData.DataArray)
+
+	// Find DataArray that has the name of "OrientationX"
+	for _, da := range vf.PolyData.Piece.PointData.DataArray {
+		if da.Name == "OrientationX" {
+			fmt.Println("Found OrientationX:", da)
+		}
 	}
 
 	return vf, nil
