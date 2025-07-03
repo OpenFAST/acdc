@@ -43,9 +43,6 @@ type ModeData struct {
 
 func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []int) (*ModeData, error) {
 
-	// Create checkpoint file name
-	checkpointFileName := filepath.Base(op.RootPath) + ".ModeShapeVTK"
-
 	// Get slice of modes from mode IDs
 	modes := []lin.Mode{}
 	for _, mID := range modeIDs {
@@ -126,6 +123,8 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 		}
 	}
 
+	// Create file names and paths
+	checkpointFileName := filepath.Base(op.RootPath) + ".ModeShapeVTK"
 	vizFilePath := op.RootPath + ".ModeShapeVTK.viz"
 	modesFilePath := op.RootPath + ".ModeShapeVTK.acdcMBC"
 	modesFileName := filepath.Base(modesFilePath)
@@ -155,8 +154,8 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 	binary.Write(w, binary.LittleEndian, int32(len(op.MBC.DescStates)))
 	binary.Write(w, binary.LittleEndian, int32(len(op.MBC.Azimuths)))
 	binary.Write(w, binary.LittleEndian, natFreq)
-	binary.Write(w, binary.LittleEndian, dampFreq)
 	binary.Write(w, binary.LittleEndian, dampRatio)
+	binary.Write(w, binary.LittleEndian, dampFreq)
 	for i := range modes {
 		for _, azEVMags := range mags[i] {
 			binary.Write(w, binary.LittleEndian, azEVMags)
@@ -220,6 +219,11 @@ func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 
 	// Loop through files
 	for _, vtpFile := range vtpFilePaths {
+
+		// Skip BD blade rotating states files
+		if strings.Contains(filepath.Base(vtpFile), "BD_BldMotionRot") {
+			continue
+		}
 
 		// Load vtk file
 		vtk, err := LoadVTK(vtpFile)

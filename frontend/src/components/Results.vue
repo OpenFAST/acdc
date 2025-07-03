@@ -25,7 +25,7 @@ const showNodePaths = ref(true)
 const xAxisWS = ref(true)
 const rotorSpeedMods = [1, 3, 6, 9, 12, 15]
 const vizScale = ref(20)
-const vizScaleOptions = [0.5, 1, 2, 3, 5, 10, 20, 50, 75, 100, 150, 200, 300, 400, 500, 1000, 2000]
+const vizScaleOptions = [0.5, 1, 2, 3, 5, 10, 20, 50, 75, 100, 150, 200, 300, 400, 500, 1000, 5000, 10000, 20000, 50000, 100000]
 
 interface Graph {
     options: ChartOptions<'scatter'>
@@ -287,7 +287,7 @@ const charts = computed(() => {
                             <option v-for="op in project.results.OPs" :value="op">
                                 {{ op.ID }} -
                                 {{ project.results.HasWind ? `${op.WindSpeed.toPrecision(3)} m/s` :
-                        `${op.RotSpeed.toPrecision(3)} RPM` }}
+                                    `${op.RotSpeed.toPrecision(3)} RPM` }}
                             </option>
                         </select>
                     </div>
@@ -438,8 +438,8 @@ const charts = computed(() => {
                                 <select class="form-select" id="linePoints" v-model="selectedPoint">
                                     <option v-for="point in selectedLine.Points" :value="point">OP: {{ point.OpPtID }},
                                         Rotor Speed: {{ point.RotSpeed.toFixed(2) }}, Wind Speed: {{
-                        point.WindSpeed.toFixed(2) }}, Natural Frequency: {{
-                        point.NaturalFreqHz.toFixed(3) }}
+                                            point.WindSpeed.toFixed(2) }}, Natural Frequency: {{
+                                            point.NaturalFreqHz.toFixed(3) }}
                                     </option>
                                 </select>
                             </div>
@@ -538,7 +538,7 @@ const charts = computed(() => {
                         <div class="d-grid gap-2 mb-3">
                             <a class="btn btn-primary" @click="project.clearModeViz">Clear</a>
                             <a class="btn btn-primary" @click="showNodePaths = !showNodePaths">{{
-                        showNodePaths ? 'Hide' : 'Show' }} Node Paths</a>
+                                showNodePaths ? 'Hide' : 'Show' }} Node Paths</a>
                         </div>
                         <div class="list-group">
                             <a class="list-group-item list-group-item-action" v-for="(mv, i) in project.modeViz"
