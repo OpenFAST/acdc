@@ -15,6 +15,12 @@ type VTKFile struct {
 	PolyData  PolyData `xml:"PolyData"`
 }
 
+type OrientationVectors struct {
+	X [][]float32 `json:"x"` // nx3 matrix for X orientation vectors
+	Y [][]float32 `json:"y"` // nx3 matrix for Y orientation vectors
+	Z [][]float32 `json:"z"` // nx3 matrix for Z orientation vectors
+}
+
 type PolyData struct {
 	Piece Piece
 }
@@ -107,30 +113,49 @@ func (da *DataArray) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 	return nil
 }
 
-func LoadVTK(path string) (*VTKFile, error) {
+func LoadVTK(path string) (*VTKFile, *OrientationVectors, error) {
 
 	bs, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	vf := &VTKFile{}
 
 	if err = xml.Unmarshal(bs, vf); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	fmt.Println("vf:", vf.PolyData)
-	fmt.Println(vf.PolyData.Piece.NumberOfLines, "lines")
-	fmt.Println(vf.PolyData.Piece.Points.DataArray)
-	fmt.Println(vf.PolyData.Piece.PointData.DataArray)
+	// Debug: Print the structure
+	fmt.Printf("NumberOfPoints: %d\n", vf.PolyData.Piece.NumberOfPoints)
+	fmt.Printf("Points DataArray Type: %s, Components: %d\n", vf.PolyData.Piece.Points.DataArray.Type, vf.PolyData.Piece.Points.DataArray.NumberOfComponents)
+	fmt.Printf("Points DataArray Values: %v\n", vf.PolyData.Piece.Points.DataArray.MatrixF32)
+
+	// Create orientation vectors
+	orientationVectors := &OrientationVectors{}
+
+	// Debug: Print all available DataArrays
+	fmt.Printf("Number of PointData arrays: %d\n", len(vf.PolyData.Piece.PointData.DataArray))
+	for i, da := range vf.PolyData.Piece.PointData.DataArray {
+		fmt.Printf("DataArray[%d]: Name='%s', Type='%s', Components=%d\n", i, da.Name, da.Type, da.NumberOfComponents)
+	}
 
 	// Find DataArray that has the name of "OrientationX"
 	for _, da := range vf.PolyData.Piece.PointData.DataArray {
 		if da.Name == "OrientationX" {
-			fmt.Println("Found OrientationX:", da)
+			fmt.Println("Found OrientationX:", da.MatrixF32)
+			orientationVectors.X = da.MatrixF32
+		} else if da.Name == "OrientationY" {
+			fmt.Println("Found OrientationY:", da.MatrixF32)
+			orientationVectors.Y = da.MatrixF32
+		} else if da.Name == "OrientationZ" {
+			fmt.Println("Found OrientationZ:", da.MatrixF32)
+			orientationVectors.Z = da.MatrixF32
+		} else if da.Name == "OrientationZ" {
+			fmt.Println("Found OrientationZ:", da.MatrixF32)
+			orientationVectors.Z = da.MatrixF32
 		}
 	}
 
-	return vf, nil
+	return vf, orientationVectors, nil
 }

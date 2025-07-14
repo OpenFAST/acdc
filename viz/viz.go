@@ -226,10 +226,11 @@ func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 		}
 
 		// Load vtk file
-		vtk, err := LoadVTK(vtpFile)
+		vtk, ov, err := LoadVTK(vtpFile)
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("Loaded Orientation Vectors:", ov)
 
 		// Skip files without lines
 		// TODO: add handling files only containing points
