@@ -28,7 +28,7 @@ type Point struct {
 
 type Component struct {
 	Line      []Point `json:"Line"`
-	LocalLine []Point `json:"Line"`
+	LocalLine []Point `json:"LocalLine"`
 }
 
 type Frame struct {
