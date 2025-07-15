@@ -1502,6 +1502,7 @@ export namespace viz {
 	}
 	export class Component {
 	    Line: Point[];
+		LocalLine: Point[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Component(source);
@@ -1510,6 +1511,7 @@ export namespace viz {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Line = this.convertValues(source["Line"], Point);
+			this.LocalLine = this.convertValues(source["LocalLine"], Point);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
