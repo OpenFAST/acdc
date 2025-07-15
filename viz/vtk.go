@@ -1,6 +1,7 @@
 package viz
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -73,7 +74,7 @@ func (da *DataArray) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 		return err
 	}
 
-	fmt.Println("decode element: ", d)
+	// fmt.Println("decode element: ", d)
 
 	// Split the raw values into a slice of strings (space-separated values)
 	valueStrings := strings.Fields(da.RawValues)
@@ -136,6 +137,8 @@ func LoadVTK(path string) (*VTKFile, *VTKFile, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to convert global coordinates to local: %w", err)
 	}
+	fmt.Println(vf.PolyData.Piece.Points.DataArray.MatrixF32)
+	fmt.Println(local_vf.PolyData.Piece.Points.DataArray.MatrixF32)
 
 	return vf, local_vf, nil
 }
@@ -172,36 +175,38 @@ func GetOrientations(vf *VTKFile) (*OrientationVectors, *OrientationMatrix, erro
 
 func Global2Local(vf *VTKFile) (*VTKFile, error) {
 
-	// Copy vf
-	local_vf := vf // Shallow copy
+	// Copy vf (Deep Copy -- so that it works independently)
+	var local_vf *VTKFile
+	err := DeepCopy(&vf, &local_vf)
 	local_coords := local_vf.PolyData.Piece.Points.DataArray.MatrixF32
-	fmt.Println("\nLocal coordinates:", local_coords)
+	// fmt.Println("\nLocal coordinates:", local_coords)
 
 	// Get Orientation vectors and matrices
 	ov, om, err := GetOrientations(local_vf)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to extract orientation vectors and matrices: %w", err)
 	}
-	fmt.Println("\nOrientation Matrix:", om)
+	// fmt.Println("\nOrientation Matrix:", om)
 
 	// Translational/Rotational operations for the points
 	local_coords = TranslateMatrix(local_coords, local_coords[0]) // Translate by the first point -- so that first point will be moved to the origin
-	fmt.Println("\nLocal coordinates:", local_coords)
+	// fmt.Println("\nLocal coordinates:", local_coords)
 
 	transposed_om := TransposeMatrix(om)
-	fmt.Println("\nTransposed Orientation Matrix:", transposed_om)
+	// fmt.Println("\nTransposed Orientation Matrix:", transposed_om)
 
 	local_coords = DotProduct(local_coords, transposed_om) // Rotate by the first orientation vector
-	fmt.Println("\nLocal coordinates:", local_coords)
+	local_vf.PolyData.Piece.Points.DataArray.MatrixF32 = local_coords
+	// fmt.Println("\nLocal coordinates from LoadVTK() :", local_coords)
 
 	// Rotational operations for the Orientation vectors
 	ov.X = DotProduct(ov.X, transposed_om)
 	ov.Y = DotProduct(ov.Y, transposed_om)
 	ov.Z = DotProduct(ov.Z, transposed_om)
 
-	fmt.Println("\nOrientationX:", ov.X)
-	fmt.Println("\nOrientationY:", ov.Y)
-	fmt.Println("\nOrientationZ:", ov.Z)
+	// fmt.Println("\nOrientationX:", ov.X)
+	// fmt.Println("\nOrientationY:", ov.Y)
+	// fmt.Println("\nOrientationZ:", ov.Z)
 
 	return local_vf, nil
 }
@@ -243,4 +248,12 @@ func TransposeMatrix(om *OrientationMatrix) [][]float32 {
 	transposed[2] = []float32{om.X[2], om.Y[2], om.Z[2]}
 
 	return transposed
+}
+
+func DeepCopy(src, dst interface{}) error {
+	bytes, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bytes, dst)
 }
