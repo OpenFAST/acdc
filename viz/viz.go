@@ -27,7 +27,8 @@ type Point struct {
 }
 
 type Component struct {
-	Line []Point `json:"Line"`
+	Line      []Point `json:"Line"`
+	LocalLine []Point `json:"LocalLine"`
 }
 
 type Frame struct {
@@ -203,6 +204,8 @@ func (opts *Options) GenerateModeData(execPath string, op *lin.LinOP, modeIDs []
 
 	// Parse mode data from files
 	md, err := ParseModeData(vtpFilePaths)
+	fmt.Println("Mode Data:", md)
+
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +222,7 @@ func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 
 	// Loop through files
 	for _, vtpFile := range vtpFilePaths {
+		fmt.Println("\nProcessing file:", vtpFile)
 
 		// Skip BD blade rotating states files
 		if strings.Contains(filepath.Base(vtpFile), "BD_BldMotionRot") {
@@ -226,7 +230,7 @@ func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 		}
 
 		// Load vtk file
-		vtk, err := LoadVTK(vtpFile)
+		vtk, local_vtk, err := LoadVTK(vtpFile)
 		if err != nil {
 			return nil, err
 		}
@@ -296,6 +300,16 @@ func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 		for j, c := range conn {
 			copy(component.Line[j].XYZ[:], vtk.PolyData.Piece.Points.DataArray.MatrixF32[c])
 		}
+
+		fmt.Println(vtk.PolyData.Piece.Points.DataArray.MatrixF32)
+
+		// Add local coordinates
+		component.LocalLine = make([]Point, len(conn))
+		for j, c := range conn {
+			copy(component.LocalLine[j].XYZ[:], local_vtk.PolyData.Piece.Points.DataArray.MatrixF32[c])
+		}
+
+		fmt.Println(local_vtk.PolyData.Piece.Points.DataArray.MatrixF32)
 	}
 
 	return &mv, nil
