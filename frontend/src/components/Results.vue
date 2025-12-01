@@ -220,11 +220,11 @@ const charts = computed(() => {
                         title: { display: true, text: xLabel, font: { size: 18 } },
                         min: Math.min(...xValues),
                         max: Math.max(...xValues),
-                        ticks: { font: { size: 16 } }
+                        ticks: { font: { size: 16 }, callback: (value) => Number(value).toFixed(3) },
                     },
                     y: {
                         title: { display: true, text: cfg.label, font: { size: 18 } },
-                        ticks: { font: { size: 16 } },
+                        ticks: { font: { size: 16 }, callback: (value) => Number(value).toFixed(3) },
                         min: 0.95 * (cfg.isNatFreq ? freqMin : dampMin),
                         max: 1.05 * (cfg.isNatFreq ? freqMax : dampMax),
                     },
