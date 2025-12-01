@@ -83,7 +83,7 @@ func NewOPOrder(ops OPSlice, numBlades int) OPOrder {
 		triplet := []int{}
 
 		// Lookup descriptions in map with all blade numbers
-		for j := 1; j <= numBlades; j++ {
+		for _, j := range []int{1, 2, 3} {
 
 			// Create description from blade number to look up in map
 			testDesc := strings.Replace(desc, matches[0], matches[1]+strconv.Itoa(j), 1)
