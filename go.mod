@@ -10,6 +10,7 @@ require (
 	github.com/mkmik/argsort v1.1.0
 	github.com/parallelo-ai/kmeans v0.1.1
 	github.com/wailsapp/wails/v2 v2.11.0
+	github.com/wcharczuk/go-chart/v2 v2.1.2
 	golang.org/x/sync v0.18.0
 	gonum.org/v1/gonum v0.16.0
 )
@@ -18,6 +19,7 @@ require (
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.0 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
@@ -38,6 +40,7 @@ require (
 	github.com/wailsapp/go-webview2 v1.0.23 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
