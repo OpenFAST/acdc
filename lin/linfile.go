@@ -159,6 +159,8 @@ func ReadLinFile(filePath string) (*LinData, error) {
 
 	// Create scanner to read linearization file
 	scanner := bufio.NewScanner(linFile)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
 
 	// Initialize linearization data structure
 	ld := &LinData{ID: ID}
