@@ -129,6 +129,16 @@ func (r *Results) Save(caseDir string) error {
 			return err
 		}
 
+		for i, A_NR := range linOP.MBC.ANRs {
+			// Write non-rotating A matrix for each operating point
+			if err := lin.ToCSV(A_NR, fmt.Sprintf("%s_a_nr_%d.csv", linOP.RootPath, i+1), "%g"); err != nil {
+				return fmt.Errorf("error writing A_NR for OP %d: %w", i+1, err)
+			}
+		}
+
+		// Write AvgA data to file
+		lin.ToCSV(linOP.MBC.AvgA, linOP.RootPath+"_avg_a.csv", "%g")
+
 		// Write Eigen analysis mode results data to file
 		w := &bytes.Buffer{}
 		linOP.Modes.ToCSV(w)
