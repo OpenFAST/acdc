@@ -114,6 +114,9 @@ function setDefaults() {
                     <div>
                         <ModelProp :field="main.TMax" />
                         <ModelProp :field="main.DT" />
+                        <ModelProp :field="main.RhoInf" />
+                        <ModelProp :field="main.ConvTol" />
+                        <ModelProp :field="main.MaxConvIter" />
                         <ModelProp :field="main.Gravity" />
                         <ModelProp :field="main.OutFmt" />
                         <ModelProp :field="main.Linearize" />

@@ -74,39 +74,41 @@ type String struct {
 // Files structure contains slices of all file types
 // file types must be slices for the parsing and writing code to work
 type Files struct {
-	Main        []Main            `json:"Main"`
-	ElastoDyn   []ElastoDyn       `json:"ElastoDyn"`
-	BeamDyn     []BeamDyn         `json:"BeamDyn"`
-	SubDyn      []SubDyn          `json:"SubDyn"`
-	AeroDyn     []AeroDyn         `json:"AeroDyn"`
-	AeroDyn14   []AeroDyn14       `json:"AeroDyn14"`
-	HydroDyn    []HydroDyn        `json:"HydroDyn"`
-	ServoDyn    []ServoDyn        `json:"ServoDyn"`
-	InflowWind  []InflowWind      `json:"InflowWind"`
-	OLAF        []OLAF            `json:"OLAF"`
-	Misc        []Misc            `json:"Misc"`
-	StControl   []StControl       `json:"StControl"`
-	AirfoilInfo []AirfoilInfo     `json:"AirfoilInfo"`
-	PathMap     map[string]string `json:"-"`
+	Main         []Main            `json:"Main"`
+	ElastoDyn    []ElastoDyn       `json:"ElastoDyn"`
+	BeamDyn      []BeamDyn         `json:"BeamDyn"`
+	BeamDynBlade []BeamDynBlade    `json:"BeamDynBlade"`
+	SubDyn       []SubDyn          `json:"SubDyn"`
+	AeroDyn      []AeroDyn         `json:"AeroDyn"`
+	AeroDyn14    []AeroDyn14       `json:"AeroDyn14"`
+	HydroDyn     []HydroDyn        `json:"HydroDyn"`
+	ServoDyn     []ServoDyn        `json:"ServoDyn"`
+	InflowWind   []InflowWind      `json:"InflowWind"`
+	OLAF         []OLAF            `json:"OLAF"`
+	Misc         []Misc            `json:"Misc"`
+	StControl    []StControl       `json:"StControl"`
+	AirfoilInfo  []AirfoilInfo     `json:"AirfoilInfo"`
+	PathMap      map[string]string `json:"-"`
 }
 
 // NewFiles returns the Model structure with all slices initialized to empty
 func NewFiles() *Files {
 	return &Files{
-		Main:        []Main{},
-		ElastoDyn:   []ElastoDyn{},
-		BeamDyn:     []BeamDyn{},
-		SubDyn:      []SubDyn{},
-		AeroDyn:     []AeroDyn{},
-		AeroDyn14:   []AeroDyn14{},
-		HydroDyn:    []HydroDyn{},
-		InflowWind:  []InflowWind{},
-		OLAF:        []OLAF{},
-		ServoDyn:    []ServoDyn{},
-		StControl:   []StControl{},
-		Misc:        []Misc{},
-		AirfoilInfo: []AirfoilInfo{},
-		PathMap:     map[string]string{},
+		Main:         []Main{},
+		ElastoDyn:    []ElastoDyn{},
+		BeamDyn:      []BeamDyn{},
+		BeamDynBlade: []BeamDynBlade{},
+		SubDyn:       []SubDyn{},
+		AeroDyn:      []AeroDyn{},
+		AeroDyn14:    []AeroDyn14{},
+		HydroDyn:     []HydroDyn{},
+		InflowWind:   []InflowWind{},
+		OLAF:         []OLAF{},
+		ServoDyn:     []ServoDyn{},
+		StControl:    []StControl{},
+		Misc:         []Misc{},
+		AirfoilInfo:  []AirfoilInfo{},
+		PathMap:      map[string]string{},
 	}
 }
 
@@ -157,6 +159,9 @@ type Main struct {
 	FileBase
 	TMax        Real    `json:"TMax"`
 	DT          Real    `json:"DT"`
+	RhoInf      Real    `json:"RhoInf"`
+	ConvTol     Real    `json:"ConvTol"`
+	MaxConvIter Integer `json:"MaxConvIter"`
 	CompElast   Integer `json:"CompElast"`
 	CompInflow  Integer `json:"CompInflow"`
 	CompAero    Integer `json:"CompAero"`
@@ -257,8 +262,14 @@ type AeroDyn14 struct {
 
 type BeamDyn struct {
 	FileBase
-	RotStates Bool `json:"RotStates"`
-	BldFile   Path `json:"BldFile" ftype:"Misc"` // BeamDynBlade
+	RotStates Bool    `json:"RotStates"`
+	BldFile   Path    `json:"BldFile" ftype:"BeamDynBlade"`
+	OrderElem Integer `json:"OrderElem" key:"order_elem"`
+}
+
+type BeamDynBlade struct {
+	FileBase
+	DampType Integer `json:"DampType" key:"damp_type"`
 }
 
 type ElastoDyn struct {
@@ -350,7 +361,6 @@ type StControl struct {
 
 type SubDyn struct {
 	FileBase
-	CBMod  Bool    `json:"CBMod"`
 	Nmodes Integer `json:"Nmodes"`
 }
 
