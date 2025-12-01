@@ -82,3 +82,27 @@ To visualize a mode shape, click the `Visualize` button on the `Mode` card or th
 The white lines are the blades and tower. The colored lines are the paths that the nodes travel through during the animation. The color, from blue to yellow, is based on the length of the path, with longer paths being a brighter color. The display of the node paths can be toggled by clicking the `Hide Node Paths` button.
 
 The `Clear` button is used to clear modes that have been visualized. Below the `Clear` and `Hide Node Paths` buttons is a list of buttons indicating which line and operating point is being visualized. Each time the `Visualize` button is clicked, a new line-operating-point button appears. The user can select which mode to visualize by clicking these buttons. 
+
+
+When a mode shape is visualized, an additional 2D chart will appear below showing the `blade tip deflection analysis`. This chart demonstrates the deflection of blade tips across frames for both flap and edge directions.
+
+![](blade-tip.png)
+
+The blade tip deflection chart provides the following information:
+
+- **X-axis**: Animation frame number (1 through total number of frames)
+- **Y-axis**: Tip deflection magnitude in the local coordinate system
+- **Flap deflection**: Solid lines showing out-of-plane blade bending
+- **Edge deflection**: Dashed lines showing in-plane blade bending
+- **Multiple blades**: Each blade component is displayed with different colors for easy comparison
+
+Note that the blade tip deflection analysis requires specific OpenFAST configuration settings to generate the necessary VTK files with orientation data:
+
+**Required settings in the main `.fst` file:**
+```
+Linearize    True      Linearization analysis {True/False}
+WrVTK        2         VTK visualization data output: (0: none; 1: init; 2: animation)
+VTK_fields   True      Write mesh fields to VTK data files? {True/False}
+```
+
+With these settings, verify that generated `.vtp` files contain orientation field data.

@@ -241,6 +241,133 @@ const charts = computed(() => {
     return objs
 })
 
+// Add Blade Tip Deflection Chart with Local Line Data
+const bladeTipChart = computed(() => {
+    const currentModeData = project.modeViz[project.currentVizID]
+
+    // Get Component names
+    const componentNames = new Set<string>()
+    for (const frame of currentModeData.Frames) {
+        for (const componentName in frame.Components) {
+            componentNames.add(componentName)
+        }
+    }
+    console.log("Component Names:", Array.from(componentNames))
+
+    const datasets: any[] = []
+    const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']       // Expecting 3 blades with 2 series each (Flap and Edge)
+    let colorIndex = 0
+
+    // Loop over each component (blade) - similar to PlotTipDeflection
+    for (const componentName of componentNames) {
+        console.log("Adding series for", componentName)
+        
+        // For the blade tip, we only need the last point of each frame
+        const tipFlapData: {x: number, y: number}[] = []
+        const tipEdgeData: {x: number, y: number}[] = []
+        
+        for (let frameIndex = 0; frameIndex < currentModeData.Frames.length; frameIndex++) {
+            const frame = currentModeData.Frames[frameIndex]
+            
+            if (frame.Components[componentName]) {
+                const component = frame.Components[componentName]
+                
+                // Check if LocalLine exists and has data
+                if (component.LocalLine && component.LocalLine.length > 0) {
+                    // Get the last point (tip)
+                    const tipPoint = component.LocalLine[component.LocalLine.length - 1]
+                    
+                    tipFlapData.push({
+                        x: frameIndex + 1, // Frame numbers start from 1
+                        y: tipPoint.XYZ[0]  // X coordinate (Flap direction)
+                    })
+                    
+                    tipEdgeData.push({
+                        x: frameIndex + 1, // Frame numbers start from 1
+                        y: tipPoint.XYZ[1]  // Y coordinate (Edge direction)
+                    })
+                }
+            }
+        }
+        
+        console.log("Tip Flap data:", tipFlapData)
+        console.log("Tip Edge data:", tipEdgeData)
+        
+        // Create Flap series
+        if (tipFlapData.length > 0) {
+            datasets.push({
+                label: `Flap_${componentName}`,
+                data: tipFlapData,
+                borderColor: colors[colorIndex % colors.length],
+                backgroundColor: colors[colorIndex % colors.length],
+                showLine: true,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+            })
+        }
+        
+        // Create Edge series
+        if (tipEdgeData.length > 0) {
+            datasets.push({
+                label: `Edge_${componentName}`,
+                data: tipEdgeData,
+                borderColor: colors[(colorIndex + 1) % colors.length],
+                backgroundColor: colors[(colorIndex + 1) % colors.length],
+                showLine: true,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                borderWidth: 2,
+                borderDash: [5, 5], // Dashed line to distinguish from Flap
+            })
+        }
+        
+        colorIndex += 2 // Increment by 2 since we use 2 colors per component
+    }
+
+    const options: ChartOptions<'scatter'> = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                display: true,
+                position: 'right',
+                labels: {
+                    font: { size: 10 }
+                }
+            },
+            title: {
+                display: true,
+                text: 'Blade Tip Deflection',
+                font: { size: 16, weight: 'bold' }
+            }
+        },
+        scales: {
+            x: {
+                title: { display: true, text: 'Frames', font: { size: 14 } },
+                ticks: { font: { size: 12 } },
+                grid: {
+                    color: '#e0e0e0',
+                }
+            },
+            y: {
+                title: { display: true, text: 'Tip Deflection', font: { size: 14 } },
+                ticks: { font: { size: 12 } },
+                grid: {
+                    color: '#e0e0e0',
+                }
+            },
+        },
+        interaction: {
+            mode: 'nearest',
+            intersect: false
+        },
+        animation: { duration: 0 }
+    }
+
+    return { data: { datasets }, options }
+})
+
 
 </script>
 
@@ -529,9 +656,14 @@ const charts = computed(() => {
             <div class="card-body">
                 <div class="row">
                     <div class="col-10">
+                        <!-- 3D Mode Visualization -->
                         <div style="width:100%; height: 80vh">
                             <ModeViz :ModeData="project.modeViz[project.currentVizID]" :showNodePaths="showNodePaths">
                             </ModeViz>
+                        </div>
+                        <!-- 2D Blade Tip Deflection Chart -->
+                        <div style="width:100%; height: 30vh" class="mt-3">
+                            <Scatter ref="bladeTipChart" :options="bladeTipChart.options" :data="bladeTipChart.data" />
                         </div>
                     </div>
                     <div class="col-2">
