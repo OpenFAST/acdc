@@ -623,6 +623,7 @@ export namespace main {
 	    Lines: string[];
 	    RotStates: Bool;
 	    BldFile: Path;
+	    OrderElem: Integer;
 	
 	    static createFrom(source: any = {}) {
 	        return new BeamDyn(source);
@@ -635,6 +636,43 @@ export namespace main {
 	        this.Lines = source["Lines"];
 	        this.RotStates = this.convertValues(source["RotStates"], Bool);
 	        this.BldFile = this.convertValues(source["BldFile"], Path);
+	        this.OrderElem = this.convertValues(source["OrderElem"], Integer);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class BeamDynBlade {
+	    Name: string;
+	    Type: string;
+	    Lines: string[];
+	    DampType: Integer;
+	
+	    static createFrom(source: any = {}) {
+	        return new BeamDynBlade(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Type = source["Type"];
+	        this.Lines = source["Lines"];
+	        this.DampType = this.convertValues(source["DampType"], Integer);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1040,7 +1078,6 @@ export namespace main {
 	    Name: string;
 	    Type: string;
 	    Lines: string[];
-	    CBMod: Bool;
 	    Nmodes: Integer;
 	
 	    static createFrom(source: any = {}) {
@@ -1052,7 +1089,6 @@ export namespace main {
 	        this.Name = source["Name"];
 	        this.Type = source["Type"];
 	        this.Lines = source["Lines"];
-	        this.CBMod = this.convertValues(source["CBMod"], Bool);
 	        this.Nmodes = this.convertValues(source["Nmodes"], Integer);
 	    }
 	
@@ -1120,6 +1156,9 @@ export namespace main {
 	    Lines: string[];
 	    TMax: Real;
 	    DT: Real;
+	    RhoInf: Real;
+	    ConvTol: Real;
+	    MaxConvIter: Integer;
 	    CompElast: Integer;
 	    CompInflow: Integer;
 	    CompAero: Integer;
@@ -1173,6 +1212,9 @@ export namespace main {
 	        this.Lines = source["Lines"];
 	        this.TMax = this.convertValues(source["TMax"], Real);
 	        this.DT = this.convertValues(source["DT"], Real);
+	        this.RhoInf = this.convertValues(source["RhoInf"], Real);
+	        this.ConvTol = this.convertValues(source["ConvTol"], Real);
+	        this.MaxConvIter = this.convertValues(source["MaxConvIter"], Integer);
 	        this.CompElast = this.convertValues(source["CompElast"], Integer);
 	        this.CompInflow = this.convertValues(source["CompInflow"], Integer);
 	        this.CompAero = this.convertValues(source["CompAero"], Integer);
@@ -1238,6 +1280,7 @@ export namespace main {
 	    Main: Main[];
 	    ElastoDyn: ElastoDyn[];
 	    BeamDyn: BeamDyn[];
+	    BeamDynBlade: BeamDynBlade[];
 	    SubDyn: SubDyn[];
 	    AeroDyn: AeroDyn[];
 	    AeroDyn14: AeroDyn14[];
@@ -1258,6 +1301,7 @@ export namespace main {
 	        this.Main = this.convertValues(source["Main"], Main);
 	        this.ElastoDyn = this.convertValues(source["ElastoDyn"], ElastoDyn);
 	        this.BeamDyn = this.convertValues(source["BeamDyn"], BeamDyn);
+	        this.BeamDynBlade = this.convertValues(source["BeamDynBlade"], BeamDynBlade);
 	        this.SubDyn = this.convertValues(source["SubDyn"], SubDyn);
 	        this.AeroDyn = this.convertValues(source["AeroDyn"], AeroDyn);
 	        this.AeroDyn14 = this.convertValues(source["AeroDyn14"], AeroDyn14);
