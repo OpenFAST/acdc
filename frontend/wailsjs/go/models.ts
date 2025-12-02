@@ -1534,6 +1534,9 @@ export namespace viz {
 	
 	export class Point {
 	    XYZ: number[];
+	    OrientationX: number[];
+	    OrientationY: number[];
+	    OrientationZ: number[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Point(source);
@@ -1542,6 +1545,9 @@ export namespace viz {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.XYZ = source["XYZ"];
+	        this.OrientationX = source["OrientationX"];
+	        this.OrientationY = source["OrientationY"];
+	        this.OrientationZ = source["OrientationZ"];
 	    }
 	}
 	export class Component {

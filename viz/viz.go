@@ -23,7 +23,10 @@ type Options struct {
 }
 
 type Point struct {
-	XYZ [3]float32 `json:"XYZ"`
+	XYZ          [3]float32 `json:"XYZ"`
+	OrientationX [3]float32 `json:"OrientationX"`
+	OrientationY [3]float32 `json:"OrientationY"`
+	OrientationZ [3]float32 `json:"OrientationZ"`
 }
 
 type Component struct {
@@ -294,10 +297,32 @@ func ParseModeData(vtpFilePaths []string) (*ModeData, error) {
 			return nil, err
 		}
 
+		// Determine indices of data arrays containing orientation data
+		orientationIndices := []int{-1, -1, -1}
+		for i, da := range vtk.PolyData.Piece.PointData.DataArray {
+			switch strings.ToLower(da.Name) {
+			case "orientationx":
+				orientationIndices[0] = i
+			case "orientationy":
+				orientationIndices[1] = i
+			case "orientationz":
+				orientationIndices[2] = i
+			}
+		}
+
 		// Copy line data into component
 		component.Line = make([]Point, len(conn))
 		for j, c := range conn {
 			copy(component.Line[j].XYZ[:], vtk.PolyData.Piece.Points.DataArray.MatrixF32[c])
+			if orientationIndices[0] > -1 {
+				copy(component.Line[j].OrientationX[:], vtk.PolyData.Piece.PointData.DataArray[orientationIndices[0]].MatrixF32[c])
+			}
+			if orientationIndices[1] > -1 {
+				copy(component.Line[j].OrientationY[:], vtk.PolyData.Piece.PointData.DataArray[orientationIndices[1]].MatrixF32[c])
+			}
+			if orientationIndices[2] > -1 {
+				copy(component.Line[j].OrientationZ[:], vtk.PolyData.Piece.PointData.DataArray[orientationIndices[2]].MatrixF32[c])
+			}
 		}
 
 		// Copy local line data into component

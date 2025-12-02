@@ -22,6 +22,7 @@ const selectedPoint = ref<diagram.Point | null>(null)
 const freqChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const dampChart = ref<ChartComponentRef<'scatter'> | null>(null)
 const showNodePaths = ref(true)
+const showNodeOrientation = ref(false)
 const xAxisWS = ref(true)
 const rotorSpeedMods = [1, 3, 6, 9, 12, 15]
 const vizScale = ref(20)
@@ -261,27 +262,27 @@ const bladeTipChart = computed(() => {
     // Loop over each component (blade) - similar to PlotTipDeflection
     for (const componentName of componentNames) {
         console.log("Adding series for", componentName)
-        
+
         // For the blade tip, we only need the last point of each frame
-        const tipFlapData: {x: number, y: number}[] = []
-        const tipEdgeData: {x: number, y: number}[] = []
-        
+        const tipFlapData: { x: number, y: number }[] = []
+        const tipEdgeData: { x: number, y: number }[] = []
+
         for (let frameIndex = 0; frameIndex < currentModeData.Frames.length; frameIndex++) {
             const frame = currentModeData.Frames[frameIndex]
-            
+
             if (frame.Components[componentName]) {
                 const component = frame.Components[componentName]
-                
+
                 // Check if LocalLine exists and has data
                 if (component.LocalLine && component.LocalLine.length > 0) {
                     // Get the last point (tip)
                     const tipPoint = component.LocalLine[component.LocalLine.length - 1]
-                    
+
                     tipFlapData.push({
                         x: frameIndex + 1, // Frame numbers start from 1
                         y: tipPoint.XYZ[0]  // X coordinate (Flap direction)
                     })
-                    
+
                     tipEdgeData.push({
                         x: frameIndex + 1, // Frame numbers start from 1
                         y: tipPoint.XYZ[1]  // Y coordinate (Edge direction)
@@ -289,10 +290,10 @@ const bladeTipChart = computed(() => {
                 }
             }
         }
-        
+
         console.log("Tip Flap data:", tipFlapData)
         console.log("Tip Edge data:", tipEdgeData)
-        
+
         // Create Flap series
         if (tipFlapData.length > 0) {
             datasets.push({
@@ -306,7 +307,7 @@ const bladeTipChart = computed(() => {
                 borderWidth: 2,
             })
         }
-        
+
         // Create Edge series
         if (tipEdgeData.length > 0) {
             datasets.push({
@@ -321,7 +322,7 @@ const bladeTipChart = computed(() => {
                 borderDash: [5, 5], // Dashed line to distinguish from Flap
             })
         }
-        
+
         colorIndex += 2 // Increment by 2 since we use 2 colors per component
     }
 
@@ -329,7 +330,7 @@ const bladeTipChart = computed(() => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { 
+            legend: {
                 display: true,
                 position: 'right',
                 labels: {
@@ -383,7 +384,7 @@ const bladeTipChart = computed(() => {
                 <div class="row row-cols-auto g-3">
                     <div class="col" v-for="c in project.analysis?.Cases">
                         <a class="btn btn-outline-primary w-100" @click="project.selectCaseLinDir(c.ID)">Case {{ c.ID
-                            }}: {{ c.Name }} </a>
+                        }}: {{ c.Name }} </a>
                     </div>
                     <div class="col">
                         <a class="btn btn-outline-primary w-100" @click="project.selectCustomLinDir()">Browse</a>
@@ -658,7 +659,8 @@ const bladeTipChart = computed(() => {
                     <div class="col-10">
                         <!-- 3D Mode Visualization -->
                         <div style="width:100%; height: 80vh">
-                            <ModeViz :ModeData="project.modeViz[project.currentVizID]" :showNodePaths="showNodePaths">
+                            <ModeViz :ModeData="project.modeViz[project.currentVizID]" :showNodePaths="showNodePaths"
+                                :showNodeOrientation="showNodeOrientation">
                             </ModeViz>
                         </div>
                         <!-- 2D Blade Tip Deflection Chart -->
@@ -671,6 +673,8 @@ const bladeTipChart = computed(() => {
                             <a class="btn btn-primary" @click="project.clearModeViz">Clear</a>
                             <a class="btn btn-primary" @click="showNodePaths = !showNodePaths">{{
                                 showNodePaths ? 'Hide' : 'Show' }} Node Paths</a>
+                            <a class="btn btn-primary" @click="showNodeOrientation = !showNodeOrientation">{{
+                                showNodeOrientation ? 'Hide' : 'Show' }} Node Orientation</a>
                         </div>
                         <div class="list-group">
                             <a class="list-group-item list-group-item-action" v-for="(mv, i) in project.modeViz"

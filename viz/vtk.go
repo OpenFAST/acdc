@@ -24,9 +24,9 @@ type OrientationVectors struct {
 }
 
 type OrientationMatrix struct {
-	X []float32 `json:"x"` // 3x3 matrix for X orientation vectors
-	Y []float32 `json:"y"` // 3x3 matrix for Y orientation vectors
-	Z []float32 `json:"z"` // 3x3 matrix for Z orientation vectors
+	X [3]float32 `json:"x"` // 3x3 matrix for X orientation vectors
+	Y [3]float32 `json:"y"` // 3x3 matrix for Y orientation vectors
+	Z [3]float32 `json:"z"` // 3x3 matrix for Z orientation vectors
 }
 
 type PolyData struct {
@@ -139,40 +139,36 @@ func LoadVTK(path string) (*VTKFile, *VTKFile, error) {
 		return vf, nil, nil
 	}
 
+	// Convert blade root coordinates from global to local
 	local_vf, err := Global2Local(vf)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to convert global coordinates to local: %w", err)
+		return nil, nil, fmt.Errorf("failed to convert global coordinates to local: %w", err)
 	}
 
 	return vf, local_vf, nil
 }
 
-func GetOrientations(vf *VTKFile) (*OrientationVectors, *OrientationMatrix, error) {
+func GetBladeRootOrientation(vf *VTKFile) (*OrientationVectors, *OrientationMatrix, error) {
 	// Create orientation vectors
 	ov := &OrientationVectors{}
 
-	// Find Orientation vectors
+	// Create a new OrientationMatrix
+	om := &OrientationMatrix{}
+
+	// Find Orientation vectors by name and copy first three components
 	for _, da := range vf.PolyData.Piece.PointData.DataArray {
-		if da.Name == "OrientationX" {
+		switch strings.ToLower(da.Name) {
+		case "orientationx":
 			ov.X = da.MatrixF32
-		} else if da.Name == "OrientationY" {
+			copy(om.X[:], da.MatrixF32[0])
+		case "orientationy":
 			ov.Y = da.MatrixF32
-		} else if da.Name == "OrientationZ" {
+			copy(om.Y[:], da.MatrixF32[0])
+		case "orientationz":
 			ov.Z = da.MatrixF32
+			copy(om.Z[:], da.MatrixF32[0])
 		}
 	}
-
-	// Create a new OrientationMatrix
-	om := &OrientationMatrix{
-		X: make([]float32, 3),
-		Y: make([]float32, 3),
-		Z: make([]float32, 3),
-	}
-
-	// Fill the OrientationMatrix with the first 3 vectors from each orientation
-	om.X = ov.X[0]
-	om.Y = ov.Y[0]
-	om.Z = ov.Z[0]
 
 	return ov, om, nil
 }
@@ -182,35 +178,29 @@ func Global2Local(vf *VTKFile) (*VTKFile, error) {
 	// Copy vf (Deep Copy -- so that it works independently)
 	var local_vf *VTKFile
 	err := DeepCopy(&vf, &local_vf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deep copy VTKFile: %w", err)
+	}
 	local_coords := local_vf.PolyData.Piece.Points.DataArray.MatrixF32
-	// fmt.Println("\nLocal coordinates:", local_coords)
 
 	// Get Orientation vectors and matrices
-	ov, om, err := GetOrientations(local_vf)
+	ov, om, err := GetBladeRootOrientation(local_vf)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to extract orientation vectors and matrices: %w", err)
+		return nil, fmt.Errorf("failed to extract orientation vectors and matrices: %w", err)
 	}
-	// fmt.Println("\nOrientation Matrix:", om)
 
 	// Translational/Rotational operations for the points
 	local_coords = TranslateMatrix(local_coords, local_coords[0]) // Translate by the first point -- so that first point will be moved to the origin
-	// fmt.Println("\nLocal coordinates:", local_coords)
 
 	transposed_om := TransposeMatrix(om)
-	// fmt.Println("\nTransposed Orientation Matrix:", transposed_om)
 
 	local_coords = DotProduct(local_coords, transposed_om) // Rotate by the first orientation vector
 	local_vf.PolyData.Piece.Points.DataArray.MatrixF32 = local_coords
-	// fmt.Println("\nLocal coordinates from LoadVTK() :", local_coords)
 
 	// Rotational operations for the Orientation vectors
 	ov.X = DotProduct(ov.X, transposed_om)
 	ov.Y = DotProduct(ov.Y, transposed_om)
 	ov.Z = DotProduct(ov.Z, transposed_om)
-
-	// fmt.Println("\nOrientationX:", ov.X)
-	// fmt.Println("\nOrientationY:", ov.Y)
-	// fmt.Println("\nOrientationZ:", ov.Z)
 
 	return local_vf, nil
 }
@@ -219,7 +209,7 @@ func TranslateMatrix(points [][]float32, translation []float32) [][]float32 {
 	result := make([][]float32, len(points))
 	for i, point := range points {
 		resPoint := make([]float32, 3)
-		for j := 0; j < 3; j++ {
+		for j := range 3 {
 			resPoint[j] = point[j] + (-translation[j])
 		}
 		result[i] = resPoint
@@ -231,8 +221,8 @@ func DotProduct(vectors [][]float32, matrix [][]float32) [][]float32 {
 	result := make([][]float32, len(vectors))
 	for i, vec := range vectors {
 		resVec := make([]float32, 3)
-		for j := 0; j < 3; j++ {
-			for k := 0; k < 3; k++ {
+		for j := range 3 {
+			for k := range 3 {
 				resVec[j] += vec[k] * matrix[k][j]
 			}
 		}
