@@ -274,28 +274,34 @@ type BeamDynBlade struct {
 
 type ElastoDyn struct {
 	FileBase
-	FlapDOF1 Bool    `json:"FlapDOF1"`
-	FlapDOF2 Bool    `json:"FlapDOF2"`
-	EdgeDOF  Bool    `json:"EdgeDOF"`
-	TeetDOF  Bool    `json:"TeetDOF"`
-	DrTrDOF  Bool    `json:"DrTrDOF"`
-	GenDOF   Bool    `json:"GenDOF"`
-	YawDOF   Bool    `json:"YawDOF"`
-	TwFADOF1 Bool    `json:"TwFADOF1"`
-	TwFADOF2 Bool    `json:"TwFADOF2"`
-	TwSSDOF1 Bool    `json:"TwSSDOF1"`
-	TwSSDOF2 Bool    `json:"TwSSDOF2"`
-	BlPitch1 Real    `json:"BlPitch1" key:"BlPitch(1)"`
-	BlPitch2 Real    `json:"BlPitch2" key:"BlPitch(2)"`
-	BlPitch3 Real    `json:"BlPitch3" key:"BlPitch(3)"`
-	RotSpeed Real    `json:"RotSpeed"`
-	NumBl    Integer `json:"NumBl"`
-	TipRad   Real    `json:"TipRad"`
-	ShftTilt Real    `json:"ShftTilt"`
-	BldFile1 Path    `json:"BldFile1" key:"BldFile(1)" ftype:"Misc"` // ElastoDynBlade
-	BldFile2 Path    `json:"BldFile2" key:"BldFile(2)" ftype:"Misc"` // ElastoDynBlade
-	BldFile3 Path    `json:"BldFile3" key:"BldFile(3)" ftype:"Misc"` // ElastoDynBlade
-	TwrFile  Path    `json:"TwrFile" ftype:"Misc"`                   // ElastoDynTower
+	FlapDOF1  Bool    `json:"FlapDOF1"`
+	FlapDOF2  Bool    `json:"FlapDOF2"`
+	EdgeDOF   Bool    `json:"EdgeDOF"`
+	PitchDOF  Bool    `json:"PitchDOF"`
+	DrTrDOF   Bool    `json:"DrTrDOF"`
+	GenDOF    Bool    `json:"GenDOF"`
+	YawDOF    Bool    `json:"YawDOF"`
+	TwFADOF1  Bool    `json:"TwFADOF1"`
+	TwFADOF2  Bool    `json:"TwFADOF2"`
+	TwSSDOF1  Bool    `json:"TwSSDOF1"`
+	TwSSDOF2  Bool    `json:"TwSSDOF2"`
+	PtfmSgDOF Bool    `json:"PtfmSgDOF"`
+	PtfmSwDOF Bool    `json:"PtfmSwDOF"`
+	PtfmHvDOF Bool    `json:"PtfmHvDOF"`
+	PtfmRDOF  Bool    `json:"PtfmRDOF"`
+	PtfmPDOF  Bool    `json:"PtfmPDOF"`
+	PtfmYDOF  Bool    `json:"PtfmYDOF"`
+	BlPitch1  Real    `json:"BlPitch1" key:"BlPitch(1)"`
+	BlPitch2  Real    `json:"BlPitch2" key:"BlPitch(2)"`
+	BlPitch3  Real    `json:"BlPitch3" key:"BlPitch(3)"`
+	RotSpeed  Real    `json:"RotSpeed"`
+	NumBl     Integer `json:"NumBl"`
+	TipRad    Real    `json:"TipRad"`
+	ShftTilt  Real    `json:"ShftTilt"`
+	BldFile1  Path    `json:"BldFile1" key:"BldFile(1)" ftype:"Misc"` // ElastoDynBlade
+	BldFile2  Path    `json:"BldFile2" key:"BldFile(2)" ftype:"Misc"` // ElastoDynBlade
+	BldFile3  Path    `json:"BldFile3" key:"BldFile(3)" ftype:"Misc"` // ElastoDynBlade
+	TwrFile   Path    `json:"TwrFile" ftype:"Misc"`                   // ElastoDynTower
 }
 
 type HydroDyn struct {

@@ -717,7 +717,7 @@ export namespace main {
 	    FlapDOF1: Bool;
 	    FlapDOF2: Bool;
 	    EdgeDOF: Bool;
-	    TeetDOF: Bool;
+	    PitchDOF: Bool;
 	    DrTrDOF: Bool;
 	    GenDOF: Bool;
 	    YawDOF: Bool;
@@ -725,6 +725,12 @@ export namespace main {
 	    TwFADOF2: Bool;
 	    TwSSDOF1: Bool;
 	    TwSSDOF2: Bool;
+	    PtfmSgDOF: Bool;
+	    PtfmSwDOF: Bool;
+	    PtfmHvDOF: Bool;
+	    PtfmRDOF: Bool;
+	    PtfmPDOF: Bool;
+	    PtfmYDOF: Bool;
 	    BlPitch1: Real;
 	    BlPitch2: Real;
 	    BlPitch3: Real;
@@ -749,7 +755,7 @@ export namespace main {
 	        this.FlapDOF1 = this.convertValues(source["FlapDOF1"], Bool);
 	        this.FlapDOF2 = this.convertValues(source["FlapDOF2"], Bool);
 	        this.EdgeDOF = this.convertValues(source["EdgeDOF"], Bool);
-	        this.TeetDOF = this.convertValues(source["TeetDOF"], Bool);
+	        this.PitchDOF = this.convertValues(source["PitchDOF"], Bool);
 	        this.DrTrDOF = this.convertValues(source["DrTrDOF"], Bool);
 	        this.GenDOF = this.convertValues(source["GenDOF"], Bool);
 	        this.YawDOF = this.convertValues(source["YawDOF"], Bool);
@@ -757,6 +763,12 @@ export namespace main {
 	        this.TwFADOF2 = this.convertValues(source["TwFADOF2"], Bool);
 	        this.TwSSDOF1 = this.convertValues(source["TwSSDOF1"], Bool);
 	        this.TwSSDOF2 = this.convertValues(source["TwSSDOF2"], Bool);
+	        this.PtfmSgDOF = this.convertValues(source["PtfmSgDOF"], Bool);
+	        this.PtfmSwDOF = this.convertValues(source["PtfmSwDOF"], Bool);
+	        this.PtfmHvDOF = this.convertValues(source["PtfmHvDOF"], Bool);
+	        this.PtfmRDOF = this.convertValues(source["PtfmRDOF"], Bool);
+	        this.PtfmPDOF = this.convertValues(source["PtfmPDOF"], Bool);
+	        this.PtfmYDOF = this.convertValues(source["PtfmYDOF"], Bool);
 	        this.BlPitch1 = this.convertValues(source["BlPitch1"], Real);
 	        this.BlPitch2 = this.convertValues(source["BlPitch2"], Real);
 	        this.BlPitch3 = this.convertValues(source["BlPitch3"], Real);
