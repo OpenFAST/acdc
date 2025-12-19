@@ -4,6 +4,8 @@ date: 2024-05-14T19:27:37+10:00
 weight: 10
 ---
 
+This page describes the Campbell diagram generation workflow and its theoretical background.
+
 ## Overview
 
 A Campbell diagram is a powerful visualization tool used in wind turbine analysis to understand how natural frequencies and damping ratios vary with rotor and wind speeds. It helps identify potential resonance conditions and instabilities where structural modes may be excited by harmonic frequencies, which is critical for avoiding fatigue damage and ensuring safe operation.
@@ -168,3 +170,14 @@ This iterative approach with validation ensures that the final clusters represen
 
 ![](cluster1.png)
 ![](cluster2.png)
+
+## Reference
+
+These are the links to sources to get more details:
+
+- MBC: https://docs.nrel.gov/docs/fy10osti/44327.pdf
+- Similarity metrics: https://past.isma-isaac.be/downloads/isma2010/papers/isma2010_0103.pdf
+- Assignment problem: https://en.wikipedia.org/wiki/Assignment_problem
+- Hungarian algorithm: https://en.wikipedia.org/wiki/Hungarian_algorithm
+- Spectral clustering: https://arxiv.org/abs/0711.0189 and https://en.wikipedia.org/wiki/Spectral_clustering
+- K-means clustering: https://en.wikipedia.org/wiki/K-means_clustering
