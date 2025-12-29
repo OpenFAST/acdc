@@ -26,6 +26,10 @@
 
   {{ block "header_css" . }}{{ end }}
 
+  {{ if .Param "math" }}
+    {{ partialCached "math.html" . }}
+  {{ end }}
+
 </head>
 
 <body class='page {{ block "body_classes" . }}{{ end }}'>
