@@ -342,6 +342,7 @@ type ServoDyn struct {
 	VS_SlPc   Real    `json:"VS_SlPc"`
 	HSSBrMode Integer `json:"HSSBrMode"`
 	YCMode    Integer `json:"YCMode"`
+	AfCmode   Integer `json:"AfCmode"`
 	NumBStC   Integer `json:"NumBStC"`
 	BStCfiles Paths   `json:"BStCfiles" num:"NumBStC" ftype:"StControl"`
 	NumNStC   Integer `json:"NumNStC"`
@@ -350,6 +351,7 @@ type ServoDyn struct {
 	TStCfiles Paths   `json:"TStCfiles" num:"NumTStC" ftype:"StControl"`
 	NumSStC   Integer `json:"NumSStC"`
 	SStCfiles Paths   `json:"SStCfiles" num:"NumSStC" ftype:"StControl"`
+	CCmode    Integer `json:"CCmode"`
 }
 
 func (sd *ServoDyn) PostParse() error {

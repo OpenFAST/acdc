@@ -988,6 +988,7 @@ export namespace main {
 	    VS_SlPc: Real;
 	    HSSBrMode: Integer;
 	    YCMode: Integer;
+	    AfCmode: Integer;
 	    NumBStC: Integer;
 	    BStCfiles: Paths;
 	    NumNStC: Integer;
@@ -996,6 +997,7 @@ export namespace main {
 	    TStCfiles: Paths;
 	    NumSStC: Integer;
 	    SStCfiles: Paths;
+	    CCmode: Integer;
 	
 	    static createFrom(source: any = {}) {
 	        return new ServoDyn(source);
@@ -1014,6 +1016,7 @@ export namespace main {
 	        this.VS_SlPc = this.convertValues(source["VS_SlPc"], Real);
 	        this.HSSBrMode = this.convertValues(source["HSSBrMode"], Integer);
 	        this.YCMode = this.convertValues(source["YCMode"], Integer);
+	        this.AfCmode = this.convertValues(source["AfCmode"], Integer);
 	        this.NumBStC = this.convertValues(source["NumBStC"], Integer);
 	        this.BStCfiles = this.convertValues(source["BStCfiles"], Paths);
 	        this.NumNStC = this.convertValues(source["NumNStC"], Integer);
@@ -1022,6 +1025,7 @@ export namespace main {
 	        this.TStCfiles = this.convertValues(source["TStCfiles"], Paths);
 	        this.NumSStC = this.convertValues(source["NumSStC"], Integer);
 	        this.SStCfiles = this.convertValues(source["SStCfiles"], Paths);
+	        this.CCmode = this.convertValues(source["CCmode"], Integer);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

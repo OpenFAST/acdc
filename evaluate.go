@@ -248,8 +248,19 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 		} else {
 
 			// Disable ServoDyn and remove files
-			files.Main[0].CompServo.Value = 0
-			files.ServoDyn = []ServoDyn{}
+			// files.Main[0].CompServo.Value = 0
+			// files.ServoDyn = []ServoDyn{}
+
+			// If ServoDyn is enabled, disable controller modes
+			// This allows the PitchDOF to be on in ElastoDyn without using the controller
+			if files.Main[0].CompServo.Value != 0 {
+				for i := range files.ServoDyn {
+					files.ServoDyn[i].PCMode.Value = 0
+					files.ServoDyn[i].VSContrl.Value = 0
+					files.ServoDyn[i].HSSBrMode.Value = 0
+					files.ServoDyn[i].YCMode.Value = 0
+				}
+			}
 
 			// Disable generator DOF
 			files.ElastoDyn[0].GenDOF.Value = false
@@ -270,9 +281,16 @@ func (eval *Evaluate) OP(ctx context.Context, model *Model, c *Case, op *Conditi
 		// Disable ElastoDyn generator DOF
 		files.ElastoDyn[0].GenDOF.Value = false
 
-		// Disable ServoDyn and remove files
-		files.Main[0].CompServo.Value = 0
-		files.ServoDyn = []ServoDyn{}
+		// If ServoDyn is enabled, disable controller modes
+		// This allows the PitchDOF to be on in ElastoDyn without using the controller
+		if files.Main[0].CompServo.Value != 0 {
+			for i := range files.ServoDyn {
+				files.ServoDyn[i].PCMode.Value = 0
+				files.ServoDyn[i].VSContrl.Value = 0
+				files.ServoDyn[i].HSSBrMode.Value = 0
+				files.ServoDyn[i].YCMode.Value = 0
+			}
+		}
 	}
 
 	// Write modified turbine files
