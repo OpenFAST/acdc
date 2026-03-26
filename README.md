@@ -20,5 +20,8 @@ Executables can be downloaded for Windows, MacOS, and Linux from the Releases pa
 
 Please open issues on Github if you encounter problems with the software. If possible, provide a minimal case and instructions to reproduce the failure.
 
+## Acknowledgements
+
+Released under software record NLR/SWR-26-042
 
 
