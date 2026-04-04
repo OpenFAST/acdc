@@ -34,6 +34,17 @@ homepage_image = 'images/cd_tn.png'
 ## You can enable to add anchor links to header elements
 # enable_anchor_link = true
 
+math = true
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.extensions]
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)']]
+
 [params.homepage_meta_tags]
 meta_description = "ACDC is an app for generating Campbell Diagrams with OpenFAST"
 meta_og_title = "ACDC: Automated Campbell Diagram Code"

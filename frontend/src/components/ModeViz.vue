@@ -10,6 +10,7 @@ const project = useProjectStore()
 const props = defineProps<{
     ModeData: viz.ModeData
     showNodePaths: boolean
+    showNodeOrientation: boolean
 }>()
 
 watch(
@@ -19,13 +20,16 @@ watch(
 )
 
 watch(() => props.showNodePaths, (snp) => (nodePaths.visible = snp))
+watch(() => props.showNodeOrientation, (sno) => {
+    for (const ofr of orientationFrames) {
+        ofr.visible = sno && lineFrames.indexOf(ofr) === frameNum
+    }
+})
 
-const showNodePaths = ref(true)
-
-let frames = new Array<THREE.Group>;
+let lineFrames = new Array<THREE.Group>;
+let orientationFrames = new Array<THREE.Group>;
 let nodePaths = new THREE.Group;
 let frameNum = 0;
-let capturing = false;
 let frameCenter = new THREE.Vector3;
 let frameSize = new THREE.Vector3;
 let clock = new THREE.Clock();
@@ -35,16 +39,29 @@ const FOV = 10
 function createFrames(modeData: viz.ModeData) {
     if (modeData.Frames == null) return
     scene.clear()
-    frames = [] as THREE.Group[];
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3));
     const material = new THREE.PointsMaterial({ color: 0x888888 });
     const origin = new THREE.Points(geometry, material);
     origin.visible = false
+
+    // Clear existing frames
+    lineFrames = [] as THREE.Group[];
+    orientationFrames = [] as THREE.Group[];
+
     const allFramesGroup = new THREE.Group()
     allFramesGroup.add(origin)
+
+    const xMaterial = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+    const yMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
+    const zMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 2 });
+
+    // Loop through frames
     for (const f of modeData.Frames) {
-        const frameGroup = new THREE.Group()
+
+        // Lines
+        const lineFrameGroup = new THREE.Group()
         for (const c of Object.values(f.Components)) {
             const curve = new THREE.CatmullRomCurve3(
                 c.Line.map((p) => new THREE.Vector3(p.XYZ[0], p.XYZ[1], p.XYZ[2])))
@@ -52,13 +69,45 @@ function createFrames(modeData: viz.ModeData) {
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const material = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 1 });
             const curveObject = new THREE.Line(geometry, material);
-            frameGroup.add(curveObject)
+            lineFrameGroup.add(curveObject)
             allFramesGroup.add(curveObject.clone()) // Add clone of object to be used for view sizing
         }
-        frameGroup.visible = false // Initialize each group to not visible for animation
-        frames.push(frameGroup)
-        scene.add(frameGroup)
+        lineFrameGroup.visible = false // Initialize each group to not visible for animation
+        lineFrames.push(lineFrameGroup)
+
+        // Orientations
+        const orientationFrameGroup = new THREE.Group()
+        for (const c of Object.values(f.Components)) {
+            const indices = new Uint16Array(c.Line.map((_, i) => i * 2).flatMap(i => [i, i + 1]));
+
+            const pointsX = new Float32Array(c.Line.flatMap(p => [p.XYZ[0], p.XYZ[1], p.XYZ[2], p.XYZ[0] + p.OrientationX[0] * 4, p.XYZ[1] + p.OrientationX[1] * 4, p.XYZ[2] + p.OrientationX[2] * 4]));
+            const geometryX = new THREE.BufferGeometry();
+            geometryX.setAttribute('position', new THREE.BufferAttribute(pointsX, 3));
+            geometryX.setIndex(new THREE.BufferAttribute(indices, 1));
+            const lineX = new THREE.LineSegments(geometryX, xMaterial);
+            orientationFrameGroup.add(lineX);
+
+            const pointsY = new Float32Array(c.Line.flatMap(p => [p.XYZ[0], p.XYZ[1], p.XYZ[2], p.XYZ[0] + p.OrientationY[0] * 4, p.XYZ[1] + p.OrientationY[1] * 4, p.XYZ[2] + p.OrientationY[2] * 4]));
+            const geometryY = new THREE.BufferGeometry();
+            geometryY.setAttribute('position', new THREE.BufferAttribute(pointsY, 3));
+            geometryY.setIndex(new THREE.BufferAttribute(indices, 1));
+            const lineY = new THREE.LineSegments(geometryY, yMaterial);
+            orientationFrameGroup.add(lineY);
+
+            // const pointsZ = new Float32Array(c.Line.flatMap(p => [p.XYZ[0], p.XYZ[1], p.XYZ[2], p.XYZ[0] + p.OrientationZ[0] * 4, p.XYZ[1] + p.OrientationZ[1] * 4, p.XYZ[2] + p.OrientationZ[2] * 4]));
+            // const geometryZ = new THREE.BufferGeometry();
+            // geometryZ.setAttribute('position', new THREE.BufferAttribute(pointsZ, 3));
+            // geometryZ.setIndex(new THREE.BufferAttribute(indices, 1));
+            // const lineZ = new THREE.LineSegments(geometryZ, zMaterial);
+            // orientationFrameGroup.add(lineZ);
+        }
+        orientationFrameGroup.visible = false // Initialize each group to not visible for animation
+        orientationFrames.push(orientationFrameGroup)
+
+        scene.add(lineFrameGroup)
+        scene.add(orientationFrameGroup)
     }
+
     // Node paths
     const componentNames = Object.keys(modeData.Frames[0].Components)
     const curves = new Array<THREE.CatmullRomCurve3>
@@ -172,12 +221,23 @@ const views = [
 function animate() {
     requestAnimationFrame(animate);
     delta += clock.getDelta()
-    if (delta > 1.5 / frames.length) {
+    if (delta > 1.5 / lineFrames.length) {
         delta = 0
-        frames[frameNum].visible = false;
+
+        // Hide current frame
+        lineFrames[frameNum].visible = false;
+        orientationFrames[frameNum].visible = false;
+
+        // Increment frame number
         frameNum++
-        if (frameNum >= frames.length) frameNum = 0
-        frames[frameNum].visible = true;
+        if (frameNum >= lineFrames.length) frameNum = 0
+
+        // Show next frame
+        lineFrames[frameNum].visible = true;
+        if (props.showNodeOrientation) {
+            orientationFrames[frameNum].visible = true;
+        }
+
         render();
     }
 }

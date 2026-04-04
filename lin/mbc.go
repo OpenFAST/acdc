@@ -28,6 +28,7 @@ type MBC struct {
 	DOFsEigen  []string      `json:"DOFsEigen"`
 	AvgA       *mat.Dense    `json:"-"`
 	ANR        *mat.Dense    `json:"-"` // Non-rotating A matrix
+	ANRs       []*mat.Dense  `json:"-"` // Non-rotating A matrix for each OP
 	AvgX       *mat.VecDense `json:"-"`
 	AvgXdot    *mat.VecDense `json:"-"`
 }
@@ -105,7 +106,7 @@ func (md *MatData) MBC3() (*MBC, error) {
 	PX.Permutation(mbc.OrderX.Num, mbc.OrderX.Indices)
 
 	// Loop through linearization data
-	for i := 0; i < md.NumStep; i++ {
+	for i := range md.NumStep {
 
 		// Rotor speed in radians/sec and rotor speed squared
 		omega := md.Omega[i]
@@ -210,6 +211,9 @@ func (md *MatData) MBC3() (*MBC, error) {
 		// Save non-rotating A matrix
 		A_NR = append(A_NR, ANR)
 	}
+
+	// Save all OP non-rotating A matrices
+	mbc.ANRs = A_NR
 
 	// Average the A matrix
 	mbc.AvgA = mat.NewDense(len(md.OP_x), len(md.OP_x), nil)

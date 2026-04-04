@@ -114,6 +114,9 @@ function setDefaults() {
                     <div>
                         <ModelProp :field="main.TMax" />
                         <ModelProp :field="main.DT" />
+                        <ModelProp :field="main.RhoInf" />
+                        <ModelProp :field="main.ConvTol" />
+                        <ModelProp :field="main.MaxConvIter" />
                         <ModelProp :field="main.Gravity" />
                         <ModelProp :field="main.OutFmt" />
                         <ModelProp :field="main.Linearize" />
@@ -189,8 +192,8 @@ function setDefaults() {
                     </div>
                 </div>
             </div>
-            <hr class="my-0" v-if="selectedFileID" />
-            <div class="card-body" v-if="selectedFileID">
+            <hr class="my-0" v-if="selectedFileID !== undefined" />
+            <div class="card-body" v-if="selectedFileID !== undefined">
                 <ModelProp :field="field" v-for="field in modelFileOptions[selectedFileID].Fields" />
                 <div class="text-center" v-if="modelFileOptions[selectedFileID].Fields.length == 0">No fields in file
                     can be modified</div>

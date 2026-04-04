@@ -17,7 +17,7 @@ func TestLoadVTK(t *testing.T) {
 	}
 
 	for _, testFile := range testFiles {
-		_, err := viz.LoadVTK(testFile)
+		_, _, err := viz.LoadVTK(testFile)
 		if err != nil {
 			t.Fatal(err)
 		}

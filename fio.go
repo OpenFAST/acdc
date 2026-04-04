@@ -74,39 +74,41 @@ type String struct {
 // Files structure contains slices of all file types
 // file types must be slices for the parsing and writing code to work
 type Files struct {
-	Main        []Main            `json:"Main"`
-	ElastoDyn   []ElastoDyn       `json:"ElastoDyn"`
-	BeamDyn     []BeamDyn         `json:"BeamDyn"`
-	SubDyn      []SubDyn          `json:"SubDyn"`
-	AeroDyn     []AeroDyn         `json:"AeroDyn"`
-	AeroDyn14   []AeroDyn14       `json:"AeroDyn14"`
-	HydroDyn    []HydroDyn        `json:"HydroDyn"`
-	ServoDyn    []ServoDyn        `json:"ServoDyn"`
-	InflowWind  []InflowWind      `json:"InflowWind"`
-	OLAF        []OLAF            `json:"OLAF"`
-	Misc        []Misc            `json:"Misc"`
-	StControl   []StControl       `json:"StControl"`
-	AirfoilInfo []AirfoilInfo     `json:"AirfoilInfo"`
-	PathMap     map[string]string `json:"-"`
+	Main         []Main            `json:"Main"`
+	ElastoDyn    []ElastoDyn       `json:"ElastoDyn"`
+	BeamDyn      []BeamDyn         `json:"BeamDyn"`
+	BeamDynBlade []BeamDynBlade    `json:"BeamDynBlade"`
+	SubDyn       []SubDyn          `json:"SubDyn"`
+	AeroDyn      []AeroDyn         `json:"AeroDyn"`
+	AeroDyn14    []AeroDyn14       `json:"AeroDyn14"`
+	HydroDyn     []HydroDyn        `json:"HydroDyn"`
+	ServoDyn     []ServoDyn        `json:"ServoDyn"`
+	InflowWind   []InflowWind      `json:"InflowWind"`
+	OLAF         []OLAF            `json:"OLAF"`
+	Misc         []Misc            `json:"Misc"`
+	StControl    []StControl       `json:"StControl"`
+	AirfoilInfo  []AirfoilInfo     `json:"AirfoilInfo"`
+	PathMap      map[string]string `json:"-"`
 }
 
 // NewFiles returns the Model structure with all slices initialized to empty
 func NewFiles() *Files {
 	return &Files{
-		Main:        []Main{},
-		ElastoDyn:   []ElastoDyn{},
-		BeamDyn:     []BeamDyn{},
-		SubDyn:      []SubDyn{},
-		AeroDyn:     []AeroDyn{},
-		AeroDyn14:   []AeroDyn14{},
-		HydroDyn:    []HydroDyn{},
-		InflowWind:  []InflowWind{},
-		OLAF:        []OLAF{},
-		ServoDyn:    []ServoDyn{},
-		StControl:   []StControl{},
-		Misc:        []Misc{},
-		AirfoilInfo: []AirfoilInfo{},
-		PathMap:     map[string]string{},
+		Main:         []Main{},
+		ElastoDyn:    []ElastoDyn{},
+		BeamDyn:      []BeamDyn{},
+		BeamDynBlade: []BeamDynBlade{},
+		SubDyn:       []SubDyn{},
+		AeroDyn:      []AeroDyn{},
+		AeroDyn14:    []AeroDyn14{},
+		HydroDyn:     []HydroDyn{},
+		InflowWind:   []InflowWind{},
+		OLAF:         []OLAF{},
+		ServoDyn:     []ServoDyn{},
+		StControl:    []StControl{},
+		Misc:         []Misc{},
+		AirfoilInfo:  []AirfoilInfo{},
+		PathMap:      map[string]string{},
 	}
 }
 
@@ -157,6 +159,9 @@ type Main struct {
 	FileBase
 	TMax        Real    `json:"TMax"`
 	DT          Real    `json:"DT"`
+	RhoInf      Real    `json:"RhoInf"`
+	ConvTol     Real    `json:"ConvTol"`
+	MaxConvIter Integer `json:"MaxConvIter"`
 	CompElast   Integer `json:"CompElast"`
 	CompInflow  Integer `json:"CompInflow"`
 	CompAero    Integer `json:"CompAero"`
@@ -257,34 +262,46 @@ type AeroDyn14 struct {
 
 type BeamDyn struct {
 	FileBase
-	RotStates Bool `json:"RotStates"`
-	BldFile   Path `json:"BldFile" ftype:"Misc"` // BeamDynBlade
+	RotStates Bool    `json:"RotStates"`
+	BldFile   Path    `json:"BldFile" ftype:"BeamDynBlade"`
+	OrderElem Integer `json:"OrderElem" key:"order_elem"`
+}
+
+type BeamDynBlade struct {
+	FileBase
+	DampType Integer `json:"DampType" key:"damp_type"`
 }
 
 type ElastoDyn struct {
 	FileBase
-	FlapDOF1 Bool    `json:"FlapDOF1"`
-	FlapDOF2 Bool    `json:"FlapDOF2"`
-	EdgeDOF  Bool    `json:"EdgeDOF"`
-	TeetDOF  Bool    `json:"TeetDOF"`
-	DrTrDOF  Bool    `json:"DrTrDOF"`
-	GenDOF   Bool    `json:"GenDOF"`
-	YawDOF   Bool    `json:"YawDOF"`
-	TwFADOF1 Bool    `json:"TwFADOF1"`
-	TwFADOF2 Bool    `json:"TwFADOF2"`
-	TwSSDOF1 Bool    `json:"TwSSDOF1"`
-	TwSSDOF2 Bool    `json:"TwSSDOF2"`
-	BlPitch1 Real    `json:"BlPitch1" key:"BlPitch(1)"`
-	BlPitch2 Real    `json:"BlPitch2" key:"BlPitch(2)"`
-	BlPitch3 Real    `json:"BlPitch3" key:"BlPitch(3)"`
-	RotSpeed Real    `json:"RotSpeed"`
-	NumBl    Integer `json:"NumBl"`
-	TipRad   Real    `json:"TipRad"`
-	ShftTilt Real    `json:"ShftTilt"`
-	BldFile1 Path    `json:"BldFile1" key:"BldFile(1)" ftype:"Misc"` // ElastoDynBlade
-	BldFile2 Path    `json:"BldFile2" key:"BldFile(2)" ftype:"Misc"` // ElastoDynBlade
-	BldFile3 Path    `json:"BldFile3" key:"BldFile(3)" ftype:"Misc"` // ElastoDynBlade
-	TwrFile  Path    `json:"TwrFile" ftype:"Misc"`                   // ElastoDynTower
+	FlapDOF1  Bool    `json:"FlapDOF1"`
+	FlapDOF2  Bool    `json:"FlapDOF2"`
+	EdgeDOF   Bool    `json:"EdgeDOF"`
+	PitchDOF  Bool    `json:"PitchDOF"`
+	DrTrDOF   Bool    `json:"DrTrDOF"`
+	GenDOF    Bool    `json:"GenDOF"`
+	YawDOF    Bool    `json:"YawDOF"`
+	TwFADOF1  Bool    `json:"TwFADOF1"`
+	TwFADOF2  Bool    `json:"TwFADOF2"`
+	TwSSDOF1  Bool    `json:"TwSSDOF1"`
+	TwSSDOF2  Bool    `json:"TwSSDOF2"`
+	PtfmSgDOF Bool    `json:"PtfmSgDOF"`
+	PtfmSwDOF Bool    `json:"PtfmSwDOF"`
+	PtfmHvDOF Bool    `json:"PtfmHvDOF"`
+	PtfmRDOF  Bool    `json:"PtfmRDOF"`
+	PtfmPDOF  Bool    `json:"PtfmPDOF"`
+	PtfmYDOF  Bool    `json:"PtfmYDOF"`
+	BlPitch1  Real    `json:"BlPitch1" key:"BlPitch(1)"`
+	BlPitch2  Real    `json:"BlPitch2" key:"BlPitch(2)"`
+	BlPitch3  Real    `json:"BlPitch3" key:"BlPitch(3)"`
+	RotSpeed  Real    `json:"RotSpeed"`
+	NumBl     Integer `json:"NumBl"`
+	TipRad    Real    `json:"TipRad"`
+	ShftTilt  Real    `json:"ShftTilt"`
+	BldFile1  Path    `json:"BldFile1" key:"BldFile(1)" ftype:"Misc"` // ElastoDynBlade
+	BldFile2  Path    `json:"BldFile2" key:"BldFile(2)" ftype:"Misc"` // ElastoDynBlade
+	BldFile3  Path    `json:"BldFile3" key:"BldFile(3)" ftype:"Misc"` // ElastoDynBlade
+	TwrFile   Path    `json:"TwrFile" ftype:"Misc"`                   // ElastoDynTower
 }
 
 type HydroDyn struct {
@@ -325,6 +342,7 @@ type ServoDyn struct {
 	VS_SlPc   Real    `json:"VS_SlPc"`
 	HSSBrMode Integer `json:"HSSBrMode"`
 	YCMode    Integer `json:"YCMode"`
+	AfCmode   Integer `json:"AfCmode"`
 	NumBStC   Integer `json:"NumBStC"`
 	BStCfiles Paths   `json:"BStCfiles" num:"NumBStC" ftype:"StControl"`
 	NumNStC   Integer `json:"NumNStC"`
@@ -333,6 +351,7 @@ type ServoDyn struct {
 	TStCfiles Paths   `json:"TStCfiles" num:"NumTStC" ftype:"StControl"`
 	NumSStC   Integer `json:"NumSStC"`
 	SStCfiles Paths   `json:"SStCfiles" num:"NumSStC" ftype:"StControl"`
+	CCmode    Integer `json:"CCmode"`
 }
 
 func (sd *ServoDyn) PostParse() error {
@@ -350,7 +369,6 @@ type StControl struct {
 
 type SubDyn struct {
 	FileBase
-	CBMod  Bool    `json:"CBMod"`
 	Nmodes Integer `json:"Nmodes"`
 }
 
