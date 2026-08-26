@@ -91,7 +91,12 @@ func spectralClustering(modeSets []*ModeSet) error {
 		}
 		di := mat.Sum(W.RowView(i))
 		D.Set(i, i, di)
-		D_isr.Set(i, i, 1/math.Sqrt(di))
+		// A mode with no MAC correlation to any other mode in the group has a
+		// zero degree. Leave its scaling at zero instead of storing +Inf,
+		// which would propagate NaN through Lsym and the eigen solve.
+		if di > 0 {
+			D_isr.Set(i, i, 1/math.Sqrt(di))
+		}
 	}
 
 	// Calculate Laplacian matrix (D - W)
@@ -112,7 +117,10 @@ func spectralClustering(modeSets []*ModeSet) error {
 	eigenVectors := &mat.CDense{}
 	eig.VectorsTo(eigenVectors)
 
-	// Get indices that would sort from largest to smallest eigenvalues
+	// Get indices that would sort from smallest to largest eigenvalues.
+	// The comparator below is '<', and the smallest eigenvalues of the
+	// symmetric Laplacian are the ones that carry the cluster structure, so
+	// those are what get selected for the feature matrix.
 	indices := argsort.SortSlice(eigenValues, func(i, j int) bool {
 		return real(eigenValues[i]) < real(eigenValues[j])
 	})
@@ -126,7 +134,13 @@ func spectralClustering(modeSets []*ModeSet) error {
 		for j, ind := range indices[:numDims] {
 			row[j] = real(eigenVectors.At(i, ind))
 		}
-		floats.Scale(1/floats.Norm(row, 2), row)
+		// Only normalize a row with a non-zero norm. Scaling by 1/0 fills the
+		// observation with NaN, and every distance comparison against NaN is
+		// false, so the point silently lands in whichever cluster is checked
+		// first instead of the nearest one.
+		if norm := floats.Norm(row, 2); norm > 0 {
+			floats.Scale(1/norm, row)
+		}
 		d[i] = Observation(row)
 	}
 
