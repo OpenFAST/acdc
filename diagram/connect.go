@@ -42,29 +42,49 @@ func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64, structMax bool) ([
 			continue
 		}
 
+		// Collect the modes in this operating point that pass the filter.
+		// NOTE: these are gathered up front so the weight matrix has exactly
+		// one column per candidate. Sizing it from len(op.Modes) leaves
+		// trailing all-zero columns that are never written but are still
+		// visible to mat.Max below.
+		filteredModes := []*lin.Mode{}
+		for l := range op.Modes {
+			mn := &op.Modes[l]
+			if mn.Filter(freqRangeHz, structMax) {
+				filteredModes = append(filteredModes, mn)
+			}
+		}
+
+		// No candidate modes in this operating point, nothing to connect
+		if len(filteredModes) == 0 {
+			continue
+		}
+
+		// No mode sets to connect to yet, because no mode in any earlier
+		// operating point passed the filter. Seed one set per candidate mode;
+		// building a zero-row weight matrix below would panic.
+		if len(modeSets) == 0 {
+			for _, mn := range filteredModes {
+				modeSets = append(modeSets, &ModeSet{
+					ID:    len(modeSets),
+					Label: fmt.Sprintf("%d", len(modeSets)),
+					Modes: []*lin.Mode{mn},
+				})
+			}
+			continue
+		}
+
 		// Create empty weighting matrix
-		w := mat.NewDense(len(modeSets), len(op.Modes), nil)
+		w := mat.NewDense(len(modeSets), len(filteredModes), nil)
 
-		// Create map mapping mode index to mode
-		modeIndexMap := map[int]*lin.Mode{}
-
-		// Loop through modes in mode set map
+		// Loop through mode sets
 		for j, modeSet := range modeSets {
 
 			// 	Get last mode in mode set
 			mp := modeSet.Modes[len(modeSet.Modes)-1]
 
-			// Loop through modes in current operating point
-			k := 0
-			for l := range op.Modes {
-
-				// Get mode
-				mn := &op.Modes[l]
-
-				// If mode should not be filtered, continue
-				if !mn.Filter(freqRangeHz, structMax) {
-					continue
-				}
+			// Loop through candidate modes in current operating point
+			for k, mn := range filteredModes {
 
 				// Calculate MAC between modes
 				mac, err := mp.MAC(mn)
@@ -77,23 +97,22 @@ func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64, structMax bool) ([
 
 				// Add MAC to weight matrix
 				w.Set(j, k, mac)
-
-				// Add mode to index map
-				modeIndexMap[k] = mn
-
-				k++
 			}
 		}
 
 		// Get max weight value
 		wMax := mat.Max(w)
 
-		// Create cost matrix (ints) from weights (rescale to maximize precision)
-		cost := NewIntMatrix(len(modeSets), len(modeIndexMap), 0)
-		for j := range cost {
-			for k := range cost[j] {
-				v := w.At(j, k)
-				cost[j][k] = int(1e7 * (1 - v/wMax))
+		// Create cost matrix (ints) from weights (rescale to maximize
+		// precision). If nothing correlates at all then every cost is equal,
+		// and the guard is required because dividing by a zero wMax yields
+		// NaN, whose conversion to int is not defined by the language spec.
+		cost := NewIntMatrix(len(modeSets), len(filteredModes), 0)
+		if wMax > 0 {
+			for j := range cost {
+				for k := range cost[j] {
+					cost[j][k] = int(1e7 * (1 - w.At(j, k)/wMax))
+				}
 			}
 		}
 
@@ -103,25 +122,32 @@ func connectModesMAC(OPs []lin.LinOP, freqRangeHz [2]float64, structMax bool) ([
 			return nil, err
 		}
 
-		// Add connected modes to sets
+		// Add connected modes to sets, tracking which candidates were paired
+		paired := make([]bool, len(filteredModes))
 		for _, pair := range pairs {
 
 			// Look up mode set from previous mode index
 			modeSet := modeSets[pair[0]]
 
 			// Add paired mode to slice of modes
-			modeSet.Modes = append(modeSet.Modes, modeIndexMap[pair[1]])
+			modeSet.Modes = append(modeSet.Modes, filteredModes[pair[1]])
 
-			// Remove paired mode from map
-			delete(modeIndexMap, pair[1])
+			// Mark paired candidate mode
+			paired[pair[1]] = true
 		}
 
-		// Loop through unpaired modes and create new mode sets
-		for _, m := range modeIndexMap {
+		// Loop through unpaired modes and create new mode sets.
+		// NOTE: walk the slice in index order rather than ranging over a map.
+		// Go randomizes map iteration order, so the IDs and labels assigned to
+		// these new mode sets varied between runs on identical input.
+		for k, mn := range filteredModes {
+			if paired[k] {
+				continue
+			}
 			modeSets = append(modeSets, &ModeSet{
 				ID:    len(modeSets),
 				Label: fmt.Sprintf("%d", len(modeSets)),
-				Modes: []*lin.Mode{m},
+				Modes: []*lin.Mode{mn},
 			})
 		}
 	}
