@@ -169,7 +169,11 @@ func (md1 Mode) MACX(md2 *Mode) (float64, error) {
 		numer2 += md1.EigenVector[i] * md2.EigenVector[i]
 
 		denom11 += md1.EigenVector[i] * cmplx.Conj(md1.EigenVector[i])
-		denom12 += md2.EigenVector[i] * md2.EigenVector[i]
+		// NOTE: this term belongs to md1. Using md2 here makes the first
+		// denominator factor (|phi1^H phi1| + |phi2^T phi2|) instead of
+		// (|phi1^H phi1| + |phi1^T phi1|), so the criterion is no longer
+		// symmetric in its arguments and does not match the reference.
+		denom12 += md1.EigenVector[i] * md1.EigenVector[i]
 
 		denom21 += md2.EigenVector[i] * cmplx.Conj(md2.EigenVector[i])
 		denom22 += md2.EigenVector[i] * md2.EigenVector[i]
