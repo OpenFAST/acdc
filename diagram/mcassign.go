@@ -88,6 +88,11 @@ func NewIntMatrix(m, n, v int) IntMatrix {
 // through the matrix
 func MinCostAssignment(cost IntMatrix) (results [][2]int, err error) {
 
+	// Nothing to assign; return an empty result instead of indexing cost[0]
+	if len(cost) == 0 || len(cost[0]) == 0 {
+		return nil, nil
+	}
+
 	// Pad cost matrix so it is square, get size
 	costSq := padMatrix(cost, 0)
 	N := len(costSq)
@@ -102,7 +107,10 @@ func MinCostAssignment(cost IntMatrix) (results [][2]int, err error) {
 		Z0_r:       0,
 		Z0_c:       0,
 		Marked:     NewIntMatrix(N, N, 0),
-		path:       make([][2]int, N),
+		// Step5 builds an alternating series of primed and starred zeros that
+		// can reach 2N-1 entries (N primes and N-1 stars), so N slots is not
+		// enough and overflows for larger augmenting paths.
+		path: make([][2]int, 2*N),
 	}
 
 	done := false
@@ -160,23 +168,30 @@ func (m *MCA) Step1() (int, error) {
 	// Loop through rows in C
 	for i := range m.C {
 
-		// Find minimum value in row, ignore invalid values
-		var minVal *int
-		for j, v := range m.C[i] {
-			if (v != INVALID) && (minVal == nil || v < *minVal) {
-				minVal = &m.C[i][j]
+		// Find minimum value in row, ignore invalid values.
+		// NOTE: this must be a copy of the minimum, not a pointer into the
+		// row. The subtraction loop below writes to the same row, so a
+		// pointer would be read back as 0 once the loop passes the position
+		// of the minimum, and every element after it would have 0 subtracted
+		// instead of the row minimum. That is not a uniform row offset, so it
+		// changes which assignment is optimal rather than only shifting the
+		// dual variables.
+		minVal := INVALID
+		for _, v := range m.C[i] {
+			if v != INVALID && v < minVal {
+				minVal = v
 			}
 		}
 
 		// If no min value found, return error
-		if minVal == nil {
+		if minVal == INVALID {
 			return 0, fmt.Errorf("all values in row %d are INVALID", i+1)
 		}
 
 		// Subtract minimum value from all values in row
 		for j, v := range m.C[i] {
 			if v != INVALID {
-				m.C[i][j] -= *minVal
+				m.C[i][j] -= minVal
 			}
 		}
 	}
@@ -265,7 +280,11 @@ func (m *MCA) Step4() (int, error) {
 	col := 0
 
 	for {
-		row, col := m.findZero(row, col)
+		// NOTE: assign with '=' rather than ':='. Declaring new variables here
+		// shadows the outer row/col, which makes the 'col = star_col'
+		// assignment below dead and restarts every search from (0, 0) instead
+		// of resuming from the starred column.
+		row, col = m.findZero(row, col)
 		if row < 0 {
 			return 6, nil
 		}
